@@ -125,7 +125,7 @@ export function useTelegram() {
 
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-web-app.js";
+    script.src = "https://telegram.org/js/telegram-web-app.js?58";
     script.async = true;
     script.onload = () => {
       const tgw = (window as unknown as WindowWithTelegram).Telegram?.WebApp;
