@@ -9,6 +9,8 @@ import { AuthContext } from "./context";
 
 const SESSION_TOKEN_KEY = "fingram_session_token";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
+
 const AuthProvider = ({ children }: PropsWithChildren) => {
   const telegram = useTelegramContext();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -55,9 +57,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
       }
 
       fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/miniapp/exchange?initData=${encodeURIComponent(
+        `${API_BASE_URL}/miniapp/exchange?initData=${encodeURIComponent(
           telegram.webApp.initData
         )}`
       )
@@ -97,7 +97,7 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         })
         .catch((error) => {
           console.error("Error during session token exchange:", error);
-          setError("Usuário não autenticado, gere um novo link de acesso no bot.");
+          setError("Usuário não autenticado, gere um novo link de acesso no bot." + error.message);
           setIsLoading(false);
         });
     });
