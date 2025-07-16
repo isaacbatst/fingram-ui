@@ -32,7 +32,7 @@ export function TransactionItem({
   categorias,
   onUpdate,
 }: TransactionItemProps) {
-  const { tg, ready } = useTelegramContext();
+  const { webApp: tg, ready } = useTelegramContext();
   // Estado para edição
   const [editState, setEditState] = useState<Partial<Transaction>>({});
   const [isSaving, setIsSaving] = useState(false);

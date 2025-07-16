@@ -1,7 +1,7 @@
-import { useCallback } from "react";
-import { useTelegramContext } from "./useTelegramContext";
 import type { SerializedVault } from "@/utils/vaultCalculations";
+import { useCallback } from "react";
 import useSWR from "swr";
+import { useAuth } from "./useAuth";
 
 export interface SummaryData {
   vault: SerializedVault;
@@ -15,42 +15,48 @@ export interface SummaryData {
     amount: number;
     percentageUsed: number;
   }>;
-  date: { 
-    year: number; 
-    month: number 
+  date: {
+    year: number;
+    month: number;
   };
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 export function useSummary() {
-  const { tg, ready } = useTelegramContext();
+  const { sessionToken } = useAuth();
 
   // Função para buscar os dados do resumo
-  const fetcher = useCallback(async (url: string) => {
-    if (!ready || !tg || !tg.initData) {
-      throw new Error('InitData não disponível');
-    }
+  const fetcher = useCallback(
+    async (url: string) => {
+      if (!sessionToken) {
+        throw new Error("Usuário não autenticado");
+      }
+      const fetchUrl = new URL(url);
+      const response = await fetch(fetchUrl.toString(), {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
 
-    const fetchUrl = new URL(url);
-    fetchUrl.searchParams.append('initData', tg.initData);
-    const response = await fetch(fetchUrl.toString());
-    
-    if(response.status === 401) {
-      throw new Error('Gere um novo link de acesso no bot.');
-    }
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `Erro ${response.status}`);
-    }
+      if (response.status === 401) {
+        throw new Error("Gere um novo link de acesso no bot.");
+      }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Erro ${response.status}`);
+      }
 
-    const data = await response.json() as SummaryData;
-    return data;
-  }, [ready, tg]);
+      const data = (await response.json()) as SummaryData;
+      return data;
+    },
+    [sessionToken]
+  );
 
   // Usando SWR para gerenciar o estado e buscar os dados
   return useSWR(
-    ready && tg ? `${API_BASE_URL}/miniapp/summary` : null,
-    fetcher,
+    sessionToken ? `${API_BASE_URL}/miniapp/summary` : null,
+    fetcher
   );
 }

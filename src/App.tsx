@@ -13,8 +13,24 @@ import { useSummary } from "./hooks/useSummary";
 import { useTelegramContext } from "./hooks/useTelegramContext";
 import { useTheme } from "./hooks/useTheme";
 import { cn } from "./lib/utils";
+import AuthProvider from "./contexts/AuthContext/provider";
+import { useAuth } from "./hooks/useAuth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 function AppContent() {
+  const auth = useAuth();
   const { isTelegram, getThemeColor } = useTheme();
   const { ready } = useTelegramContext();
   const summary = useSummary();
@@ -32,15 +48,61 @@ function AppContent() {
 
   const bgClass = `bg-${getThemeColor("bg_color")}`;
   const textClass = `text-${getThemeColor("text_color")}`;
+
+  if (!auth.sessionToken && !auth.isLoading) {
+    return (
+      <ErrorDisplay
+        error={
+          auth.error ??
+          "Usuário não autenticado. Gere um novo link de acesso no bot."
+        }
+        onRetry={() => window.location.reload()}
+        className="max-w-md mx-auto mt-10"
+      />
+    );
+  }
+
   return (
     <div
       className={cn(
-        "min-h-screen flex flex-col items-center p-2",
+        "min-h-screen flex flex-col items-center",
         bgClass,
         textClass
       )}
     >
-      <div className="rounded-3xl shadow-xl p-5 w-full max-w-sm mt-6 mb-4 border">
+      {auth.sessionToken && (
+        <div className="flex justify-end self-stretch p-5">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar logout</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja sair? Você precisará gerar um novo link
+                  de acesso no bot.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={auth.logout}>
+                  Sair
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
+      <div className="rounded-3xl shadow-xl p-5 w-full max-w-sm mb-4 border">
         {summary.isLoading && <LoadingSpinner />}
 
         {summary.error && (
@@ -51,37 +113,40 @@ function AppContent() {
           />
         )}
 
-        {!summary.isLoading && !summary.error && summary.data && summary.data.vault && (
-          <>
-            <SaldoResumo
-              saldo={summary.data.vault.balance}
-              receitas={summary.data.vault.totalIncomeAmount}
-              despesas={summary.data.vault.totalSpentAmount}
-            />
+        {!summary.isLoading &&
+          !summary.error &&
+          summary.data &&
+          summary.data.vault && (
+            <>
+              <SaldoResumo
+                saldo={summary.data.vault.balance}
+                receitas={summary.data.vault.totalIncomeAmount}
+                despesas={summary.data.vault.totalSpentAmount}
+              />
 
-            {/* Tabs: Orçamento / Transações */}
-            <Tabs defaultValue="orcamento" className="w-full">
-              <TabsList className="w-full mb-4">
-                <TabsTrigger className="w-1/2" value="orcamento">
-                  Orçamento
-                </TabsTrigger>
-                <TabsTrigger className="w-1/2" value="transacoes">
-                  Transações
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="orcamento">
-                <OrcamentoTab orcamento={orcamento} />
-              </TabsContent>
-              {/* Tab Transações */}
-              <TabsContent value="transacoes">
-                <TransacoesTab
-                  categories={categories.data || []}
-                  mutateSummary={summary.mutate}
-                />
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+              {/* Tabs: Orçamento / Transações */}
+              <Tabs defaultValue="orcamento" className="w-full">
+                <TabsList className="w-full mb-4">
+                  <TabsTrigger className="w-1/2" value="orcamento">
+                    Orçamento
+                  </TabsTrigger>
+                  <TabsTrigger className="w-1/2" value="transacoes">
+                    Transações
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="orcamento">
+                  <OrcamentoTab orcamento={orcamento} />
+                </TabsContent>
+                {/* Tab Transações */}
+                <TabsContent value="transacoes">
+                  <TransacoesTab
+                    categories={categories.data || []}
+                    mutateSummary={summary.mutate}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
 
         {!summary.isLoading && !summary.error && !summary.data && ready && (
           <div className="text-center p-6">
@@ -113,7 +178,7 @@ function AppContent() {
           </div>
         )}
       </div>
-      <div className="text-xs mt-auto mb-2">Fingram &copy; 2024</div>
+      <div className="text-xs mt-auto mb-2">Fingram &copy; {new Date().getFullYear()}</div>
     </div>
   );
 }
@@ -134,7 +199,9 @@ export default function App() {
     >
       <TelegramProvider>
         <ThemeProvider>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </ThemeProvider>
         <Toaster richColors />
       </TelegramProvider>

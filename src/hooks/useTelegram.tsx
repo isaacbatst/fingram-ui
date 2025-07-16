@@ -51,6 +51,32 @@ export type TelegramWebApp = {
   close: () => void;
   sendData: (data: string) => void;
   expand: () => void;
+  SecureStorage: {
+    setItem: (
+      key: string,
+      value: string,
+      callback?: (error: Error | null, success?: boolean) => void
+    ) => TelegramWebApp["SecureStorage"];
+    getItem: (
+      key: string,
+      callback: (
+        error: Error | null,
+        value?: string,
+        canRestore?: boolean
+      ) => void
+    ) => TelegramWebApp["SecureStorage"];
+    restoreItem: (
+      key: string,
+      callback?: (error: Error | null, value?: string) => void
+    ) => TelegramWebApp["SecureStorage"];
+    removeItem: (
+      key: string,
+      callback?: (error: Error | null, success?: boolean) => void
+    ) => TelegramWebApp["SecureStorage"];
+    clear: (
+      callback?: (error: Error | null, success?: boolean) => void
+    ) => TelegramWebApp["SecureStorage"];
+  };
   MainButton: {
     show: () => void;
     hide: () => void;
@@ -107,7 +133,7 @@ export const THEME_FALLBACKS: Record<keyof TelegramThemeParams, string> = {
 export type TelegramTheme = {
   getThemeColor: (key: keyof TelegramThemeParams) => string;
   themeFallbacks: typeof THEME_FALLBACKS;
-}
+};
 
 export function useTelegram() {
   const tg = useRef<TelegramWebApp>(null);
@@ -124,7 +150,7 @@ export function useTelegram() {
   }
 
   useEffect(() => {
-    if(ready) return;
+    if (ready) return;
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js?58";
     script.async = true;
@@ -146,26 +172,19 @@ export function useTelegram() {
       }
     };
     document.body.appendChild(script);
-    const timeout = setTimeout(() => {
-      if (!ready) {
-        setInitData(getMockInitData());
-        setReady(true);
-      }
-    }, 3000);
     return () => {
-      clearTimeout(timeout);
       document.body.removeChild(script);
     };
   }, [ready]);
 
   return {
-    tg: tg.current,
+    webApp: tg.current,
     isTelegram,
     ready,
     initData,
     theme: {
       getThemeColor,
-      themeFallbacks: THEME_FALLBACKS
-    } as TelegramTheme
+      themeFallbacks: THEME_FALLBACKS,
+    } as TelegramTheme,
   };
 }

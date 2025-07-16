@@ -2,7 +2,7 @@ import { createContext } from "react";
 import type { TelegramTheme, TelegramWebApp, TelegramWebAppInitData } from "@/hooks/useTelegram";
 
 export interface TelegramContextType {
-  tg: TelegramWebApp | null;
+  webApp: TelegramWebApp | null;
   isTelegram: boolean;
   ready: boolean;
   initData: TelegramWebAppInitData | null;
