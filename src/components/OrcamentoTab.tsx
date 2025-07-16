@@ -36,7 +36,7 @@ export function OrcamentoTab({ orcamento }: OrcamentoProps) {
                   {c.categoria}
                 </span>
                 <span className="text-xs text-gray-400">
-                  R$ {c.usado}/{c.valor}
+                  R$ {c.usado}/{c.valor.toFixed(2)}
                 </span>
               </div>
               <Progress
