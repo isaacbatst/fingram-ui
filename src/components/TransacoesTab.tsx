@@ -42,16 +42,17 @@ export type Transaction = {
 
 type TransacoesTabProps = {
   categories: Category[];
+  mutateSummary: () => void;
 };
 
-export function TransacoesTab({ categories }: TransacoesTabProps) {
+export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps) {
   const { getThemeColor } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
   const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
   const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
   const [filtroCategoria, setFiltroCategoria] = useState<string>("");
   // Usando o hook para buscar as transações
-  const { data, isLoading, error, mutate } = useTransactions({
+  const { data, isLoading, error, mutate: mutateTransactions } = useTransactions({
     page: currentPage,
     month: filtroMes,
     year: filtroAno,
@@ -78,29 +79,6 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
         date: tx.createdAt.toString(),
       }))
     : [];
-
-  // Filtro efetivo (aplicado apenas aos dados mock, já que dados reais são filtrados no backend)
-  const transFiltradas = data
-    ? transactions
-    : transactions.filter((tx) => {
-        if (transFiltroCat && tx.category !== transFiltroCat) return false;
-        if (
-          transFiltroDataRange[0] &&
-          new Date(tx.date) < new Date(transFiltroDataRange[0])
-        )
-          return false;
-        if (
-          transFiltroDataRange[1] &&
-          new Date(tx.date) > new Date(transFiltroDataRange[1])
-        )
-          return false;
-        if (
-          transFiltroNome &&
-          !tx.description.toLowerCase().includes(transFiltroNome.toLowerCase())
-        )
-          return false;
-        return true;
-      });
 
   return (
     <div>
@@ -141,7 +119,7 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
               onValueChange={(val) => {
                 setFiltroCategoria(val);
                 setCurrentPage(1); // Reset para a primeira página
-                mutate(); // Recarrega as transações com o novo filtro
+                mutateTransactions(); // Recarrega as transações com o novo filtro
               }}
             >
               <SelectTrigger className="text-xs flex-1">
@@ -162,7 +140,7 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
               className="ml-2"
               onClick={() => {
                 setFiltroCategoria("");
-                mutate(); // Recarrega as transações com os filtros resetados
+                mutateTransactions(); // Recarrega as transações com os filtros resetados
               }}
             >
               <X className="h-4 w-4" />
@@ -269,11 +247,11 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
       {isLoading && <LoadingSpinner />}
 
       {error && (
-        <ErrorDisplay error={error} onRetry={() => mutate()} className="my-4" />
+        <ErrorDisplay error={error} onRetry={() => mutateTransactions()} className="my-4" />
       )}
 
       <div className="space-y-3 pb-2">
-        {!isLoading && !error && transFiltradas.length === 0 ? (
+        {!isLoading && !error && transactions.length === 0 ? (
           <div className="text-gray-400 text-center py-8">
             Nenhuma transação encontrada
           </div>
@@ -284,7 +262,7 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
             className="w-full"
             animateContent={false}
           >
-            {transFiltradas
+            {transactions
               .slice()
               .reverse()
               .map((tx) => (
@@ -292,7 +270,12 @@ export function TransacoesTab({ categories }: TransacoesTabProps) {
                   key={tx.id}
                   transaction={tx}
                   categorias={categories}
-                  onUpdate={() => mutate()}
+                  onUpdate={async () => {
+                    await Promise.allSettled([
+                      mutateTransactions(),
+                      mutateSummary(),
+                    ]);
+                  }}
                 />
               ))}
           </Accordion>

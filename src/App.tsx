@@ -79,7 +79,10 @@ function AppContent() {
               </TabsContent>
               {/* Tab Transações */}
               <TabsContent value="transacoes">
-                <TransacoesTab categories={categories.data || []} />
+                <TransacoesTab
+                  categories={categories.data || []}
+                  mutateSummary={refetch}
+                />
               </TabsContent>
             </Tabs>
           </>

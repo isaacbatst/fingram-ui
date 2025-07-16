@@ -24,14 +24,12 @@ const API_BASE_URL =
 type TransactionItemProps = {
   transaction: Transaction;
   categorias?: Category[]; // Agora é opcional
-  setTransactions?: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  onUpdate?: () => void;
+  onUpdate?: () => Promise<void>;
 };
 
 export function TransactionItem({
   transaction: tx,
   categorias,
-  setTransactions,
   onUpdate,
 }: TransactionItemProps) {
   const { tg, ready } = useTelegramContext();
@@ -102,30 +100,10 @@ export function TransactionItem({
         throw new Error(errorData.message || "Erro ao editar transação");
       }
 
-      // Atualizar o estado local se o setTransactions estiver disponível
-      if (setTransactions) {
-        setTransactions((ts) =>
-          ts.map((t) =>
-            t.id === tx.id
-              ? {
-                  ...t,
-                  ...editState,
-                  amount:
-                    editState.amount !== undefined
-                      ? Number(editState.amount)
-                      : t.amount,
-                }
-              : t
-          )
-        );
-      }
-
-      // Chamar o callback de atualização, se existir
       if (onUpdate) {
-        onUpdate();
+        await onUpdate();
       }
 
-      // Limpar o estado de edição
       clearEditState();
       toast.success("Transação editada com sucesso!", { closeButton: true });
 
