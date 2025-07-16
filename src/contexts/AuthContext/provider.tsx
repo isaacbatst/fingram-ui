@@ -56,15 +56,15 @@ const AuthProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
-      fetch(
-        `${API_BASE_URL}/miniapp/exchange?initData=${encodeURIComponent(
-          telegram.webApp.initData
-        )}`
-      )
+      const exchangeUrl = `${API_BASE_URL}/miniapp/exchange?initData=${encodeURIComponent(
+        telegram.webApp.initData
+      )}`;
+
+      fetch(exchangeUrl)
         .then(async (res) => {
           if (!res.ok) {
             throw new Error(
-              `Failed to exchange init data: ${res.status} ${await res.text()}`
+              `Failed to exchange init data on ${exchangeUrl}: ${res.status} ${await res.text()}`
             );
           }
           return res.json();
