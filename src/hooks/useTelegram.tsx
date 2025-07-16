@@ -124,6 +124,7 @@ export function useTelegram() {
   }
 
   useEffect(() => {
+    if(ready) return;
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js?58";
     script.async = true;
@@ -155,8 +156,7 @@ export function useTelegram() {
       clearTimeout(timeout);
       document.body.removeChild(script);
     };
-    // eslint-disable-next-line
-  }, []);
+  }, [ready]);
 
   return {
     tg: tg.current,

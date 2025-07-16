@@ -34,14 +34,17 @@ export function useSummary() {
 
     const fetchUrl = new URL(url);
     fetchUrl.searchParams.append('initData', tg.initData);
-
     const response = await fetch(fetchUrl.toString());
+    
+    if(response.status === 401) {
+      throw new Error('Gere um novo link de acesso no bot.');
+    }
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || `Erro ${response.status}`);
     }
 
-    const data: SummaryData = await response.json();
+    const data = await response.json() as SummaryData;
     return data;
   }, [ready, tg]);
 

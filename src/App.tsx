@@ -6,29 +6,21 @@ import { TransacoesTab } from "@/components/TransacoesTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TelegramProvider } from "@/contexts/TelegramContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ErrorBoundary } from "react-error-boundary";
+import { Toaster } from "./components/ui/sonner";
+import { useCategories } from "./hooks/useCategories";
 import { useSummary } from "./hooks/useSummary";
 import { useTelegramContext } from "./hooks/useTelegramContext";
 import { useTheme } from "./hooks/useTheme";
-import { useCategories } from "./hooks/useCategories";
 import { cn } from "./lib/utils";
-import { Toaster } from "./components/ui/sonner";
 
 function AppContent() {
   const { isTelegram, getThemeColor } = useTheme();
   const { ready } = useTelegramContext();
-  const {
-    data: summaryData,
-    isLoading: loading,
-    error,
-    mutate: refetch,
-  } = useSummary();
-
-  const saldo = summaryData?.vault.balance ?? 0;
-  const receitas = summaryData?.vault.totalIncomeAmount ?? 0;
-  const despesas = summaryData?.vault.totalSpentAmount ?? 0;
+  const summary = useSummary();
   const categories = useCategories();
 
-  const orcamento = summaryData?.budget?.map((b) => ({
+  const orcamento = summary.data?.budget?.map((b) => ({
     categoria: b.category.name,
     valor: b.amount,
     usado: b.spent,
@@ -40,7 +32,6 @@ function AppContent() {
 
   const bgClass = `bg-${getThemeColor("bg_color")}`;
   const textClass = `text-${getThemeColor("text_color")}`;
-
   return (
     <div
       className={cn(
@@ -50,18 +41,22 @@ function AppContent() {
       )}
     >
       <div className="rounded-3xl shadow-xl p-5 w-full max-w-sm mt-6 mb-4 border">
-        {loading && <LoadingSpinner />}
+        {summary.isLoading && <LoadingSpinner />}
 
-        {error && (
-          <ErrorDisplay error={error} onRetry={refetch} className="my-4" />
+        {summary.error && (
+          <ErrorDisplay
+            error={summary.error.message}
+            onRetry={summary.mutate}
+            className="my-4"
+          />
         )}
 
-        {!loading && !error && summaryData && (
+        {!summary.isLoading && !summary.error && summary.data && summary.data.vault && (
           <>
             <SaldoResumo
-              saldo={saldo}
-              receitas={receitas}
-              despesas={despesas}
+              saldo={summary.data.vault.balance}
+              receitas={summary.data.vault.totalIncomeAmount}
+              despesas={summary.data.vault.totalSpentAmount}
             />
 
             {/* Tabs: Orçamento / Transações */}
@@ -81,14 +76,14 @@ function AppContent() {
               <TabsContent value="transacoes">
                 <TransacoesTab
                   categories={categories.data || []}
-                  mutateSummary={refetch}
+                  mutateSummary={summary.mutate}
                 />
               </TabsContent>
             </Tabs>
           </>
         )}
 
-        {!loading && !error && !summaryData && ready && (
+        {!summary.isLoading && !summary.error && !summary.data && ready && (
           <div className="text-center p-6">
             <div className="text-gray-500 mb-4">
               <svg
@@ -125,11 +120,24 @@ function AppContent() {
 
 export default function App() {
   return (
-    <TelegramProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-      <Toaster richColors />
-    </TelegramProvider>
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <ErrorDisplay
+          error={`${error.message} ${error.stack}`}
+          onRetry={() => {
+            resetErrorBoundary();
+            window.location.reload();
+          }}
+          className="max-w-md mx-auto mt-10"
+        />
+      )}
+    >
+      <TelegramProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+        <Toaster richColors />
+      </TelegramProvider>
+    </ErrorBoundary>
   );
 }
