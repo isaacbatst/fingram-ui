@@ -264,7 +264,6 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
           >
             {transactions
               .slice()
-              .reverse()
               .map((tx) => (
                 <TransactionItem
                   key={tx.id}
