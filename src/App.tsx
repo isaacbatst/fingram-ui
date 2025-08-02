@@ -36,16 +36,6 @@ function AppContent() {
   const summary = useSummary();
   const categories = useCategories();
 
-  const orcamento = summary.data?.budget?.map((b) => ({
-    categoria: b.category.name,
-    valor: b.amount,
-    usado: b.spent,
-  })) ?? [
-    { categoria: "Alimentação", valor: 800, usado: 670 },
-    { categoria: "Transporte", valor: 300, usado: 220 },
-    { categoria: "Lazer", valor: 400, usado: 120 },
-  ];
-
   const bgClass = `bg-${getThemeColor("bg_color")}`;
   const textClass = `text-${getThemeColor("text_color")}`;
 
@@ -135,7 +125,7 @@ function AppContent() {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="orcamento">
-                  <OrcamentoTab orcamento={orcamento} />
+                  <OrcamentoTab />
                 </TabsContent>
                 {/* Tab Transações */}
                 <TabsContent value="transacoes">
