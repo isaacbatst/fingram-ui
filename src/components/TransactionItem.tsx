@@ -12,11 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTelegramContext } from "@/hooks/useTelegramContext";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "../hooks/useAuth";
 import type { Category } from "../hooks/useCategories";
 import type { Transaction } from "./TransacoesTab";
-import { toast } from "sonner";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -32,8 +32,7 @@ export function TransactionItem({
   categorias,
   onUpdate,
 }: TransactionItemProps) {
-  const { webApp: tg, ready } = useTelegramContext();
-  // Estado para edição
+  const { sessionToken } = useAuth();
   const [editState, setEditState] = useState<Partial<Transaction>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,28 +58,22 @@ export function TransactionItem({
   }
   // Função para salvar a edição na API
   async function saveChanges() {
-    if (!ready || !tg?.initDataUnsafe) {
-      setError("O contexto do Telegram não está pronto.");
+    if (!sessionToken) {
+      toast.error("Sessão expirada. Por favor, faça login novamente.");
       return;
     }
-
     setIsSaving(true);
     setError(null);
 
     try {
-      // Mostrar indicador de progresso no botão principal, se disponível
-      if (tg?.MainButton) {
-        tg.MainButton.showProgress();
-      }
-
       const response = await fetch(
-        `${API_BASE_URL}/miniapp/edit-transaction?initData=${encodeURIComponent(
-          tg.initData
-        )}`,
+        `${API_BASE_URL}/miniapp/edit-transaction`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+           Authorization: `Bearer ${sessionToken}`,
+
           },
           body: JSON.stringify({
             transactionCode: tx.code,
@@ -106,19 +99,9 @@ export function TransactionItem({
 
       clearEditState();
       toast.success("Transação editada com sucesso!", { closeButton: true });
-
-      // Mostrar notificação de sucesso usando a API do Telegram
-      if (tg?.MainButton) {
-        tg.MainButton.hideProgress();
-      }
     } catch (err) {
       console.error("Erro ao editar transação:", err);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
-
-      // Desativar o botão de loading
-      if (tg?.MainButton) {
-        tg.MainButton.hideProgress();
-      }
     } finally {
       setIsSaving(false);
     }
