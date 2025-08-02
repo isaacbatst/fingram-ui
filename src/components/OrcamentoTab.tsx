@@ -1,5 +1,11 @@
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useTheme } from "@/hooks/useTheme";
 import { useState } from "react";
@@ -28,15 +34,23 @@ const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 export function OrcamentoTab() {
   const { getThemeColor } = useTheme();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  
-  const { data: budgetData, isLoading, error, mutate } = useBudgetSummary(selectedYear, selectedMonth);
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  );
 
-  const orcamento = budgetData?.budget?.map((b) => ({
-    categoria: b.category.name,
-    valor: b.amount,
-    usado: b.spent,
-  })) ?? [];
+  const {
+    data: budgetData,
+    isLoading,
+    error,
+    mutate,
+  } = useBudgetSummary(selectedYear, selectedMonth);
+
+  const orcamento =
+    budgetData?.budget?.map((b) => ({
+      categoria: b.category.name,
+      valor: b.amount,
+      usado: b.spent,
+    })) ?? [];
 
   return (
     <div>
@@ -44,25 +58,9 @@ export function OrcamentoTab() {
         <div className="mb-3 font-semibold text-gray-700 text-base">
           Orçamento por categoria
         </div>
-        
+
         {/* Seletores de ano e mês */}
         <div className="flex gap-2 mb-4">
-          <Select
-            value={selectedYear.toString()}
-            onValueChange={(value) => setSelectedYear(parseInt(value, 10))}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Ano" />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
           <Select
             value={selectedMonth.toString()}
             onValueChange={(value) => setSelectedMonth(parseInt(value, 10))}
@@ -78,6 +76,21 @@ export function OrcamentoTab() {
               ))}
             </SelectContent>
           </Select>
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(value) => setSelectedYear(parseInt(value, 10))}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -86,11 +99,7 @@ export function OrcamentoTab() {
 
       {/* Error */}
       {error && (
-        <ErrorDisplay
-          error={error.message}
-          onRetry={mutate}
-          className="my-4"
-        />
+        <ErrorDisplay error={error.message} onRetry={mutate} className="my-4" />
       )}
 
       {/* Conteúdo do orçamento */}
@@ -98,14 +107,15 @@ export function OrcamentoTab() {
         <div className="space-y-4">
           {orcamento.map((c) => {
             const pct = Math.min(100, (c.usado / c.valor) * 100);
-            
+
             // Cores para a barra de progresso
-            const filledColor = pct > 90
-              ? getThemeColor("destructive_text_color")
-              : getThemeColor("accent_text_color");
-            
+            const filledColor =
+              pct > 90
+                ? getThemeColor("destructive_text_color")
+                : getThemeColor("accent_text_color");
+
             const bgColor = getThemeColor("section_separator_color");
-            
+
             return (
               <div key={c.categoria}>
                 <div className="flex justify-between mb-1">
@@ -131,7 +141,9 @@ export function OrcamentoTab() {
       {/* Estado vazio */}
       {!isLoading && !error && orcamento.length === 0 && (
         <div className="text-center p-6 text-gray-500">
-          <p className="text-sm">Nenhum orçamento encontrado para este período</p>
+          <p className="text-sm">
+            Nenhum orçamento encontrado para este período
+          </p>
         </div>
       )}
     </div>
