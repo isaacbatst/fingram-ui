@@ -51,12 +51,14 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
   const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
   const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
   const [filtroCategoria, setFiltroCategoria] = useState<string>("");
+  const [filtroDescricao, setFiltroDescricao] = useState<string>("");
   // Usando o hook para buscar as transações
   const { data, isLoading, error, mutate: mutateTransactions } = useTransactions({
     page: currentPage,
     month: filtroMes,
     year: filtroAno,
     categoryId: filtroCategoria,
+    description: filtroDescricao,
   });
 
   // Filtros das transações
@@ -141,6 +143,33 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
               onClick={() => {
                 setFiltroCategoria("");
                 mutateTransactions(); // Recarrega as transações com os filtros resetados
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex">
+            <Input
+              type="text"
+              className="text-xs flex-1"
+              placeholder="Buscar por descrição..."
+              value={filtroDescricao}
+              onChange={(e) => setFiltroDescricao(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setCurrentPage(1);
+                  mutateTransactions();
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="ml-2"
+              onClick={() => {
+                setFiltroDescricao("");
+                mutateTransactions();
               }}
             >
               <X className="h-4 w-4" />

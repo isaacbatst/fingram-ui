@@ -9,6 +9,7 @@ export interface TransactionsParams {
   year?: number;
   month?: number;
   categoryId?: string; // Adicionando filtro por categoria
+  description?: string; // Adicionando filtro por descrição
 }
 
 const API_BASE_URL =
@@ -31,6 +32,10 @@ export function useTransactions(params?: TransactionsParams) {
 
     if (params?.categoryId) {
       url.searchParams.append("categoryId", params.categoryId);
+    }
+
+    if (params?.description) {
+      url.searchParams.append("description", params.description);
     }
 
     return url.toString();
