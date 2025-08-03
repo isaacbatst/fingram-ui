@@ -14,27 +14,19 @@ export const ApiProvider = ({ children, useMockApi = false }: ApiProviderProps) 
   const { isTelegram, ready } = useTelegramContext();
 
   const apiService = useMemo(() => {
+    // Aguardar o Telegram context estar ready antes de decidir qual API usar
+    if (!ready) {
+      return new MockApiService(); // Temporário até decidir qual usar
+    }
+    
     // Use mock API if explicitly requested OR if not in Telegram environment OR if using mock session token
     const isMockSession = sessionToken === "mock-session-token";
     const shouldUseMock = useMockApi || !isTelegram || isMockSession;
     
-    console.log("ApiProvider - Environment check [DETAILED]:", {
-      useMockApi,
-      isTelegram,
-      ready,
-      sessionToken: sessionToken ? (isMockSession ? "mock-session-token" : "real-token") : "null",
-      isMockSession,
-      shouldUseMock,
-      timestamp: new Date().toISOString(),
-      condition: `useMockApi=${useMockApi} || !isTelegram=${!isTelegram} || isMockSession=${isMockSession} = ${shouldUseMock}`
-    });
-    
     if (shouldUseMock) {
-      console.log("✅ Using Mock API Service (not in Telegram, mock session, or explicitly requested)");
       return new MockApiService();
     }
     
-    console.log("⚠️ Using Real API Service (in Telegram environment with real session)");
     return new RealApiService(sessionToken);
   }, [useMockApi, isTelegram, sessionToken, ready]);
 

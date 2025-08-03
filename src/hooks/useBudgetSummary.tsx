@@ -27,7 +27,6 @@ export function useBudgetSummary(year?: number, month?: number) {
   // Função para buscar os dados do resumo de orçamento
   const fetcher = useCallback(
     async () => {
-      console.log("useBudgetSummary fetcher called", { year, month, apiService: apiService.constructor.name });
       return await apiService.getBudgetSummary(year, month);
     },
     [apiService, year, month]
@@ -37,14 +36,6 @@ export function useBudgetSummary(year?: number, month?: number) {
   const key = apiService.isAuthenticated() 
     ? `budget-summary${year && month ? `|${year}-${month}` : ''}`
     : null;
-
-  console.log("useBudgetSummary", { 
-    key, 
-    isAuthenticated: apiService.isAuthenticated(),
-    apiService: apiService.constructor.name,
-    year,
-    month
-  });
 
   return useSWR(key, fetcher);
 }

@@ -6,6 +6,7 @@ import { TransacoesTab } from "@/components/TransacoesTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TelegramProvider } from "@/contexts/TelegramContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { StorageProvider } from "@/contexts/StorageContext/provider";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "./components/ui/sonner";
@@ -39,6 +40,21 @@ function AppContent() {
 
   const bgClass = `bg-${getThemeColor("bg_color")}`;
   const textClass = `text-${getThemeColor("text_color")}`;
+
+  // Mostrar loading enquanto a autenticação está carregando
+  if (auth.isLoading) {
+    return (
+      <div
+        className={cn(
+          "min-h-screen flex flex-col items-center justify-center",
+          bgClass,
+          textClass
+        )}
+      >
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   if (!auth.sessionToken && !auth.isLoading) {
     return (
@@ -190,11 +206,13 @@ export default function App() {
     >
       <TelegramProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <ApiProvider>
-              <AppContent />
-            </ApiProvider>
-          </AuthProvider>
+          <StorageProvider>
+            <AuthProvider>
+              <ApiProvider>
+                <AppContent />
+              </ApiProvider>
+            </AuthProvider>
+          </StorageProvider>
         </ThemeProvider>
         <Toaster richColors />
       </TelegramProvider>

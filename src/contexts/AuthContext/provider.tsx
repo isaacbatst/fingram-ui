@@ -5,6 +5,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useTelegramContext } from "../../hooks/useTelegramContext";
+import { useStorage } from "../../hooks/useStorage";
 import { AuthContext } from "./context";
 
 const SESSION_TOKEN_KEY = "fingram_session_token";
@@ -12,123 +13,113 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002
 
 const AuthProvider = ({ children }: PropsWithChildren) => {
   const telegram = useTelegramContext();
+  const storageService = useStorage();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const logout = useCallback(() => {
-    if (!telegram.isTelegram || !telegram.webApp) {
-      // Se não estiver no Telegram, apenas limpe o estado local
-      setSessionToken(null);
-      return;
-    }
-
+  const logout = useCallback(async () => {
     try {
-      telegram.webApp.SecureStorage.removeItem(SESSION_TOKEN_KEY, (err) => {
-        if (err) {
-          console.error("Failed to remove session token:", err);
-          setError("Failed to remove session token");
-          return;
-        }
-        setSessionToken(null);
-      });
-    } catch (err) {
-      console.error("SecureStorage not available:", err);
+      await storageService.removeItem(SESSION_TOKEN_KEY);
       setSessionToken(null);
+    } catch (err) {
+      console.error("Failed to remove session token:", err);
+      setError("Failed to remove session token");
     }
-  }, [telegram.isTelegram, telegram.webApp]);
+  }, [storageService]);
 
   useEffect(() => {
-    console.log("AuthProvider useEffect", { 
-      isTelegram: telegram.isTelegram, 
-      ready: telegram.ready,
-      webApp: !!telegram.webApp 
-    });
+    // Aguardar o Telegram tentar carregar primeiro
+    if (!telegram.ready) {
+      setIsLoading(true);
+      return;
+    }
     
-    // Se não estiver no Telegram, simule autenticação para permitir uso da API mock
-    if (!telegram.isTelegram) {
-      console.log("Not in Telegram environment, using mock authentication");
+    // Verificação robusta: deve ter TUDO funcionando para ser considerado Telegram válido
+    const isValidTelegram = (() => {
+      if (!telegram.isTelegram || !telegram.webApp) {
+        return false;
+      }
+      
+      // Tentar acessar initData para verificar se realmente funciona
+      try {
+        const initData = telegram.webApp.initData;
+        return initData && initData.length > 0;
+      } catch (error) {
+        console.log("Telegram WebApp initData is not accessible:", error);
+        return false;
+      }
+    })();
+    
+    if (!isValidTelegram) {
+      // Fora do Telegram ou Telegram inválido, usar mock authentication
       setSessionToken("mock-session-token");
       setIsLoading(false);
       setError(null);
       return;
     }
 
-    if (!telegram.ready || !telegram.webApp) {
-      console.log("Telegram context not ready yet...");
-      return;
-    }
+    // No Telegram VÁLIDO, tentar carregar token existente ou fazer exchange
+    const handleTelegramAuthentication = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    console.log("In Telegram environment, proceeding with real authentication");
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      telegram.webApp.SecureStorage.getItem(SESSION_TOKEN_KEY, (_err, value) => {
-        if (value && value !== "null") {
-          setSessionToken(value);
+      try {
+        // Tentar pegar token existente
+        const existingToken = await storageService.getItem(SESSION_TOKEN_KEY);
+        if (existingToken && existingToken !== "null") {
+          setSessionToken(existingToken);
           setIsLoading(false);
           return;
         }
 
-        if (!telegram.webApp) {
-          console.error("Telegram WebApp is not available");
-          setError("Telegram WebApp is not available");
+        // Se não tem token, fazer exchange com o backend
+        if (!telegram.webApp || !telegram.webApp.initData) {
+          setError("Telegram WebApp or initData is not available");
           setIsLoading(false);
           return;
         }
 
-        const exchangeUrl = `${API_BASE_URL}/miniapp/exchange?initData=${encodeURIComponent(
-          telegram.webApp.initData
-        )}`;
+        // Verificação adicional para garantir que initData está realmente disponível
+        let initData: string;
+        try {
+          initData = telegram.webApp.initData;
+          if (!initData || initData.length === 0) {
+            throw new Error("initData is empty");
+          }
+        } catch (error) {
+          setError("Failed to access Telegram initData: " + (error as Error).message);
+          setIsLoading(false);
+          return;
+        }
 
-        fetch(exchangeUrl)
-          .then(async (res) => {
-            if (!res.ok) {
-              throw new Error(
-                `Failed to exchange init data on ${exchangeUrl}: ${res.status} ${await res.text()}`
-              );
-            }
-            return res.json();
-          })
-          .then((data) => {
-            if (!telegram.webApp) {
-              console.error("Telegram WebApp is not available after fetching data");
-              setError("Telegram WebApp is not available after fetching data");
-              setIsLoading(false);
-              return;
-            }
-            if (!data || !data.token) {
-              console.error("No token received from the server.");
-              setError("No token received from the server");
-              setIsLoading(false);
-              return;
-            }
-            setSessionToken(data.token);
-            telegram.webApp.SecureStorage.setItem(
-              SESSION_TOKEN_KEY,
-              data.token,
-              (err) => {
-                if (err) {
-                  console.error("Failed to save session token:", err);
-                  setError("Failed to save session token");
-                }
-                setIsLoading(false);
-              }
-            );
-          })
-          .catch((error) => {
-            console.error("Error during session token exchange:", error);
-            setError("Usuário não autenticado, gere um novo link de acesso no bot." + error.message);
-            setIsLoading(false);
-          });
-      });
-    } catch (err) {
-      console.error("SecureStorage not available:", err);
-      setError("SecureStorage not available. Please access this app through Telegram.");
-      setIsLoading(false);
-    }
-  }, [telegram.ready, telegram.webApp, telegram.isTelegram]);
+        const exchangeUrl = `${API_BASE_URL}/miniapp/exchange?initData=${encodeURIComponent(initData)}`;
+
+        const response = await fetch(exchangeUrl);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to exchange init data on ${exchangeUrl}: ${response.status} ${await response.text()}`
+          );
+        }
+
+        const data = await response.json();
+        if (!data || !data.token) {
+          throw new Error("No token received from the server");
+        }
+
+        // Salvar o novo token
+        await storageService.setItem(SESSION_TOKEN_KEY, data.token);
+        setSessionToken(data.token);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error during authentication:", error);
+        setError("Usuário não autenticado, gere um novo link de acesso no bot. " + (error as Error).message);
+        setIsLoading(false);
+      }
+    };
+
+    handleTelegramAuthentication();
+  }, [telegram.ready, telegram.isTelegram, telegram.webApp, storageService]);
 
   return (
     <AuthContext.Provider value={{ sessionToken, isLoading, error, logout }}>
