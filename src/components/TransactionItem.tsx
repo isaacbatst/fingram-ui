@@ -14,12 +14,9 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAuth } from "../hooks/useAuth";
+import { useApi } from "../hooks/useApi";
 import type { Category } from "../hooks/useCategories";
 import type { Transaction } from "./TransacoesTab";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 type TransactionItemProps = {
   transaction: Transaction;
@@ -32,7 +29,7 @@ export function TransactionItem({
   categorias,
   onUpdate,
 }: TransactionItemProps) {
-  const { sessionToken } = useAuth();
+  const apiService = useApi();
   const [editState, setEditState] = useState<Partial<Transaction>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +55,7 @@ export function TransactionItem({
   }
   // Função para salvar a edição na API
   async function saveChanges() {
-    if (!sessionToken) {
+    if (!apiService.isAuthenticated()) {
       toast.error("Sessão expirada. Por favor, faça login novamente.");
       return;
     }
@@ -66,31 +63,19 @@ export function TransactionItem({
     setError(null);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/miniapp/edit-transaction`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-           Authorization: `Bearer ${sessionToken}`,
+      const result = await apiService.editTransaction({
+        transactionCode: tx.code,
+        newAmount:
+          editState.amount !== undefined
+            ? Number(editState.amount)
+            : undefined,
+        newDate: editState.date,
+        newCategory: editState.categoryCode,
+        newDescription: editState.description,
+      });
 
-          },
-          body: JSON.stringify({
-            transactionCode: tx.code,
-            newAmount:
-              editState.amount !== undefined
-                ? Number(editState.amount)
-                : undefined,
-            newDate: editState.date,
-            newCategory: editState.categoryCode,
-            newDescription: editState.description,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Erro ao editar transação");
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       if (onUpdate) {

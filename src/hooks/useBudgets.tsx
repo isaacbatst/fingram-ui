@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { useAuth } from "./useAuth";
+import { useApi } from "./useApi";
 
 interface Budget {
-  categoryCode: string;
+  categoryId: string;
   amount: number;
 }
 
@@ -13,31 +13,15 @@ interface SetBudgetsResponse {
 }
 
 export const useBudgets = () => {
-  const { sessionToken } = useAuth();
+  const apiService = useApi();
 
   const setBudgets = useCallback(
     async (budgets: Budget[]): Promise<SetBudgetsResponse> => {
-      if (!sessionToken) {
-        return { error: "Token de sessão não encontrado" };
-      }
-
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/miniapp/set-budgets`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${sessionToken}`,
-            },
-            body: JSON.stringify({ budgets }),
-          }
-        );
+        const response = await apiService.setBudgets(budgets);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.message || "Erro ao definir orçamentos";
-          return { error: errorMessage };
+        if (response.error) {
+          return { error: response.error };
         }
 
         toast.success("Orçamentos definidos com sucesso!");
@@ -48,7 +32,7 @@ export const useBudgets = () => {
         return { error: errorMessage };
       }
     },
-    [sessionToken]
+    [apiService]
   );
 
   return {

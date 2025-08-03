@@ -151,6 +151,26 @@ export function useTelegram() {
 
   useEffect(() => {
     if (ready) return;
+    
+    // Verificar se já existe Telegram WebApp disponível
+    const existingTelegram = (window as unknown as WindowWithTelegram).Telegram?.WebApp;
+    if (existingTelegram) {
+      tg.current = existingTelegram;
+      setIsTelegram(true);
+      tg.current.ready();
+      setInitData(tg.current.initDataUnsafe || getMockInitData());
+      setReady(true);
+      setTheme(tg.current.themeParams || {});
+      
+      // Adiciona/remover classe .dark conforme o tema do Telegram
+      if (existingTelegram.colorScheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js?58";
     script.async = true;
@@ -169,11 +189,31 @@ export function useTelegram() {
         } else {
           document.documentElement.classList.remove("dark");
         }
+      } else {
+        // Se não conseguiu carregar o Telegram WebApp, continue como não-Telegram
+        console.log("Telegram WebApp not available, continuing without it");
+        setIsTelegram(false);
+        setReady(true);
+        setInitData(getMockInitData());
       }
     };
+    
+    script.onerror = () => {
+      // Se falhou ao carregar o script, continue como não-Telegram
+      console.log("Failed to load Telegram WebApp script, continuing without it");
+      setIsTelegram(false);
+      setReady(true);
+      setInitData(getMockInitData());
+    };
+    
     document.body.appendChild(script);
+    
     return () => {
-      document.body.removeChild(script);
+      try {
+        document.body.removeChild(script);
+      } catch {
+        // Script pode já ter sido removido
+      }
     };
   }, [ready]);
 

@@ -6,6 +6,7 @@ import { TransacoesTab } from "@/components/TransacoesTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TelegramProvider } from "@/contexts/TelegramContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ApiProvider } from "@/contexts/ApiContext/provider";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "./components/ui/sonner";
 import { useCategories } from "./hooks/useCategories";
@@ -190,7 +191,9 @@ export default function App() {
       <TelegramProvider>
         <ThemeProvider>
           <AuthProvider>
-            <AppContent />
+            <ApiProvider>
+              <AppContent />
+            </ApiProvider>
           </AuthProvider>
         </ThemeProvider>
         <Toaster richColors />

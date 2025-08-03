@@ -60,7 +60,7 @@ export function OrcamentoTab() {
   const orcamento =
     budgetData?.budget?.map((b) => ({
       categoria: b.category.name,
-      categoryCode: b.category.code,
+      categoryId: b.category.id,
       valor: b.amount,
       usado: b.spent,
     })) ?? [];
@@ -70,13 +70,13 @@ export function OrcamentoTab() {
     // Inicializar os valores dos inputs com os valores atuais
     const initialValues: Record<string, string> = {};
     orcamento.forEach((item) => {
-      initialValues[item.categoryCode] = item.valor.toString();
+      initialValues[item.categoryId] = item.valor.toString();
     });
     
     // Adicionar categorias que não têm orçamento definido
     categories?.forEach((cat: Category) => {
-      if (!initialValues[cat.code]) {
-        initialValues[cat.code] = "0";
+      if (!initialValues[cat.id]) {
+        initialValues[cat.id] = "0";
       }
     });
     
@@ -92,8 +92,8 @@ export function OrcamentoTab() {
     setIsSaving(true);
     try {
       const budgetsToSave = Object.entries(editingBudgets)
-        .map(([categoryCode, amountStr]) => ({
-          categoryCode,
+        .map(([categoryId, amountStr]) => ({
+          categoryId,
           amount: parseFloat(amountStr) || 0,
         }))
         .filter((budget) => budget.amount > 0); // Só enviar orçamentos > 0
@@ -110,12 +110,12 @@ export function OrcamentoTab() {
     }
   };
 
-  const handleBudgetChange = (categoryCode: string, value: string) => {
+  const handleBudgetChange = (categoryId: string, value: string) => {
     // Permitir apenas números e pontos decimais
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setEditingBudgets((prev) => ({
         ...prev,
-        [categoryCode]: value,
+        [categoryId]: value,
       }));
     }
   };
@@ -213,12 +213,12 @@ export function OrcamentoTab() {
             <>
               {categories?.map((category: Category) => {
                 const currentBudget = orcamento.find(
-                  (o) => o.categoryCode === category.code
+                  (o) => o.categoryId === category.id
                 );
-                const budgetValue = editingBudgets[category.code] || "0";
+                const budgetValue = editingBudgets[category.id] || "0";
 
                 return (
-                  <div key={category.code} className="space-y-2">
+                  <div key={category.id} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-600 text-sm">
                         {category.name}
@@ -233,7 +233,7 @@ export function OrcamentoTab() {
                         type="text"
                         value={budgetValue}
                         onChange={(e) =>
-                          handleBudgetChange(category.code, e.target.value)
+                          handleBudgetChange(category.id, e.target.value)
                         }
                         placeholder="0.00"
                         className="flex-1"
