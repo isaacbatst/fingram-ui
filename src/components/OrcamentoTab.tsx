@@ -6,11 +6,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
+import { useBudgets } from "@/hooks/useBudgets";
+import { useCategories, type Category } from "@/hooks/useCategories";
 import { useTheme } from "@/hooks/useTheme";
 import { useState } from "react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
 
 const months = [
   { value: 1, label: "Janeiro" },
@@ -33,10 +38,17 @@ const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
 export function OrcamentoTab() {
   const { getThemeColor } = useTheme();
+  const { setBudgets } = useBudgets();
+  const { data: categories } = useCategories();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth() + 1
   );
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingBudgets, setEditingBudgets] = useState<
+    Record<string, string>
+  >({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const {
     data: budgetData,
@@ -48,15 +60,106 @@ export function OrcamentoTab() {
   const orcamento =
     budgetData?.budget?.map((b) => ({
       categoria: b.category.name,
+      categoryCode: b.category.code,
       valor: b.amount,
       usado: b.spent,
     })) ?? [];
 
+  const handleEditClick = () => {
+    setIsEditing(true);
+    // Inicializar os valores dos inputs com os valores atuais
+    const initialValues: Record<string, string> = {};
+    orcamento.forEach((item) => {
+      initialValues[item.categoryCode] = item.valor.toString();
+    });
+    
+    // Adicionar categorias que não têm orçamento definido
+    categories?.forEach((cat: Category) => {
+      if (!initialValues[cat.code]) {
+        initialValues[cat.code] = "0";
+      }
+    });
+    
+    setEditingBudgets(initialValues);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingBudgets({});
+  };
+
+  const handleSaveBudgets = async () => {
+    setIsSaving(true);
+    try {
+      const budgetsToSave = Object.entries(editingBudgets)
+        .map(([categoryCode, amountStr]) => ({
+          categoryCode,
+          amount: parseFloat(amountStr) || 0,
+        }))
+        .filter((budget) => budget.amount > 0); // Só enviar orçamentos > 0
+
+      const result = await setBudgets(budgetsToSave);
+      if (result.success) {
+        setIsEditing(false);
+        setEditingBudgets({});
+        // Atualizar os dados
+        mutate();
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBudgetChange = (categoryCode: string, value: string) => {
+    // Permitir apenas números e pontos decimais
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setEditingBudgets((prev) => ({
+        ...prev,
+        [categoryCode]: value,
+      }));
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
-        <div className="mb-3 font-semibold text-gray-700 text-base">
-          Orçamento por categoria
+        <div className="mb-3 font-semibold text-gray-700 text-base flex justify-between items-center">
+          <span>Orçamento por categoria</span>
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEditClick}
+              className="h-8 w-8 p-0"
+              title="Editar orçamentos"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </Button>
+          )}
+          {isEditing && (
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSaveBudgets}
+                disabled={isSaving}
+                className="h-8 w-8 p-0"
+                title="Salvar orçamentos"
+              >
+                <CheckIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                className="h-8 w-8 p-0"
+                title="Cancelar edição"
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Seletores de ano e mês */}
@@ -103,47 +206,95 @@ export function OrcamentoTab() {
       )}
 
       {/* Conteúdo do orçamento */}
-      {!isLoading && !error && orcamento.length > 0 && (
+      {!isLoading && !error && (
         <div className="space-y-4">
-          {orcamento.map((c) => {
-            const pct = Math.min(100, (c.usado / c.valor) * 100);
+          {isEditing ? (
+            // Modo de edição - mostrar todas as categorias
+            <>
+              {categories?.map((category: Category) => {
+                const currentBudget = orcamento.find(
+                  (o) => o.categoryCode === category.code
+                );
+                const budgetValue = editingBudgets[category.code] || "0";
 
-            // Cores para a barra de progresso
-            const filledColor =
-              pct > 90
-                ? getThemeColor("destructive_text_color")
-                : getThemeColor("accent_text_color");
-
-            const bgColor = getThemeColor("section_separator_color");
-
-            return (
-              <div key={c.categoria}>
-                <div className="flex justify-between mb-1">
-                  <span className="font-medium text-gray-600">
-                    {c.categoria}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    R$ {c.usado.toFixed(2)}/{c.valor.toFixed(2)}
-                  </span>
+                return (
+                  <div key={category.code} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-600 text-sm">
+                        {category.name}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        Usado: R$ {currentBudget?.usado.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">R$</span>
+                      <Input
+                        type="text"
+                        value={budgetValue}
+                        onChange={(e) =>
+                          handleBudgetChange(category.code, e.target.value)
+                        }
+                        placeholder="0.00"
+                        className="flex-1"
+                        disabled={isSaving}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              {isSaving && (
+                <div className="text-center py-2">
+                  <LoadingSpinner />
                 </div>
-                <Progress
-                  value={pct}
-                  filledColor={filledColor}
-                  bgColor={bgColor}
-                  className="h-4"
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
+              )}
+            </>
+          ) : (
+            // Modo de visualização - mostrar apenas categorias com orçamento
+            <>
+              {orcamento.length > 0 ? (
+                orcamento.map((c) => {
+                  const pct = Math.min(100, (c.usado / c.valor) * 100);
 
-      {/* Estado vazio */}
-      {!isLoading && !error && orcamento.length === 0 && (
-        <div className="text-center p-6 text-gray-500">
-          <p className="text-sm">
-            Nenhum orçamento encontrado para este período
-          </p>
+                  // Cores para a barra de progresso
+                  const filledColor =
+                    pct > 90
+                      ? getThemeColor("destructive_text_color")
+                      : getThemeColor("accent_text_color");
+
+                  const bgColor = getThemeColor("section_separator_color");
+
+                  return (
+                    <div key={c.categoria}>
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium text-gray-600">
+                          {c.categoria}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          R$ {c.usado.toFixed(2)}/{c.valor.toFixed(2)}
+                        </span>
+                      </div>
+                      <Progress
+                        value={pct}
+                        filledColor={filledColor}
+                        bgColor={bgColor}
+                        className="h-4"
+                      />
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center p-6 text-gray-500">
+                  <p className="text-sm">
+                    Nenhum orçamento definido para este período
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Clique no ícone de edição para definir orçamentos
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
