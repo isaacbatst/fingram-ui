@@ -20,6 +20,7 @@ export interface EditTransactionRequest {
   newDate?: string;
   newCategory?: string;
   newDescription?: string;
+  newType?: 'income' | 'expense';
 }
 
 export interface EditTransactionResponse {

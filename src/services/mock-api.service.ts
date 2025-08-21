@@ -69,24 +69,6 @@ export class MockApiService implements ApiService {
           }]
         ],
         budgets: [
-          ["cat1", {
-            category: {
-              id: "cat1",
-              name: "Alimentação",
-              code: "FOOD",
-              description: "Gastos com alimentação"
-            },
-            amount: 500
-          }],
-          ["cat3", {
-            category: {
-              id: "cat3",
-              name: "Transporte",
-              code: "TRANSPORT",
-              description: "Gastos com transporte"
-            },
-            amount: 200
-          }]
         ],
         balance: 1423.51,
         totalBudgetedAmount: 700,
@@ -95,26 +77,7 @@ export class MockApiService implements ApiService {
         totalIncomeAmount: 1500.00
       },
       budget: [
-        {
-          category: {
-            id: "cat1",
-            name: "Alimentação",
-            code: "FOOD"
-          },
-          spent: 50.99,
-          amount: 500,
-          percentageUsed: 10.2
-        },
-        {
-          category: {
-            id: "cat3",
-            name: "Transporte",
-            code: "TRANSPORT"
-          },
-          spent: 25.50,
-          amount: 200,
-          percentageUsed: 12.75
-        }
+       
       ],
       date: {
         year: new Date().getFullYear(),
@@ -134,15 +97,7 @@ export class MockApiService implements ApiService {
         createdAt: new Date().toISOString(),
         transactions: [],
         budgets: [
-          ["cat1", {
-            category: {
-              id: "cat1",
-              name: "Alimentação",
-              code: "FOOD",
-              description: "Gastos com alimentação"
-            },
-            amount: 500
-          }]
+        
         ],
         balance: 1423.51,
         totalBudgetedAmount: 500,
@@ -151,16 +106,7 @@ export class MockApiService implements ApiService {
         totalIncomeAmount: 1500.00
       },
       budget: [
-        {
-          category: {
-            id: "cat1",
-            name: "Alimentação",
-            code: "FOOD"
-          },
-          spent: 50.99,
-          amount: 500,
-          percentageUsed: 10.2
-        }
+       
       ],
       date: {
         year: year || new Date().getFullYear(),
@@ -335,6 +281,14 @@ export class MockApiService implements ApiService {
     }
     
     console.log("Mock: Transação editada com sucesso", request);
+    // Se a transação mudar de tipo, seria importante refletir isso no backend real
+    // Aqui estamos simulando uma validação de backend para demonstração
+    if (request.newType) {
+      if (request.newType !== 'income' && request.newType !== 'expense') {
+        return { error: "Tipo de transação inválido" };
+      }
+    }
+    
     return {};
   }
 

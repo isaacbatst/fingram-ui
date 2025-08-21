@@ -35,9 +35,9 @@ export type Transaction = {
   type: "income" | "expense";
   amount: number;
   category: string;
+  categoryCode?: string; // código da categoria para edição
   description: string;
   date: string;
-  categoryCode?: string;
 };
 
 type TransacoesTabProps = {

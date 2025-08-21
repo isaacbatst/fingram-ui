@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import type { Category } from "../hooks/useCategories";
 import type { Transaction } from "./TransacoesTab";
+import { CategorySelect } from "./CategorySelect";
 
 type TransactionItemProps = {
   transaction: Transaction;
@@ -25,7 +26,7 @@ type TransactionItemProps = {
 };
 
 export function TransactionItem({
-  transaction: tx,
+  transaction: txOriginal,
   categorias,
   onUpdate,
 }: TransactionItemProps) {
@@ -33,18 +34,30 @@ export function TransactionItem({
   const [editState, setEditState] = useState<Partial<Transaction>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Garantir que a transação tenha categoryCode definido
+  const tx = {
+    ...txOriginal,
+    categoryCode: txOriginal.categoryCode || txOriginal.category,
+  };
+
+  type CategoryWithType = {
+    label: string;
+    value: string;
+    type: "income" | "expense" | "both";
+  };
 
   // Converter categorias da API para o formato usado no componente
-  const categories = categorias
+  const categories: CategoryWithType[] = categorias
     ? categorias.map((cat: Category) => ({
         label: cat.name,
         value: cat.code,
-        type:
-          cat.type === "both"
-            ? (tx.type as "income" | "expense") // usar o tipo da transação atual
-            : (cat.type as "income" | "expense"),
+        type: cat.type === "both" 
+          ? "both" 
+          : (cat.type as "income" | "expense"),
       }))
-    : categorias || []; // fallback para as categorias passadas por props ou array vazio
+    : []; // array vazio se não houver categorias
+
 
   // Função para remover o estado de edição
 
@@ -72,6 +85,7 @@ export function TransactionItem({
         newDate: editState.date,
         newCategory: editState.categoryCode,
         newDescription: editState.description,
+        newType: editState.type,
       });
 
       if (result.error) {
@@ -132,7 +146,37 @@ export function TransactionItem({
             saveChanges();
           }}
         >
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
+            <div className="flex flex-col gap-1 w-[120px]">
+              <Select
+                value={editState.type ?? tx.type}
+                onValueChange={(val) =>
+                  setEditState((s) => ({
+                    ...s,
+                    type: val as "income" | "expense",
+                    // Limpar a categoria quando mudar o tipo para evitar tipos incompatíveis
+                    categoryCode: undefined,
+                  }))
+                }
+              >
+                <SelectTrigger 
+                  className={`text-xs ${
+                    (editState.type ?? tx.type) === "income" 
+                      ? "border-green-500 bg-green-100/10" 
+                      : "border-red-500 bg-red-100/10"
+                  }`}
+                >
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="income">💰 Receita</SelectItem>
+                  <SelectItem value="expense">💸 Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="text-xs text-center mt-1">
+                {(editState.type ?? tx.type) === "income" ? "Receita" : "Despesa"}
+              </div>
+            </div>
             <Input
               type="number"
               min={0.01}
@@ -148,26 +192,19 @@ export function TransactionItem({
                 }))
               }
             />
-            <Select
+          </div>
+          <div className="flex gap-2">
+            <CategorySelect
+              categories={categories}
               value={editState.categoryCode ?? tx.categoryCode}
-              onValueChange={(val) =>
+              onChange={(val) =>
                 setEditState((s) => ({
                   ...s,
                   categoryCode: val,
                 }))
               }
-            >
-              <SelectTrigger className="text-xs w-[120px]">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              currentTransactionType={editState.type ?? tx.type}
+            />
           </div>
           <Input
             className="text-xs"
