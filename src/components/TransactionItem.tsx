@@ -173,9 +173,6 @@ export function TransactionItem({
                   <SelectItem value="expense">💸 Despesa</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="text-xs text-center mt-1">
-                {(editState.type ?? tx.type) === "income" ? "Receita" : "Despesa"}
-              </div>
             </div>
             <Input
               type="number"
