@@ -4,6 +4,7 @@ import { RealApiService } from "../../services/real-api.service";
 import { MockApiService } from "../../services/mock-api.service";
 import { useAuth } from "../../hooks/useAuth";
 import { useTelegramContext } from "../../hooks/useTelegramContext";
+import { mutate } from "swr";
 
 interface ApiProviderProps extends PropsWithChildren {
   useMockApi?: boolean;
@@ -49,6 +50,9 @@ export const ApiProvider = ({ children, useMockApi = false }: ApiProviderProps) 
   useMemo(() => {
     if (apiService instanceof RealApiService) {
       apiService.updateSessionToken(sessionToken);
+      mutate("summary"); // Refetch summary data on session token change
+      mutate("categories"); // Refetch categories data on session token change
+      mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false); // Refetch transactions data on session token change
     }
   }, [apiService, sessionToken]);
 
