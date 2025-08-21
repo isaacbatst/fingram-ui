@@ -25,6 +25,9 @@ export function CategorySelect({
   categories,
   value,
   onChange,
+  // Já não precisamos usar currentTransactionType aqui
+  // pois já fizemos a filtragem em TransactionItem.tsx
+  // mantemos no tipo para compatibilidade da interface
   className = "",
 }: CategorySelectProps) {
   // Se não houver categorias, não renderizar o componente
