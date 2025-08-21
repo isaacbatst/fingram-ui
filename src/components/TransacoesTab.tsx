@@ -34,7 +34,12 @@ export type Transaction = {
   code: string;
   type: "income" | "expense";
   amount: number;
-  category: string;
+  category: string | {
+    id: string;
+    name: string;
+    code: string;
+    description?: string;
+  };
   categoryCode?: string; // código da categoria para edição
   description: string;
   date: string;
@@ -75,12 +80,16 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
         code: tx.code,
         type: tx.type,
         amount: Math.abs(tx.amount),
-        category: tx.category?.name || "",
+        // Preserva o objeto completo da categoria para termos todos os dados disponíveis
+        category: tx.category || "",
+        // Mantém o categoryCode para compatibilidade
         categoryCode: tx.category?.code || "",
         description: tx.description || "",
         date: tx.createdAt.toString(),
       }))
     : [];
+    
+  console.log("TransacoesTab: Transactions mapeadas", transactions.length);
 
   return (
     <div>

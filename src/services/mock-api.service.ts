@@ -17,6 +17,19 @@ export class MockApiService implements ApiService {
   private mockTransactionsCache: TransactionDTO[] = [];
   private categoriesCache: Category[] | null = null;
   
+  constructor() {
+    // Usar para debug: limpa o cache na inicialização para garantir dados atualizados
+    this.resetCaches();
+    console.log("MockApiService: Construtor chamado, caches resetados");
+  }
+
+  // Método para resetar os caches quando necessário, útil para debugging
+  resetCaches(): void {
+    this.mockTransactionsCache = [];
+    this.categoriesCache = null;
+    console.log("MockApiService: Caches resetados");
+  }
+  
   isAuthenticated(): boolean {
     return this.isAuth;
   }
@@ -133,46 +146,95 @@ export class MockApiService implements ApiService {
       return this.categoriesCache;
     }
     
-    // Inicializa o cache de categorias
+    // Inicializa o cache de categorias com os mesmos dados do seed do backend
     this.categoriesCache = [
       {
-        id: "cat1",
-        name: "Alimentação",
-        code: "FOOD",
-        type: "expense",
-        description: "Gastos com alimentação"
+        id: 'f00110c1-fd2f-42d2-b579-8cc337668d82',
+        name: '🏡 Moradia',
+        code: '1',
+        type: 'expense',
+        description: 'Aluguel, condomínio, contas de casa como luz, água, internet, gás, manutenção, IPTU, reformas...'
       },
       {
-        id: "cat2",
-        name: "Salário",
-        code: "SALARY",
-        type: "income",
-        description: "Receitas de salário"
+        id: 'a29eb76c-0def-43ef-9c21-95928616e6f5',
+        name: '🛒 Compras',
+        code: '2',
+        type: 'expense',
+        description: 'Supermercado, compras de alimentos, feira, padaria, higiene pessoal, itens de limpeza...'
       },
       {
-        id: "cat3",
-        name: "Transporte",
-        code: "TRANSPORT",
-        type: "expense",
-        description: "Gastos com transporte"
+        id: 'f2662cda-938f-4af6-8fcc-b9d6b7bfc061',
+        name: '🚗 Transporte',
+        code: '3',
+        type: 'expense',
+        description: 'Combustível, manutenção de veículos, impostos, Uber, 99, ônibus, metrô, estacionamento...'
       },
       {
-        id: "cat4",
-        name: "Lazer",
-        code: "ENTERTAINMENT",
-        type: "expense",
-        description: "Gastos com entretenimento"
+        id: '9854990d-b348-4572-a077-dd4710cc9973',
+        name: '🎓 Educação',
+        code: '4',
+        type: 'expense',
+        description: 'Mensalidade escolar, faculdade, pós-graduação, cursos online, cursos técnicos, livros...'
       },
       {
-        id: "cat5",
-        name: "Investimentos",
-        code: "INVESTMENT",
-        type: "both",
-        description: "Aplicações e resgates"
+        id: '2d865bfa-84a3-4b06-9ac0-23bb50439954',
+        name: '🏥 Saúde',
+        code: '5',
+        type: 'expense',
+        description: 'Remédios, farmácia, consultas médicas, exames, plano de saúde, academia, fisioterapia...'
+      },
+      {
+        id: 'c5d35a1b-5d61-4412-9083-52bd9468fbe5',
+        name: '🎉 Lazer',
+        code: '6',
+        type: 'expense',
+        description: 'Cinema, shows, streaming, hobbies, bares, festas, restaurantes, viagens, turismo...'
+      },
+      {
+        id: '206b9595-4929-4cc9-8bd9-8ec2aa73a27a',
+        name: '💰 Investimentos',
+        code: '7',
+        type: 'expense',
+        description: 'Poupança, aplicações financeiras, compra de ações, fundos de investimento, previdência privada...'
+      },
+      {
+        id: '3562366d-861c-46de-a1f3-2d468134ec7f',
+        name: '👪 Família & Pets',
+        code: '8',
+        type: 'expense',
+        description: 'Filhos, creche, escola, roupas infantis, brinquedos, mesada, despesas com pais, pets...'
+      },
+      {
+        id: 'ee5bc836-ca4c-432e-afeb-fc8728f54350',
+        name: '🎁 Presentes',
+        code: '9',
+        type: 'expense',
+        description: 'Presentes para familiares, amigos ou colegas, lembrancinhas, datas comemorativas...'
+      },
+      {
+        id: 'd9837314-2262-4ff1-a74c-a1a64deedd34',
+        name: '📦 Outros',
+        code: '10',
+        type: 'both',
+        description: 'Despesas ou receitas diversas, pontuais, não recorrentes ou não encaixadas nas outras categorias...'
+      },
+      {
+        id: 'd17708cd-dac1-4b3f-a647-c79840d67ee5',
+        name: '💼 Trabalho',
+        code: '11',
+        type: 'income',
+        description: 'Salário, freelance, bônus, comissão, décimo terceiro, férias recebidas, pagamento por serviços...'
+      },
+      {
+        id: '4aaf2ae5-7f40-4bd1-a3bb-3e0c5f3d112a',
+        name: '🧾 Impostos & Taxas',
+        code: '12',
+        type: 'expense',
+        description: 'Imposto de Renda, taxas governamentais, cartório, taxas bancárias, tributos, INSS...'
       }
     ];
     
-    console.log("Mock: Inicializando cache de categorias");
+    console.log("Mock: Inicializando cache de categorias do seed");
     return this.categoriesCache;
   }
 
@@ -181,6 +243,24 @@ export class MockApiService implements ApiService {
     
     // Inicializa o cache se estiver vazio
     if (this.mockTransactionsCache.length === 0) {
+      // Primeiro carrega as categorias para garantir consistência
+      const categories = await this.getCategories();
+      
+      // Busca categorias pelo tipo para criar transações com categorias corretas
+      const findCategoryByType = (type: 'income' | 'expense' | 'both'): Category => {
+        const matchingCategories = categories.filter(cat => 
+          cat.type === type || cat.type === 'both'
+        );
+        return matchingCategories[Math.floor(Math.random() * matchingCategories.length)];
+      };
+      
+      // Categorias específicas para exemplos realistas
+      const comprasCategory = categories.find(cat => cat.code === '2'); // Compras
+      const transporteCategory = categories.find(cat => cat.code === '3'); // Transporte 
+      const lazerCategory = categories.find(cat => cat.code === '6'); // Lazer
+      const trabalhoCategory = categories.find(cat => cat.code === '11'); // Trabalho
+      const investimentosCategory = categories.find(cat => cat.code === '7'); // Investimentos
+      
       this.mockTransactionsCache = [
         {
           id: "tx1",
@@ -191,12 +271,7 @@ export class MockApiService implements ApiService {
           createdAt: new Date(Date.now() - 86400000),
           type: "expense",
           vaultId: "mock-vault-1",
-          category: {
-            id: "cat1",
-            name: "Alimentação",
-            code: "FOOD",
-            description: "Gastos com alimentação"
-          }
+          category: comprasCategory || findCategoryByType('expense')
         },
         {
           id: "tx2",
@@ -207,12 +282,7 @@ export class MockApiService implements ApiService {
           createdAt: new Date(Date.now() - 172800000),
           type: "income",
           vaultId: "mock-vault-1",
-          category: {
-            id: "cat2",
-            name: "Salário",
-            code: "SALARY",
-            description: "Receitas de salário"
-          }
+          category: trabalhoCategory || findCategoryByType('income')
         },
         {
           id: "tx3",
@@ -223,12 +293,7 @@ export class MockApiService implements ApiService {
           createdAt: new Date(Date.now() - 259200000),
           type: "expense",
           vaultId: "mock-vault-1",
-          category: {
-            id: "cat3",
-            name: "Transporte",
-            code: "TRANSPORT",
-            description: "Gastos com transporte"
-          }
+          category: transporteCategory || findCategoryByType('expense')
         },
         {
           id: "tx4",
@@ -239,12 +304,7 @@ export class MockApiService implements ApiService {
           createdAt: new Date(Date.now() - 345600000),
           type: "expense",
           vaultId: "mock-vault-1",
-          category: {
-            id: "cat4",
-            name: "Lazer",
-            code: "ENTERTAINMENT",
-            description: "Gastos com entretenimento"
-          }
+          category: lazerCategory || findCategoryByType('expense')
         },
         {
           id: "tx5",
@@ -255,15 +315,10 @@ export class MockApiService implements ApiService {
           createdAt: new Date(Date.now() - 432000000),
           type: "expense",
           vaultId: "mock-vault-1",
-          category: {
-            id: "cat5",
-            name: "Investimentos",
-            code: "INVESTMENT",
-            description: "Aplicações e resgates"
-          }
+          category: investimentosCategory || findCategoryByType('expense')
         }
       ];
-      console.log("Mock: Inicializando cache de transações");
+      console.log("Mock: Inicializando cache de transações com categorias do seed");
     }
 
     // Filtragem e paginação usando o cache
@@ -314,6 +369,7 @@ export class MockApiService implements ApiService {
   }
 
   async editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse> {
+    console.log("Mock: Iniciando edição de transação", request);
     await new Promise(resolve => setTimeout(resolve, 400));
     
     // Baixa probabilidade de erro aleatório para testes
@@ -326,6 +382,13 @@ export class MockApiService implements ApiService {
     if (request.newType && !['income', 'expense'].includes(request.newType)) {
       console.log("Mock: Tipo de transação inválido", request.newType);
       return { error: "Tipo de transação inválido" };
+    }
+    
+    // Debug - mostrar categorias disponíveis
+    if (request.newCategory) {
+      const categories = await this.getCategories();
+      console.log(`Mock: Buscando categoria ${request.newCategory} entre ${categories.length} categorias disponíveis`);
+      console.log("Mock: Códigos de categorias disponíveis:", categories.map(c => c.code).join(", "));
     }
     
     // Encontre a transação no cache ou carregue o cache se estiver vazio
@@ -359,7 +422,7 @@ export class MockApiService implements ApiService {
       }
       
       if (request.newCategory) {
-        // Encontra a categoria correspondente
+        // Encontra a categoria correspondente pelo código
         const categories = await this.getCategories();
         const category = categories.find(cat => cat.code === request.newCategory);
         
@@ -370,8 +433,22 @@ export class MockApiService implements ApiService {
             code: category.code,
             description: category.description || ""
           };
+          console.log(`Mock: Categoria atualizada para: ${category.name} (${category.code})`);
         } else {
-          console.log(`Mock: Categoria não encontrada: ${request.newCategory}`);
+          console.log(`Mock: Categoria não encontrada com código: ${request.newCategory}`);
+          // Tenta buscar por ID como fallback (caso o código esteja na realidade armazenando um ID)
+          const categoryById = categories.find(cat => cat.id === request.newCategory);
+          if (categoryById) {
+            transaction.category = {
+              id: categoryById.id,
+              name: categoryById.name,
+              code: categoryById.code,
+              description: categoryById.description || ""
+            };
+            console.log(`Mock: Categoria encontrada por ID: ${categoryById.name} (${categoryById.code})`);
+          } else {
+            return { error: `Categoria não encontrada: ${request.newCategory}` };
+          }
         }
       }
       

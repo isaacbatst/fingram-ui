@@ -38,7 +38,11 @@ export function TransactionItem({
   // Garantir que a transação tenha categoryCode definido
   const tx = {
     ...txOriginal,
-    categoryCode: txOriginal.categoryCode || txOriginal.category,
+    categoryCode: txOriginal.categoryCode || (
+      typeof txOriginal.category === 'object' 
+        ? txOriginal.category.code 
+        : txOriginal.category
+    ),
   };
   
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
@@ -47,6 +51,7 @@ export function TransactionItem({
     if (categorias && editState.categoryCode) {
       const categoryExists = categorias.some(c => c.code === editState.categoryCode);
       if (!categoryExists) {
+        console.log("Categoria não encontrada no novo conjunto, resetando:", editState.categoryCode);
         setEditState(state => ({
           ...state,
           categoryCode: tx.categoryCode
@@ -71,11 +76,25 @@ export function TransactionItem({
           : (cat.type as "income" | "expense"),
       }))
     : []; // array vazio se não houver categorias
+  
+  // Log para debug de categorias
+  useEffect(() => {
+    if (categorias && categorias.length > 0) {
+      console.log(`TransactionItem: ${categorias.length} categorias carregadas`);
+    }
+  }, [categorias]);
     
   // Filtrar categorias com base no tipo da transação atual
   const filteredCategories = categories.filter(
     cat => cat.type === "both" || cat.type === (editState.type ?? tx.type)
   );
+  
+  // Debug de categorias filtradas
+  useEffect(() => {
+    if (filteredCategories.length > 0) {
+      console.log(`TransactionItem: ${filteredCategories.length} categorias filtradas para tipo ${editState.type ?? tx.type}`);
+    }
+  }, [filteredCategories.length, editState.type, tx.type]);
 
 
   // Função para remover o estado de edição
@@ -141,8 +160,8 @@ export function TransactionItem({
             <div className="text-xs text-gray-400">
               {new Date(tx.date).toLocaleDateString("pt-BR")} •{" "}
               {categories.find((c) => c.value === tx.categoryCode)?.label ||
-                categories.find((c) => c.value === tx.category)?.label ||
-                tx.category}
+               categories.find((c) => c.value === (typeof tx.category === 'string' ? tx.category : tx.category.code))?.label ||
+               (typeof tx.category === 'object' ? tx.category.name : tx.category)}
             </div>
           </div>
           <div
