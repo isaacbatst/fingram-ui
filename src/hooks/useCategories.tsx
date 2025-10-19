@@ -5,7 +5,7 @@ export interface Category {
   id: string;
   name: string;
   code: string;
-  type: "income" | "expense" | "both";
+  transactionType: "income" | "expense" | "both";
   description?: string;
 }
 

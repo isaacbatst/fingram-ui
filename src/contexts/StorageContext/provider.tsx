@@ -15,7 +15,13 @@ export const StorageProvider = ({ children }: PropsWithChildren) => {
     
     // Se está no Telegram e tem WebApp com SecureStorage disponível
     if (isTelegram && webApp && webApp.SecureStorage) {
-      return new TelegramStorageService(webApp.SecureStorage);
+      try {
+        // Test if SecureStorage is actually working
+        return new TelegramStorageService(webApp.SecureStorage);
+      } catch (error) {
+        console.warn("Telegram SecureStorage not available, falling back to localStorage:", error);
+        return new LocalStorageService();
+      }
     }
     
     // Fallback para localStorage

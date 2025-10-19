@@ -71,9 +71,9 @@ export function TransactionItem({
     ? categorias.map((cat: Category) => ({
         label: cat.name,
         value: cat.code,
-        type: cat.type === "both" 
+        type: cat.transactionType === "both" 
           ? "both" 
-          : (cat.type as "income" | "expense"),
+          : (cat.transactionType as "income" | "expense"),
       }))
     : []; // array vazio se não houver categorias
   

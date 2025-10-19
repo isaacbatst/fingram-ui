@@ -1,8 +1,10 @@
 import { ErrorDisplay } from "@/components/ErrorDisplay";
+import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OrcamentoTab } from "@/components/OrcamentoTab";
 import { SaldoResumo } from "@/components/SaldoResumo";
 import { TransacoesTab } from "@/components/TransacoesTab";
+import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TelegramProvider } from "@/contexts/TelegramContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -56,17 +58,47 @@ function AppContent() {
     );
   }
 
-  if (!auth.sessionToken && !auth.isLoading) {
-    return (
-      <ErrorDisplay
-        error={
-          auth.error ??
-          "Usuário não autenticado. Gere um novo link de acesso no bot."
-        }
-        onRetry={() => window.location.reload()}
-        className="max-w-md mx-auto mt-10"
-      />
-    );
+  // Handle authentication based on mode
+  if (!auth.isLoading) {
+    // Telegram mode - need session token
+    if (auth.authMode === 'telegram' && !auth.sessionToken) {
+      return (
+        <ErrorDisplay
+          error={
+            auth.error ??
+            "Usuário não autenticado. Gere um novo link de acesso no bot."
+          }
+          onRetry={() => window.location.reload()}
+          className="max-w-md mx-auto mt-10"
+        />
+      );
+    }
+    
+    // Standalone mode - need vault access token
+    if (auth.authMode === 'standalone' && !auth.vaultAccessToken) {
+      return (
+        <div
+          className={cn(
+            "min-h-screen flex flex-col items-center justify-center p-4",
+            bgClass,
+            textClass
+          )}
+        >
+          <VaultAccessTokenInput />
+        </div>
+      );
+    }
+    
+    // If we have an error and no tokens, show error
+    if (auth.error && !auth.sessionToken && !auth.vaultAccessToken) {
+      return (
+        <ErrorDisplay
+          error={auth.error}
+          onRetry={() => window.location.reload()}
+          className="max-w-md mx-auto mt-10"
+        />
+      );
+    }
   }
 
   return (
@@ -77,7 +109,7 @@ function AppContent() {
         textClass
       )}
     >
-      {auth.sessionToken && (
+      {(auth.sessionToken || auth.vaultAccessToken) && (
         <div className="flex justify-end self-stretch p-5">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -94,8 +126,10 @@ function AppContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar logout</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Tem certeza que deseja sair? Você precisará gerar um novo link
-                  de acesso no bot.
+                  {auth.authMode === 'telegram' 
+                    ? "Tem certeza que deseja sair? Você precisará gerar um novo link de acesso no bot."
+                    : "Tem certeza que deseja sair? Você precisará inserir seu token de acesso novamente."
+                  }
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -131,16 +165,22 @@ function AppContent() {
                 despesas={summary.data.vault.totalSpentAmount}
               />
 
-              {/* Tabs: Orçamento / Transações */}
-              <Tabs defaultValue="orcamento" className="w-full">
+              {/* Tabs: Orçamento / Transações / Input */}
+              <Tabs defaultValue="input" className="w-full">
                 <TabsList className="w-full mb-4">
-                  <TabsTrigger className="w-1/2" value="orcamento">
+                  <TabsTrigger className="w-1/3" value="input">
+                    Registro
+                  </TabsTrigger>
+                  <TabsTrigger className="w-1/3" value="orcamento">
                     Orçamento
                   </TabsTrigger>
-                  <TabsTrigger className="w-1/2" value="transacoes">
+                  <TabsTrigger className="w-1/3" value="transacoes">
                     Transações
                   </TabsTrigger>
                 </TabsList>
+                <TabsContent value="input">
+                  <InputTab />
+                </TabsContent>
                 <TabsContent value="orcamento">
                   <OrcamentoTab />
                 </TabsContent>
@@ -179,7 +219,12 @@ function AppContent() {
           </div>
         )}
 
-        {!isTelegram && ready && (
+        {auth.authMode === 'standalone' && (
+          <div className="mt-6 text-center text-gray-500 text-sm bg-blue-50 border border-blue-200 rounded-lg py-2 px-3">
+            Modo Standalone - Acessando cofre diretamente
+          </div>
+        )}
+        {auth.authMode === 'telegram' && !isTelegram && ready && (
           <div className="mt-6 text-center text-gray-500 text-sm bg-yellow-50 border border-yellow-200 rounded-lg py-2 px-3">
             Abra este app pelo botão no Telegram!
           </div>

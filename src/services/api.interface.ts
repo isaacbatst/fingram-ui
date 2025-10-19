@@ -27,6 +27,20 @@ export interface EditTransactionResponse {
   error?: string;
 }
 
+export interface CreateTransactionRequest {
+  amount: number;
+  description?: string;
+  categoryId?: string;
+  date?: string; // ISO date string
+  type: 'income' | 'expense';
+}
+
+export interface CreateTransactionResponse {
+  transaction?: TransactionDTO;
+  vault?: any;
+  error?: string;
+}
+
 export interface ApiService {
   // Auth
   isAuthenticated(): boolean;
@@ -41,6 +55,7 @@ export interface ApiService {
   
   // Transactions
   getTransactions(params?: TransactionsParams): Promise<Paginated<TransactionDTO>>;
+  createTransaction(request: CreateTransactionRequest): Promise<CreateTransactionResponse>;
   editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse>;
   
   // Budgets

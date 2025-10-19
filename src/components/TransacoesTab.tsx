@@ -73,7 +73,7 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
   const [transFiltroCat, setTransFiltroCat] = useState<string>("");
   const [transFiltroNome, setTransFiltroNome] = useState("");
 
-  // Determine se deve usar dados reais ou mock
+  // Process transaction data
   const transactions = data?.items
     ? data.items.map((tx) => ({
         id: tx.id,

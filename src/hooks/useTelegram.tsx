@@ -98,18 +98,6 @@ type WindowWithTelegram = Window & {
   };
 };
 
-function getMockInitData(): TelegramWebAppInitData {
-  return {
-    user: {
-      id: 12345678,
-      first_name: "Isaac",
-      username: "isaacbatst",
-      photo_url: "",
-    },
-    chat: undefined,
-    chat_instance: "some-instance-id",
-  };
-}
 
 // Fallbacks padrão para cada cor do tema do Telegram
 export const THEME_FALLBACKS: Record<keyof TelegramThemeParams, string> = {
@@ -155,20 +143,34 @@ export function useTelegram() {
     // Verificar se já existe Telegram WebApp disponível
     const existingTelegram = (window as unknown as WindowWithTelegram).Telegram?.WebApp;
     if (existingTelegram) {
-      tg.current = existingTelegram;
-      setIsTelegram(true);
-      tg.current.ready();
-      setInitData(tg.current.initDataUnsafe || getMockInitData());
-      setReady(true);
-      setTheme(tg.current.themeParams || {});
+      // Check if we're actually in a Telegram environment
+      const initData = existingTelegram.initDataUnsafe;
+      const hasValidUser = initData?.user?.id && initData?.user?.first_name;
       
-      // Adiciona/remover classe .dark conforme o tema do Telegram
-      if (existingTelegram.colorScheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      return;
+      if (hasValidUser) {
+        // We're actually in Telegram
+        tg.current = existingTelegram;
+        setIsTelegram(true);
+        tg.current.ready();
+        setInitData(initData);
+        setReady(true);
+        setTheme(tg.current.themeParams || {});
+        
+        // Adiciona/remover classe .dark conforme o tema do Telegram
+        if (existingTelegram.colorScheme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+        return;
+        } else {
+          // WebApp object exists but we're not actually in Telegram
+          console.log("Telegram WebApp object exists but no valid user data - not in Telegram environment");
+          setIsTelegram(false);
+          setReady(true);
+          setInitData(null);
+          return;
+        }
     }
 
     const script = document.createElement("script");
@@ -177,24 +179,38 @@ export function useTelegram() {
     script.onload = () => {
       const tgw = (window as unknown as WindowWithTelegram).Telegram?.WebApp;
       if (tgw) {
-        tg.current = tgw;
-        setIsTelegram(true);
-        tg.current.ready();
-        setInitData(tg.current.initDataUnsafe || getMockInitData());
-        setReady(true);
-        setTheme(tg.current.themeParams || {});
-        // Adiciona/remover classe .dark conforme o tema do Telegram
-        if (tgw.colorScheme === "dark") {
-          document.documentElement.classList.add("dark");
+        // Check if we're actually in a Telegram environment
+        // by verifying if we have valid initData with user information
+        const initData = tgw.initDataUnsafe;
+        const hasValidUser = initData?.user?.id && initData?.user?.first_name;
+        
+        if (hasValidUser) {
+          // We're actually in Telegram
+          tg.current = tgw;
+          setIsTelegram(true);
+          tg.current.ready();
+          setInitData(initData);
+          setReady(true);
+          setTheme(tg.current.themeParams || {});
+          // Adiciona/remover classe .dark conforme o tema do Telegram
+          if (tgw.colorScheme === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
         } else {
-          document.documentElement.classList.remove("dark");
+          // WebApp object exists but we're not actually in Telegram
+          console.log("Telegram WebApp object exists but no valid user data - not in Telegram environment");
+          setIsTelegram(false);
+          setReady(true);
+          setInitData(null);
         }
       } else {
         // Se não conseguiu carregar o Telegram WebApp, continue como não-Telegram
         console.log("Telegram WebApp not available, continuing without it");
         setIsTelegram(false);
         setReady(true);
-        setInitData(getMockInitData());
+        setInitData(null);
       }
     };
     
@@ -203,7 +219,7 @@ export function useTelegram() {
       console.log("Failed to load Telegram WebApp script, continuing without it");
       setIsTelegram(false);
       setReady(true);
-      setInitData(getMockInitData());
+      setInitData(null);
     };
     
     document.body.appendChild(script);

@@ -16,38 +16,43 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 
-export class RealApiService implements ApiService {
-  private sessionToken: string | null = null;
+export class StandaloneApiService implements ApiService {
+  private accessToken: string | null = null;
 
-  constructor(sessionToken: string | null) {
-    this.sessionToken = sessionToken;
+  constructor(accessToken: string | null = null) {
+    this.accessToken = accessToken;
   }
 
-  updateSessionToken(sessionToken: string | null) {
-    this.sessionToken = sessionToken;
+  updateAccessToken(accessToken: string | null) {
+    this.accessToken = accessToken;
   }
 
   isAuthenticated(): boolean {
-    return this.sessionToken !== null;
+    return this.accessToken !== null;
   }
 
   getSessionToken(): string | null {
-    return this.sessionToken;
+    return this.accessToken;
   }
 
-  async getSummary(): Promise<SummaryData> {
-    if (!this.sessionToken) {
-      throw new Error("Usuário não autenticado");
-    }
-
-    const response = await fetch(`${API_BASE_URL}/miniapp/summary`, {
+  private async makeRequest(
+    endpoint: string, 
+    options: RequestInit = {}
+  ): Promise<Response> {
+    const url = `${API_BASE_URL}/vault${endpoint}`;
+    
+    const defaultOptions: RequestInit = {
+      credentials: 'include', // Include cookies for HTTP-only authentication
       headers: {
-        Authorization: `Bearer ${this.sessionToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
       },
-    });
+    };
 
+    const response = await fetch(url, { ...defaultOptions, ...options });
+    
     if (response.status === 401) {
-      throw new Error("Gere um novo link de acesso no bot.");
+      throw new Error("Token de acesso inválido ou expirado.");
     }
     
     if (!response.ok) {
@@ -55,55 +60,58 @@ export class RealApiService implements ApiService {
       throw new Error(errorText || `Erro ${response.status}`);
     }
 
+    return response;
+  }
+
+  async authenticate(accessToken: string): Promise<{ vaultId: string }> {
+    const response = await this.makeRequest('/authenticate', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken }),
+    });
+
+    const data = await response.json();
+    
+    // Set the access token for future requests
+    this.accessToken = accessToken;
+    
+    return data;
+  }
+
+  async getSummary(): Promise<SummaryData> {
+    if (!this.accessToken) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const response = await this.makeRequest('/summary');
     return response.json();
   }
 
   async getBudgetSummary(year?: number, month?: number): Promise<BudgetSummaryData> {
-    if (!this.sessionToken) {
+    if (!this.accessToken) {
       throw new Error("Usuário não autenticado");
     }
 
-    const url = new URL(`${API_BASE_URL}/miniapp/summary`);
+    const url = new URL(`${API_BASE_URL}/vault/summary`);
     if (year && month) {
       url.searchParams.append("year", year.toString());
       url.searchParams.append("month", month.toString());
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${this.sessionToken}`,
-      },
-    });
-
-    if (response.status === 401) {
-      throw new Error("Gere um novo link de acesso no bot.");
-    }
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `Erro ${response.status}`);
-    }
-
+    const response = await this.makeRequest(`/summary?${url.searchParams.toString()}`);
     return response.json();
   }
 
   async getCategories(): Promise<Category[]> {
-    const response = await fetch(`${API_BASE_URL}/miniapp/categories`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `Erro ${response.status}`);
-    }
-
+    const response = await this.makeRequest('/categories');
     return response.json();
   }
 
   async getTransactions(params?: TransactionsParams): Promise<Paginated<TransactionDTO>> {
-    if (!this.sessionToken) {
+    if (!this.accessToken) {
       throw new Error("Usuário não autenticado");
     }
 
-    const url = new URL(`${API_BASE_URL}/miniapp/transactions`);
+    const url = new URL(`${API_BASE_URL}/vault/transactions`);
     
     if (params?.page) {
       url.searchParams.append("page", params.page.toString());
@@ -119,40 +127,20 @@ export class RealApiService implements ApiService {
       url.searchParams.append("description", params.description);
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${this.sessionToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `Erro ${response.status}`);
-    }
-
+    const response = await this.makeRequest(`/transactions?${url.searchParams.toString()}`);
     return response.json();
   }
 
   async createTransaction(request: CreateTransactionRequest): Promise<CreateTransactionResponse> {
-    if (!this.sessionToken) {
-      return { error: "Token de sessão não encontrado" };
+    if (!this.accessToken) {
+      return { error: "Token de acesso não encontrado" };
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/miniapp/create-transaction`, {
+      const response = await this.makeRequest('/create-transaction', {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.sessionToken}`,
-        },
         body: JSON.stringify(request),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || "Erro ao criar transação";
-        return { error: errorMessage };
-      }
 
       return await response.json();
     } catch (error) {
@@ -162,25 +150,15 @@ export class RealApiService implements ApiService {
   }
 
   async editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse> {
-    if (!this.sessionToken) {
-      return { error: "Token de sessão não encontrado" };
+    if (!this.accessToken) {
+      return { error: "Token de acesso não encontrado" };
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/miniapp/edit-transaction`, {
+      await this.makeRequest('/edit-transaction', {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.sessionToken}`,
-        },
         body: JSON.stringify(request),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || "Erro ao editar transação";
-        return { error: errorMessage };
-      }
 
       return {};
     } catch (error) {
@@ -190,17 +168,13 @@ export class RealApiService implements ApiService {
   }
 
   async setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse> {
-    if (!this.sessionToken) {
-      return { error: "Token de sessão não encontrado" };
+    if (!this.accessToken) {
+      return { error: "Token de acesso não encontrado" };
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/miniapp/set-budgets`, {
+      await this.makeRequest('/set-budgets', {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.sessionToken}`,
-        },
         body: JSON.stringify({ 
           budgets: budgets.map(b => ({
             categoryCode: b.categoryId, // Backend expects categoryCode
@@ -208,12 +182,6 @@ export class RealApiService implements ApiService {
           }))
         }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || "Erro ao definir orçamentos";
-        return { error: errorMessage };
-      }
 
       return {};
     } catch (error) {
