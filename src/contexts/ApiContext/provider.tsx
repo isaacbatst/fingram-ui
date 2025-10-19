@@ -50,14 +50,10 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
         const errorText = await response.text();
         throw new Error(errorText || `Erro ${response.status}`);
       }
-
-      const data = await response.json();
       
       // Authentication successful - cookie is set by server
       setIsAuthenticated(true);
-      setIsLoading(false);
-      
-      return data;
+      setIsLoading(false);    
     } catch (error) {
       console.error("Error during vault authentication:", error);
       setError("Token de acesso inválido. Verifique o token e tente novamente.");
@@ -85,18 +81,11 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
         throw new Error(errorText || `Erro ${response.status}`);
       }
 
-      const data = await response.json();
-      
-      if (!data || !data.vaultId) {
-        throw new Error("No vault ID received from the server");
-      }
-
       // Authentication successful - cookie is set by server
       setIsAuthenticated(true);
       setIsLoading(false);
       setPendingTempToken(null); // Clear pending token after successful authentication
       
-      return data;
     } catch (error) {
       console.error("Error during temp token authentication:", error);
       setError("Token temporário inválido ou expirado. Gere um novo link no bot.");

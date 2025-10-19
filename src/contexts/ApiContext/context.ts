@@ -7,8 +7,8 @@ export interface ApiContextType {
   isLoading: boolean;
   error: string | null;
   logout: () => void;
-  authenticateWithVaultToken: (accessToken: string) => Promise<{ vaultId: string }>;
-  authenticateWithTempToken: (tempToken: string) => Promise<{ vaultId: string }>;
+  authenticateWithVaultToken: (accessToken: string) => Promise<void>;
+  authenticateWithTempToken: (tempToken: string) => Promise<void>;
   pendingTempToken: string | null;
   confirmTempTokenExchange: () => Promise<void>;
   dismissTempToken: () => void;
