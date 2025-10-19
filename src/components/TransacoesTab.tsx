@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTheme } from "@/hooks/useTheme";
 import { useTransactions } from "@/hooks/useTransactions";
 import {
   ChevronLeft,
@@ -50,7 +49,6 @@ type TransacoesTabProps = {
 };
 
 export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps) {
-  const { getThemeColor } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
   const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
   const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
@@ -241,10 +239,10 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
                 value={transFiltroDataRange}
                 onChange={setTransFiltroDataRange}
                 theme={{
-                  textColor: getThemeColor("text_color"),
-                  hintColor: getThemeColor("hint_color"),
-                  buttonColor: getThemeColor("button_color"),
-                  accentColor: getThemeColor("accent_text_color"),
+                  textColor: "#1f2937", // gray-800
+                  hintColor: "#6b7280", // gray-500
+                  buttonColor: "#3b82f6", // blue-500
+                  accentColor: "#1f2937", // gray-800
                 }}
               />
               <Select onValueChange={setTransFiltroCat} value={transFiltroCat}>

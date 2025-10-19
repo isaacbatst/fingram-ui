@@ -7,15 +7,12 @@ import { TransacoesTab } from "@/components/TransacoesTab";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StorageProvider } from "@/contexts/StorageContext/provider";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "./components/ui/sonner";
 import { useCategories } from "./hooks/useCategories";
 import { useSummary } from "./hooks/useSummary";
-import { useTheme } from "./hooks/useTheme";
-import { cn } from "./lib/utils";
 import { useApi } from "./hooks/useApi";
 import {
   AlertDialog,
@@ -33,23 +30,13 @@ import { LogOut } from "lucide-react";
 
 function AppContent() {
   const auth = useApi();
-  const { getThemeColor } = useTheme();
   const summary = useSummary();
   const categories = useCategories();
-
-  const bgClass = `bg-${getThemeColor("bg_color")}`;
-  const textClass = `text-${getThemeColor("text_color")}`;
 
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
     return (
-      <div
-        className={cn(
-          "min-h-screen flex flex-col items-center justify-center",
-          bgClass,
-          textClass
-        )}
-      >
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-gray-900">
         <LoadingSpinner />
       </div>
     );
@@ -65,13 +52,7 @@ function AppContent() {
     // Need authentication
     if (!auth.isAuthenticated) {
       return (
-        <div
-          className={cn(
-            "min-h-screen flex flex-col items-center justify-center p-4",
-            bgClass,
-            textClass
-          )}
-        >
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white text-gray-900">
           <VaultAccessTokenInput />
         </div>
       );
@@ -90,13 +71,7 @@ function AppContent() {
   }
 
   return (
-    <div
-      className={cn(
-        "min-h-screen flex flex-col items-center",
-        bgClass,
-        textClass
-      )}
-    >
+    <div className="min-h-screen flex flex-col items-center bg-white text-gray-900">
       {auth.isAuthenticated && (
         <div className="flex justify-end self-stretch p-5">
           <AlertDialog>
@@ -216,14 +191,12 @@ export default function App() {
         />
       )}
     >
-      <ThemeProvider>
-        <StorageProvider>
-          <ApiProvider>
-            <AppContent />
-          </ApiProvider>
-        </StorageProvider>
-        <Toaster richColors />
-      </ThemeProvider>
+      <StorageProvider>
+        <ApiProvider>
+          <AppContent />
+        </ApiProvider>
+      </StorageProvider>
+      <Toaster richColors />
     </ErrorBoundary>
   );
 }

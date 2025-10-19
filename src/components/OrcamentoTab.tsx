@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useCategories, type Category } from "@/hooks/useCategories";
-import { useTheme } from "@/hooks/useTheme";
 import { useState } from "react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -37,7 +36,6 @@ const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
 export function OrcamentoTab() {
-  const { getThemeColor } = useTheme();
   const { setBudgets } = useBudgets();
   const { data: categories } = useCategories();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -252,12 +250,8 @@ export function OrcamentoTab() {
                   const pct = Math.min(100, (c.usado / c.valor) * 100);
 
                   // Cores para a barra de progresso
-                  const filledColor =
-                    pct > 90
-                      ? getThemeColor("destructive_text_color")
-                      : getThemeColor("accent_text_color");
-
-                  const bgColor = getThemeColor("section_separator_color");
+                  const filledColor = pct > 90 ? "#ef4444" : "#3b82f6"; // red-500 : blue-500
+                  const bgColor = "#e5e7eb"; // gray-200
 
                   return (
                     <div key={c.categoria}>
