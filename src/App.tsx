@@ -5,6 +5,7 @@ import { OrcamentoTab } from "@/components/OrcamentoTab";
 import { SaldoResumo } from "@/components/SaldoResumo";
 import { TransacoesTab } from "@/components/TransacoesTab";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
+import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StorageProvider } from "@/contexts/StorageContext/provider";
@@ -56,6 +57,11 @@ function AppContent() {
 
   // Handle authentication
   if (!auth.isLoading) {
+    // Show temp token confirmation if there's a pending token
+    if (auth.pendingTempToken) {
+      return <TempTokenConfirmation />;
+    }
+    
     // Need authentication
     if (!auth.isAuthenticated) {
       return (

@@ -9,6 +9,7 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingTempToken, setPendingTempToken] = useState<string | null>(null);
 
   // Always provide an API service
   const apiService = useMemo(() => {
@@ -93,14 +94,30 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
       // Authentication successful - cookie is set by server
       setIsAuthenticated(true);
       setIsLoading(false);
+      setPendingTempToken(null); // Clear pending token after successful authentication
       
       return data;
     } catch (error) {
       console.error("Error during temp token authentication:", error);
       setError("Token temporário inválido ou expirado. Gere um novo link no bot.");
       setIsLoading(false);
+      setPendingTempToken(null); // Clear pending token on error
       throw error;
     }
+  }, []);
+
+  const confirmTempTokenExchange = useCallback(async () => {
+    if (!pendingTempToken) return;
+    await authenticateWithTempToken(pendingTempToken);
+  }, [pendingTempToken, authenticateWithTempToken]);
+
+  const dismissTempToken = useCallback(() => {
+    setPendingTempToken(null);
+    setError(null);
+    // Remove token from URL
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('token');
+    window.history.replaceState({}, '', newUrl.toString());
   }, []);
 
   useEffect(() => {
@@ -109,24 +126,9 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
     const tempToken = urlParams.get('token');
     
     if (tempToken) {
-      // Handle temporary token authentication
-      const handleTempTokenAuthentication = async () => {
-        try {
-          await authenticateWithTempToken(tempToken);
-          // Remove token from URL after successful authentication
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete('token');
-          window.history.replaceState({}, '', newUrl.toString());
-        } catch (error) {
-          console.error("Error during temp token authentication:", error);
-          // Remove token from URL even if authentication failed
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete('token');
-          window.history.replaceState({}, '', newUrl.toString());
-        }
-      };
-      
-      handleTempTokenAuthentication();
+      // Set pending token instead of auto-authenticating
+      setPendingTempToken(tempToken);
+      setIsLoading(false);
       return;
     }
 
@@ -174,7 +176,10 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
       error, 
       logout,
       authenticateWithVaultToken,
-      authenticateWithTempToken
+      authenticateWithTempToken,
+      pendingTempToken,
+      confirmTempTokenExchange,
+      dismissTempToken
     }}>
       {children}
     </ApiContext.Provider>

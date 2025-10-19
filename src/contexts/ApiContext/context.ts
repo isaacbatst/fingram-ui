@@ -9,6 +9,9 @@ export interface ApiContextType {
   logout: () => void;
   authenticateWithVaultToken: (accessToken: string) => Promise<{ vaultId: string }>;
   authenticateWithTempToken: (tempToken: string) => Promise<{ vaultId: string }>;
+  pendingTempToken: string | null;
+  confirmTempTokenExchange: () => Promise<void>;
+  dismissTempToken: () => void;
 }
 
 export const ApiContext = createContext<ApiContextType | null>(null);
