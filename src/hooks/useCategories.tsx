@@ -10,9 +10,9 @@ export interface Category {
 }
 
 export function useCategories() {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
   
-  return useSWR("categories", async () => {
+  return useSWR(isAuthenticated ? "categories" : null, async () => {
     return await apiService.getCategories();
   }, {
     revalidateOnFocus: false,

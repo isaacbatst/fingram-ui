@@ -13,11 +13,11 @@ export interface TransactionsParams {
 }
 
 export function useTransactions(params?: TransactionsParams) {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
 
   // Função para criar uma chave única baseada nos parâmetros
   const getKey = useCallback(() => {
-    if (!apiService.isAuthenticated()) return null;
+    if (!isAuthenticated) return null;
     
     const keyParts = ["transactions"];
     if (params?.page) keyParts.push(`page:${params.page}`);
@@ -26,7 +26,7 @@ export function useTransactions(params?: TransactionsParams) {
     if (params?.description) keyParts.push(`desc:${params.description}`);
     
     return keyParts.join("|");
-  }, [apiService, params]);
+  }, [isAuthenticated, params]);
 
   // Função para buscar os dados das transações
   const fetcher = useCallback(

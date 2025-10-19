@@ -52,7 +52,6 @@ export function OrcamentoTab() {
 
   const {
     data: budgetData,
-    isLoading,
     error,
     mutate,
   } = useBudgetSummary(selectedYear, selectedMonth);
@@ -197,17 +196,13 @@ export function OrcamentoTab() {
         </div>
       </div>
 
-      {/* Loading */}
-      {isLoading && <LoadingSpinner />}
-
       {/* Error */}
       {error && (
         <ErrorDisplay error={error.message} onRetry={mutate} className="my-4" />
       )}
 
       {/* Conteúdo do orçamento */}
-      {!isLoading && !error && (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {isEditing ? (
             // Modo de edição - mostrar todas as categorias
             <>
@@ -296,7 +291,6 @@ export function OrcamentoTab() {
             </>
           )}
         </div>
-      )}
     </div>
   );
 }

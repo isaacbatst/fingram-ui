@@ -4,11 +4,11 @@ import type { CreateTransactionRequest, CreateTransactionResponse } from "../ser
 import { mutate } from "swr";
 
 export function useCreateTransaction() {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
 
   const createTransaction = useCallback(
     async (request: CreateTransactionRequest): Promise<CreateTransactionResponse> => {
-      if (!apiService.isAuthenticated()) {
+      if (!isAuthenticated) {
         return { error: "Usuário não autenticado" };
       }
 

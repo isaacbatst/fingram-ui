@@ -1,72 +1,181 @@
-import { useMemo, type PropsWithChildren } from "react";
+import { useMemo, useCallback, useEffect, useState, type PropsWithChildren } from "react";
 import { ApiContext } from "./context";
-import { RealApiService } from "../../services/real-api.service";
 import { StandaloneApiService } from "../../services/standalone-api.service";
-import { useAuth } from "../../hooks/useAuth";
-import { useTelegramContext } from "../../hooks/useTelegramContext";
 import { mutate } from "swr";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
+
 export const ApiProvider = ({ children }: PropsWithChildren) => {
-  const { sessionToken, vaultAccessToken, authMode } = useAuth();
-  const { isTelegram, ready, webApp, initData } = useTelegramContext();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Always provide an API service
   const apiService = useMemo(() => {
-    // Se ainda não está pronto, retorna null para evitar renderização prematura
-    if (!ready) {
-      console.log("API: Aguardando inicialização do contexto Telegram");
-      return null;
+    console.log("API: Usando Standalone API com cookie authentication");
+    return new StandaloneApiService();
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      // Call logout endpoint to clear server-side session
+      await fetch(`${API_BASE_URL}/vault/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.warn("Failed to logout on server:", err);
+    } finally {
+      // Clear local authentication state
+      setIsAuthenticated(false);
     }
-    
-    // Use auth mode to determine which API service to use
-    if (authMode === 'standalone') {
-      if (vaultAccessToken) {
-        console.log("API: Usando Standalone API com vault access token");
-        return new StandaloneApiService(vaultAccessToken);
-      } else {
-        console.log("API: Modo standalone mas sem vault access token - retornando null");
-        return null;
+  }, []);
+
+  const authenticateWithVaultToken = useCallback(async (accessToken: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_BASE_URL}/vault/authenticate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accessToken }),
+        credentials: 'include', // Include cookies for HTTP-only authentication
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Erro ${response.status}`);
       }
-    }
-    
-    // Telegram mode - use existing logic
-    const isRealTelegram = 
-      isTelegram && 
-      !!webApp &&
-      !!initData?.user?.id &&        // Verifica se temos um user ID válido
-      !!webApp.initData &&           // Verifica se temos initData
-      webApp.initData.length > 10;   // Garante que não é um initData vazio
-    
-    if (!isRealTelegram || !sessionToken) {
-      console.log(`API: Não no ambiente Telegram válido ou sem session token - retornando null`);
-      return null;
-    }
-    
-    console.log("API: Usando API Real com ambiente Telegram confirmado");
-    return new RealApiService(sessionToken);
-  }, [authMode, sessionToken, vaultAccessToken, isTelegram, ready, webApp, initData]);
 
-  // Update tokens in API services when they change
+      const data = await response.json();
+      
+      // Authentication successful - cookie is set by server
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      
+      return data;
+    } catch (error) {
+      console.error("Error during vault authentication:", error);
+      setError("Token de acesso inválido. Verifique o token e tente novamente.");
+      setIsLoading(false);
+      throw error;
+    }
+  }, []);
+
+  const authenticateWithTempToken = useCallback(async (tempToken: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_BASE_URL}/vault/authenticate-temp-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: tempToken }),
+        credentials: 'include', // Include cookies for HTTP-only authentication
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Erro ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data || !data.vaultId) {
+        throw new Error("No vault ID received from the server");
+      }
+
+      // Authentication successful - cookie is set by server
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      
+      return data;
+    } catch (error) {
+      console.error("Error during temp token authentication:", error);
+      setError("Token temporário inválido ou expirado. Gere um novo link no bot.");
+      setIsLoading(false);
+      throw error;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check for temporary token in URL first
+    const urlParams = new URLSearchParams(window.location.search);
+    const tempToken = urlParams.get('token');
+    
+    if (tempToken) {
+      // Handle temporary token authentication
+      const handleTempTokenAuthentication = async () => {
+        try {
+          await authenticateWithTempToken(tempToken);
+          // Remove token from URL after successful authentication
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('token');
+          window.history.replaceState({}, '', newUrl.toString());
+        } catch (error) {
+          console.error("Error during temp token authentication:", error);
+          // Remove token from URL even if authentication failed
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('token');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      };
+      
+      handleTempTokenAuthentication();
+      return;
+    }
+
+    // Check authentication status via API
+    const checkAuthenticationStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/vault/me`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          // User is authenticated
+          setIsAuthenticated(true);
+        } else {
+          // User is not authenticated
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.warn("Error checking authentication status:", error);
+        // Assume not authenticated on error
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuthenticationStatus();
+  }, [authenticateWithTempToken]);
+
+  // Refetch data when authentication status changes
   useMemo(() => {
-    if (apiService instanceof RealApiService) {
-      apiService.updateSessionToken(sessionToken);
-      mutate("summary"); // Refetch summary data on session token change
-      mutate("categories"); // Refetch categories data on session token change
-      mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false); // Refetch transactions data on session token change
-    } else if (apiService instanceof StandaloneApiService) {
-      apiService.updateAccessToken(vaultAccessToken);
-      mutate("summary"); // Refetch summary data on vault access token change
-      mutate("categories"); // Refetch categories data on vault access token change
-      mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false); // Refetch transactions data on vault access token change
+    if (isAuthenticated) {
+      mutate("summary"); // Refetch summary data on authentication change
+      mutate("categories"); // Refetch categories data on authentication change
+      mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false); // Refetch transactions data on authentication change
     }
-  }, [apiService, sessionToken, vaultAccessToken]);
-
-  // Don't render children if no API service is available
-  if (!apiService) {
-    return null;
-  }
+  }, [isAuthenticated]);
 
   return (
-    <ApiContext.Provider value={{ apiService }}>
+    <ApiContext.Provider value={{ 
+      apiService,
+      isAuthenticated,
+      isLoading, 
+      error, 
+      logout,
+      authenticateWithVaultToken,
+      authenticateWithTempToken
+    }}>
       {children}
     </ApiContext.Provider>
   );

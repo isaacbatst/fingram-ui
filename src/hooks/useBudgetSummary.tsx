@@ -22,7 +22,7 @@ export interface BudgetSummaryData {
 }
 
 export function useBudgetSummary(year?: number, month?: number) {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
 
   // Função para buscar os dados do resumo de orçamento
   const fetcher = useCallback(
@@ -33,7 +33,7 @@ export function useBudgetSummary(year?: number, month?: number) {
   );
 
   // Criar uma chave SWR que inclui os parâmetros de data
-  const key = apiService.isAuthenticated() 
+  const key = isAuthenticated 
     ? `budget-summary${year && month ? `|${year}-${month}` : ''}`
     : null;
 

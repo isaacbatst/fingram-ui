@@ -1,6 +1,5 @@
-import type { TelegramTheme } from "@/hooks/useTelegram";
-
-export interface ThemeContextType extends TelegramTheme {
+export interface ThemeContextType {
   isTelegram: boolean;
-  ready: boolean;
+  getThemeColor: (key: string) => string;
+  themeFallbacks: Record<string, string>;
 }

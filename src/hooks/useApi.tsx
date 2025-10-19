@@ -8,5 +8,5 @@ export const useApi = () => {
     throw new Error("useApi deve ser usado dentro de um ApiProvider");
   }
   
-  return context.apiService;
+  return context;
 };

@@ -6,7 +6,6 @@ import { SaldoResumo } from "@/components/SaldoResumo";
 import { TransacoesTab } from "@/components/TransacoesTab";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TelegramProvider } from "@/contexts/TelegramContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StorageProvider } from "@/contexts/StorageContext/provider";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
@@ -14,11 +13,9 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "./components/ui/sonner";
 import { useCategories } from "./hooks/useCategories";
 import { useSummary } from "./hooks/useSummary";
-import { useTelegramContext } from "./hooks/useTelegramContext";
 import { useTheme } from "./hooks/useTheme";
 import { cn } from "./lib/utils";
-import AuthProvider from "./contexts/AuthContext/provider";
-import { useAuth } from "./hooks/useAuth";
+import { useApi } from "./hooks/useApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,9 +31,8 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 function AppContent() {
-  const auth = useAuth();
-  const { isTelegram, getThemeColor } = useTheme();
-  const { ready } = useTelegramContext();
+  const auth = useApi();
+  const { getThemeColor } = useTheme();
   const summary = useSummary();
   const categories = useCategories();
 
@@ -58,24 +54,10 @@ function AppContent() {
     );
   }
 
-  // Handle authentication based on mode
+  // Handle authentication
   if (!auth.isLoading) {
-    // Telegram mode - need session token
-    if (auth.authMode === 'telegram' && !auth.sessionToken) {
-      return (
-        <ErrorDisplay
-          error={
-            auth.error ??
-            "Usuário não autenticado. Gere um novo link de acesso no bot."
-          }
-          onRetry={() => window.location.reload()}
-          className="max-w-md mx-auto mt-10"
-        />
-      );
-    }
-    
-    // Standalone mode - need vault access token
-    if (auth.authMode === 'standalone' && !auth.vaultAccessToken) {
+    // Need authentication
+    if (!auth.isAuthenticated) {
       return (
         <div
           className={cn(
@@ -89,8 +71,8 @@ function AppContent() {
       );
     }
     
-    // If we have an error and no tokens, show error
-    if (auth.error && !auth.sessionToken && !auth.vaultAccessToken) {
+    // If we have an error and not authenticated, show error
+    if (auth.error && !auth.isAuthenticated) {
       return (
         <ErrorDisplay
           error={auth.error}
@@ -109,7 +91,7 @@ function AppContent() {
         textClass
       )}
     >
-      {(auth.sessionToken || auth.vaultAccessToken) && (
+      {auth.isAuthenticated && (
         <div className="flex justify-end self-stretch p-5">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -126,10 +108,7 @@ function AppContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar logout</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {auth.authMode === 'telegram' 
-                    ? "Tem certeza que deseja sair? Você precisará gerar um novo link de acesso no bot."
-                    : "Tem certeza que deseja sair? Você precisará inserir seu token de acesso novamente."
-                  }
+                  Tem certeza que deseja sair? Você precisará inserir seu token de acesso novamente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -144,58 +123,51 @@ function AppContent() {
       )}
 
       <div className="rounded-3xl shadow-xl p-5 w-full max-w-sm mb-4 border">
-        {summary.isLoading && <LoadingSpinner />}
+        {summary.data && summary.data.vault ? (
+          <>
+            <SaldoResumo
+              saldo={summary.data.vault.balance}
+              receitas={summary.data.vault.totalIncomeAmount}
+              despesas={summary.data.vault.totalSpentAmount}
+            />
 
-        {summary.error && (
+            {/* Tabs: Orçamento / Transações / Input */}
+            <Tabs defaultValue="input" className="w-full">
+              <TabsList className="w-full mb-4">
+                <TabsTrigger className="w-1/3" value="input">
+                  Registro
+                </TabsTrigger>
+                <TabsTrigger className="w-1/3" value="orcamento">
+                  Orçamento
+                </TabsTrigger>
+                <TabsTrigger className="w-1/3" value="transacoes">
+                  Transações
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="input">
+                <InputTab />
+              </TabsContent>
+              <TabsContent value="orcamento">
+                <OrcamentoTab />
+              </TabsContent>
+              {/* Tab Transações */}
+              <TabsContent value="transacoes">
+                <TransacoesTab
+                  categories={categories.data || []}
+                  mutateSummary={summary.mutate}
+                />
+              </TabsContent>
+            </Tabs>
+          </>
+        ) : summary.error ? (
           <ErrorDisplay
             error={summary.error.message}
             onRetry={summary.mutate}
             className="my-4"
           />
-        )}
-
-        {!summary.isLoading &&
-          !summary.error &&
-          summary.data &&
-          summary.data.vault && (
-            <>
-              <SaldoResumo
-                saldo={summary.data.vault.balance}
-                receitas={summary.data.vault.totalIncomeAmount}
-                despesas={summary.data.vault.totalSpentAmount}
-              />
-
-              {/* Tabs: Orçamento / Transações / Input */}
-              <Tabs defaultValue="input" className="w-full">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger className="w-1/3" value="input">
-                    Registro
-                  </TabsTrigger>
-                  <TabsTrigger className="w-1/3" value="orcamento">
-                    Orçamento
-                  </TabsTrigger>
-                  <TabsTrigger className="w-1/3" value="transacoes">
-                    Transações
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="input">
-                  <InputTab />
-                </TabsContent>
-                <TabsContent value="orcamento">
-                  <OrcamentoTab />
-                </TabsContent>
-                {/* Tab Transações */}
-                <TabsContent value="transacoes">
-                  <TransacoesTab
-                    categories={categories.data || []}
-                    mutateSummary={summary.mutate}
-                  />
-                </TabsContent>
-              </Tabs>
-            </>
-          )}
-
-        {!summary.isLoading && !summary.error && !summary.data && ready && (
+        ) : summary.isLoading ? (
+          <LoadingSpinner />
+        ) : (
           <div className="text-center p-6">
             <div className="text-gray-500 mb-4">
               <svg
@@ -213,20 +185,9 @@ function AppContent() {
               </svg>
               <p className="text-sm">Nenhum cofre encontrado</p>
               <p className="text-xs text-gray-400 mt-1">
-                Use /create no Telegram para criar um cofre
+                Use /create no bot para criar um cofre
               </p>
             </div>
-          </div>
-        )}
-
-        {auth.authMode === 'standalone' && (
-          <div className="mt-6 text-center text-gray-500 text-sm bg-blue-50 border border-blue-200 rounded-lg py-2 px-3">
-            Modo Standalone - Acessando cofre diretamente
-          </div>
-        )}
-        {auth.authMode === 'telegram' && !isTelegram && ready && (
-          <div className="mt-6 text-center text-gray-500 text-sm bg-yellow-50 border border-yellow-200 rounded-lg py-2 px-3">
-            Abra este app pelo botão no Telegram!
           </div>
         )}
       </div>
@@ -249,18 +210,14 @@ export default function App() {
         />
       )}
     >
-      <TelegramProvider>
-        <ThemeProvider>
-          <StorageProvider>
-            <AuthProvider>
-              <ApiProvider>
-                <AppContent />
-              </ApiProvider>
-            </AuthProvider>
-          </StorageProvider>
-        </ThemeProvider>
+      <ThemeProvider>
+        <StorageProvider>
+          <ApiProvider>
+            <AppContent />
+          </ApiProvider>
+        </StorageProvider>
         <Toaster richColors />
-      </TelegramProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

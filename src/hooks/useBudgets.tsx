@@ -13,10 +13,14 @@ interface SetBudgetsResponse {
 }
 
 export const useBudgets = () => {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
 
   const setBudgets = useCallback(
     async (budgets: Budget[]): Promise<SetBudgetsResponse> => {
+      if (!isAuthenticated) {
+        return { error: "Usuário não autenticado" };
+      }
+      
       try {
         const response = await apiService.setBudgets(budgets);
 

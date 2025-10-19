@@ -30,7 +30,7 @@ export function TransactionItem({
   categorias,
   onUpdate,
 }: TransactionItemProps) {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
   const [editState, setEditState] = useState<Partial<Transaction>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function TransactionItem({
   }
   // Função para salvar a edição na API
   async function saveChanges() {
-    if (!apiService.isAuthenticated()) {
+    if (!isAuthenticated) {
       toast.error("Sessão expirada. Por favor, faça login novamente.");
       return;
     }

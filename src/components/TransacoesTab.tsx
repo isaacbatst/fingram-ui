@@ -26,7 +26,6 @@ import {
 import { useState } from "react";
 import type { Category } from "../hooks/useCategories";
 import { ErrorDisplay } from "./ErrorDisplay";
-import { LoadingSpinner } from "./LoadingSpinner";
 import { TransactionItem } from "./TransactionItem";
 
 export type Transaction = {
@@ -58,7 +57,7 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
   const [filtroCategoria, setFiltroCategoria] = useState<string>("");
   const [filtroDescricao, setFiltroDescricao] = useState<string>("");
   // Usando o hook para buscar as transações
-  const { data, isLoading, error, mutate: mutateTransactions } = useTransactions({
+  const { data, error, mutate: mutateTransactions } = useTransactions({
     page: currentPage,
     month: filtroMes,
     year: filtroAno,
@@ -282,14 +281,12 @@ export function TransacoesTab({ categories, mutateSummary }: TransacoesTabProps)
         </Collapsible>
       )}
 
-      {isLoading && <LoadingSpinner />}
-
       {error && (
         <ErrorDisplay error={error} onRetry={() => mutateTransactions()} className="my-4" />
       )}
 
       <div className="space-y-3 pb-2">
-        {!isLoading && !error && transactions.length === 0 ? (
+        {transactions.length === 0 ? (
           <div className="text-gray-400 text-center py-8">
             Nenhuma transação encontrada
           </div>

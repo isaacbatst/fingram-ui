@@ -17,22 +17,23 @@ import type {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 
 export class StandaloneApiService implements ApiService {
-  private accessToken: string | null = null;
-
-  constructor(accessToken: string | null = null) {
-    this.accessToken = accessToken;
+  constructor() {
+    // No need to store tokens - authentication is handled by HTTP-only cookies
   }
 
-  updateAccessToken(accessToken: string | null) {
-    this.accessToken = accessToken;
+  updateAccessToken() {
+    // No-op since we're using cookie-based authentication
   }
 
   isAuthenticated(): boolean {
-    return this.accessToken !== null;
+    // Authentication status is managed by the AuthContext
+    // This method is kept for interface compatibility
+    return true;
   }
 
   getSessionToken(): string | null {
-    return this.accessToken;
+    // No session token needed with cookie-based authentication
+    return null;
   }
 
   private async makeRequest(
@@ -71,26 +72,15 @@ export class StandaloneApiService implements ApiService {
 
     const data = await response.json();
     
-    // Set the access token for future requests
-    this.accessToken = accessToken;
-    
     return data;
   }
 
   async getSummary(): Promise<SummaryData> {
-    if (!this.accessToken) {
-      throw new Error("Usuário não autenticado");
-    }
-
     const response = await this.makeRequest('/summary');
     return response.json();
   }
 
   async getBudgetSummary(year?: number, month?: number): Promise<BudgetSummaryData> {
-    if (!this.accessToken) {
-      throw new Error("Usuário não autenticado");
-    }
-
     const url = new URL(`${API_BASE_URL}/vault/summary`);
     if (year && month) {
       url.searchParams.append("year", year.toString());
@@ -107,10 +97,6 @@ export class StandaloneApiService implements ApiService {
   }
 
   async getTransactions(params?: TransactionsParams): Promise<Paginated<TransactionDTO>> {
-    if (!this.accessToken) {
-      throw new Error("Usuário não autenticado");
-    }
-
     const url = new URL(`${API_BASE_URL}/vault/transactions`);
     
     if (params?.page) {
@@ -132,10 +118,6 @@ export class StandaloneApiService implements ApiService {
   }
 
   async createTransaction(request: CreateTransactionRequest): Promise<CreateTransactionResponse> {
-    if (!this.accessToken) {
-      return { error: "Token de acesso não encontrado" };
-    }
-
     try {
       const response = await this.makeRequest('/create-transaction', {
         method: "POST",
@@ -150,10 +132,6 @@ export class StandaloneApiService implements ApiService {
   }
 
   async editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse> {
-    if (!this.accessToken) {
-      return { error: "Token de acesso não encontrado" };
-    }
-
     try {
       await this.makeRequest('/edit-transaction', {
         method: "POST",
@@ -168,10 +146,6 @@ export class StandaloneApiService implements ApiService {
   }
 
   async setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse> {
-    if (!this.accessToken) {
-      return { error: "Token de acesso não encontrado" };
-    }
-
     try {
       await this.makeRequest('/set-budgets', {
         method: "POST",

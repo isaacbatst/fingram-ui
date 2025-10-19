@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
+import { useApi } from "@/hooks/useApi";
 import { Loader2, Key } from "lucide-react";
 
 export function VaultAccessTokenInput() {
   const [accessToken, setAccessToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { authenticateWithVaultToken } = useAuth();
+  const { authenticateWithVaultToken } = useApi();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

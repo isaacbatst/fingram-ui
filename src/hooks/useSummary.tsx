@@ -22,7 +22,7 @@ export interface SummaryData {
 }
 
 export function useSummary() {
-  const apiService = useApi();
+  const { apiService, isAuthenticated } = useApi();
 
   // Função para buscar os dados do resumo
   const fetcher = useCallback(
@@ -34,7 +34,7 @@ export function useSummary() {
 
   // Usando SWR para gerenciar o estado e buscar os dados
   return useSWR(
-    apiService.isAuthenticated() ? "summary" : null,
+    isAuthenticated ? "summary" : null,
     fetcher
   );
 }
