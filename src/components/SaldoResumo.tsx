@@ -23,8 +23,7 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
               strokeLinecap="round"
             />
           </svg>
-          + R${" "}
-          {receitas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          + R$ {receitas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </div>
         <div className="flex items-center gap-1 font-medium text-red-600">
           <svg width="16" height="16" fill="none" className="inline">
@@ -35,10 +34,12 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
               strokeLinecap="round"
             />
           </svg>
-          - R${" "}
-          {despesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          - R$ {despesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </div>
       </div>
+      <p className="text-xs text-gray-400 my-2">
+        (receitas e despesas deste mês)
+      </p>
     </div>
   );
 }

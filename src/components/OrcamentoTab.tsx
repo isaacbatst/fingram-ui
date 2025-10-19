@@ -62,6 +62,12 @@ export function OrcamentoTab() {
       usado: b.spent,
     })) ?? [];
 
+  // Calcular totais do orçamento
+  const totalOrcamento = orcamento.reduce((sum, item) => sum + item.valor, 0);
+  const totalGasto = orcamento.reduce((sum, item) => sum + item.usado, 0);
+  const saldoRestante = totalOrcamento - totalGasto;
+  const percentualUso = totalOrcamento > 0 ? (totalGasto / totalOrcamento) * 100 : 0;
+
   const handleEditClick = () => {
     setIsEditing(true);
     // Inicializar os valores dos inputs com os valores atuais
@@ -193,6 +199,51 @@ export function OrcamentoTab() {
           </Select>
         </div>
       </div>
+
+      {/* Resumo do Orçamento */}
+      {orcamento.length > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="text-center">
+            <div className="text-sm font-medium text-blue-700 mb-2">
+              Resumo do Orçamento
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Orçamento Total</div>
+                <div className="text-lg font-bold text-gray-900">
+                  R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Total Gasto</div>
+                <div className="text-lg font-bold text-red-600">
+                  R$ {totalGasto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">Saldo Restante</span>
+                <span className={`text-sm font-medium ${saldoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {saldoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    percentualUso > 90 ? 'bg-red-500' : 
+                    percentualUso > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min(100, percentualUso)}%` }}
+                ></div>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {percentualUso.toFixed(1)}% do orçamento utilizado
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (

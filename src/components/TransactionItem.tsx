@@ -154,7 +154,7 @@ export function TransactionItem({
             }`}
           />
           <div className="flex-1">
-            <div className="font-medium text-gray-300 mb-1">
+            <div className="font-medium text-gray-600 mb-1">
               {tx.description || "(Sem descrição)"}
             </div>
             <div className="text-xs text-gray-400">
