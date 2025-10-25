@@ -12,6 +12,7 @@ export interface ApiContextType {
   pendingTempToken: string | null;
   confirmTempTokenExchange: () => Promise<void>;
   dismissTempToken: () => void;
+  refreshAuth: () => Promise<void>;
 }
 
 export const ApiContext = createContext<ApiContextType | null>(null);

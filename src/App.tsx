@@ -14,19 +14,7 @@ import { Toaster } from "./components/ui/sonner";
 import { useCategories } from "./hooks/useCategories";
 import { useSummary } from "./hooks/useSummary";
 import { useApi } from "./hooks/useApi";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { AccountButton } from "@/components/AccountButton";
 
 function AppContent() {
   const auth = useApi();
@@ -74,36 +62,11 @@ function AppContent() {
     <div className="min-h-screen flex flex-col items-center bg-white text-gray-900">
       {auth.isAuthenticated && (
         <div className="flex justify-end self-stretch p-5">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                title="Sair"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar logout</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja sair? Você precisará inserir seu token de acesso novamente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={auth.logout}>
-                  Sair
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <AccountButton />
         </div>
       )}
 
-      <div className="rounded-3xl shadow-xl p-5 w-full max-w-sm mb-4 border">
+      <div className="rounded-3xl p-5 w-full sm:max-w-sm sm:shadow-xl sm:border">
         {summary.data && summary.data.vault ? (
           <>
             <SaldoResumo
@@ -172,7 +135,6 @@ function AppContent() {
           </div>
         )}
       </div>
-      <div className="text-xs mt-auto mb-2">Fingram &copy; {new Date().getFullYear()}</div>
     </div>
   );
 }

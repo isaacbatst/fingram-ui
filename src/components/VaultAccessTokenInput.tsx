@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useApi } from "@/hooks/useApi";
 import { Loader2, Key } from "lucide-react";
+import { CreateVaultDialog } from "./CreateVaultDialog";
 
 export function VaultAccessTokenInput() {
   const [accessToken, setAccessToken] = useState("");
@@ -81,6 +82,13 @@ export function VaultAccessTokenInput() {
         
         <div className="mt-4 text-xs text-gray-500 text-center">
           <p>Você pode obter seu token de acesso através do bot do Telegram</p>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="text-center text-sm text-gray-600 mb-3">
+            Ou crie um novo cofre
+          </div>
+          <CreateVaultDialog />
         </div>
       </CardContent>
     </Card>

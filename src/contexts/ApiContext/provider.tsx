@@ -125,6 +125,32 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
     window.history.replaceState({}, "", newUrl.toString());
   }, []);
 
+  const refreshAuth = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_BASE_URL}/vault/me`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        // User is authenticated
+        setIsAuthenticated(true);
+      } else {
+        // User is not authenticated
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      console.warn("Error checking authentication status:", error);
+      // Assume not authenticated on error
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const checkTempToken = useCallback(() => {
     // Check for temporary token in URL first
     const urlParams = new URLSearchParams(window.location.search);
@@ -192,6 +218,7 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
         pendingTempToken,
         confirmTempTokenExchange,
         dismissTempToken,
+        refreshAuth,
       }}
     >
       {children}
