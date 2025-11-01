@@ -12,6 +12,7 @@ export interface SerializedTransaction {
   isCommitted: boolean;
   description?: string;
   createdAt: string; // Date como string JSON
+  date: string; // Date como string JSON
   categoryId: string | null;
   type: 'expense' | 'income';
   vaultId: string;

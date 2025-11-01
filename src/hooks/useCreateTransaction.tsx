@@ -27,7 +27,7 @@ export function useCreateTransaction() {
         };
       }
     },
-    [apiService]
+    [apiService, isAuthenticated]
   );
 
   return { createTransaction };

@@ -35,6 +35,7 @@ export type Transaction = {
       };
   categoryCode?: string; // código da categoria para edição
   description: string;
+  createdAt: string;
   date: string;
 };
 
@@ -77,7 +78,8 @@ export function TransacoesTab({
         // Mantém o categoryCode para compatibilidade
         categoryCode: tx.category?.code || "",
         description: tx.description || "",
-        date: tx.createdAt.toString(),
+        date: tx.date.toString(),
+        createdAt: tx.createdAt.toString(),
       }))
     : [];
 
