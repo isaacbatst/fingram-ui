@@ -15,11 +15,17 @@ import { useCategories } from "./hooks/useCategories";
 import { useSummary } from "./hooks/useSummary";
 import { useApi } from "./hooks/useApi";
 import { AccountButton } from "@/components/AccountButton";
+import { useSearchParams } from "./hooks/useSearchParams";
 
 function AppContent() {
   const auth = useApi();
   const summary = useSummary();
   const categories = useCategories();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get("aba") || "input";
+  const setCurrentTab = (tab: string) => {
+    setSearchParams({ aba: tab });
+  }
 
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
@@ -76,7 +82,7 @@ function AppContent() {
             />
 
             {/* Tabs: Orçamento / Transações / Input */}
-            <Tabs defaultValue="input" className="w-full">
+            <Tabs defaultValue={currentTab} className="w-full" onValueChange={setCurrentTab}>
               <TabsList className="w-full mb-4">
                 <TabsTrigger className="w-1/3" value="input">
                   Registro

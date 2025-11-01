@@ -14,8 +14,8 @@ import {
   ChevronRight,
   X
 } from "lucide-react";
-import { useState } from "react";
 import type { Category } from "../hooks/useCategories";
+import { useSearchParams } from "../hooks/useSearchParams";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { TransactionItem } from "./TransactionItem";
@@ -48,11 +48,29 @@ export function TransacoesTab({
   categories,
   mutateSummary,
 }: TransacoesTabProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
-  const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
-  const [filtroCategoria, setFiltroCategoria] = useState<string>("");
-  const [filtroDescricao, setFiltroDescricao] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = parseInt(searchParams.get("transacoes_pagina") || "1", 10);
+  const setCurrentPage = (page: number) => {
+    setSearchParams({ transacoes_pagina: page.toString() });
+  }
+
+  const filtroMes = parseInt(searchParams.get("transacoes_mes") || (new Date().getMonth() + 1).toString(), 10);
+  const setFiltroMes = (month: number) => {
+    setSearchParams({ transacoes_mes: month.toString() });
+  }
+  const filtroAno = parseInt(searchParams.get("transacoes_ano") || new Date().getFullYear().toString(), 10);
+  const setFiltroAno = (year: number) => {
+    setSearchParams({ transacoes_ano: year.toString() });
+  }
+  const filtroCategoria = searchParams.get("transacoes_categoria") || "";
+  const setFiltroCategoria = (category: string) => {
+    setSearchParams({ transacoes_categoria: category });
+  }
+  const filtroDescricao = searchParams.get("transacoes_descricao") || "";
+  const setFiltroDescricao = (description: string) => {
+    setSearchParams({ transacoes_descricao: description });
+  }
   // Usando o hook para buscar as transações
   const {
     data,
@@ -183,7 +201,7 @@ export function TransacoesTab({
               size="icon"
               className="h-8 w-8"
               disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -196,7 +214,7 @@ export function TransacoesTab({
               className="h-8 w-8"
               disabled={currentPage >= data.totalPages}
               onClick={() =>
-                setCurrentPage((p) => Math.min(data.totalPages, p + 1))
+                setCurrentPage(Math.min(data.totalPages, currentPage + 1))
               }
             >
               <ChevronRight className="h-4 w-4" />

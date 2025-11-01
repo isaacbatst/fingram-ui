@@ -16,13 +16,18 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import type { Category } from "../hooks/useCategories";
-import type { Transaction } from "./TransacoesTab";
 import { CategorySelect } from "./CategorySelect";
+import { DatePicker } from "./DatePicker";
+import type { Transaction } from "./TransacoesTab";
 
 type TransactionItemProps = {
   transaction: Transaction;
   categorias?: Category[]; // Agora é opcional
   onUpdate?: () => Promise<void>;
+};
+
+const dateOnly = (date: string) => {
+  return date.split("T")[0].split("-").reverse().join("/");
 };
 
 export function TransactionItem({
@@ -31,30 +36,37 @@ export function TransactionItem({
   onUpdate,
 }: TransactionItemProps) {
   const { apiService, isAuthenticated } = useApi();
-  const [editState, setEditState] = useState<Partial<Transaction>>({});
+  const [editState, setEditState] = useState<
+    Partial<Transaction & { transactionFormattedDate: string }>
+  >({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Garantir que a transação tenha categoryCode definido
   const tx = {
     ...txOriginal,
-    categoryCode: txOriginal.categoryCode || (
-      typeof txOriginal.category === 'object' 
-        ? txOriginal.category.code 
-        : txOriginal.category
-    ),
+    categoryCode:
+      txOriginal.categoryCode ||
+      (typeof txOriginal.category === "object"
+        ? txOriginal.category.code
+        : txOriginal.category),
   };
-  
+
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
   // e a categoria atual não estiver mais na lista
   useEffect(() => {
     if (categorias && editState.categoryCode) {
-      const categoryExists = categorias.some(c => c.code === editState.categoryCode);
+      const categoryExists = categorias.some(
+        (c) => c.code === editState.categoryCode
+      );
       if (!categoryExists) {
-        console.log("Categoria não encontrada no novo conjunto, resetando:", editState.categoryCode);
-        setEditState(state => ({
+        console.log(
+          "Categoria não encontrada no novo conjunto, resetando:",
+          editState.categoryCode
+        );
+        setEditState((state) => ({
           ...state,
-          categoryCode: tx.categoryCode
+          categoryCode: tx.categoryCode,
         }));
       }
     }
@@ -71,31 +83,37 @@ export function TransactionItem({
     ? categorias.map((cat: Category) => ({
         label: cat.name,
         value: cat.code,
-        type: cat.transactionType === "both" 
-          ? "both" 
-          : (cat.transactionType as "income" | "expense"),
+        type:
+          cat.transactionType === "both"
+            ? "both"
+            : (cat.transactionType as "income" | "expense"),
       }))
     : []; // array vazio se não houver categorias
-  
+
   // Log para debug de categorias
   useEffect(() => {
     if (categorias && categorias.length > 0) {
-      console.log(`TransactionItem: ${categorias.length} categorias carregadas`);
+      console.log(
+        `TransactionItem: ${categorias.length} categorias carregadas`
+      );
     }
   }, [categorias]);
-    
+
   // Filtrar categorias com base no tipo da transação atual
   const filteredCategories = categories.filter(
-    cat => cat.type === "both" || cat.type === (editState.type ?? tx.type)
+    (cat) => cat.type === "both" || cat.type === (editState.type ?? tx.type)
   );
-  
+
   // Debug de categorias filtradas
   useEffect(() => {
     if (filteredCategories.length > 0) {
-      console.log(`TransactionItem: ${filteredCategories.length} categorias filtradas para tipo ${editState.type ?? tx.type}`);
+      console.log(
+        `TransactionItem: ${
+          filteredCategories.length
+        } categorias filtradas para tipo ${editState.type ?? tx.type}`
+      );
     }
   }, [filteredCategories.length, editState.type, tx.type]);
-
 
   // Função para remover o estado de edição
 
@@ -117,9 +135,7 @@ export function TransactionItem({
       const result = await apiService.editTransaction({
         transactionCode: tx.code,
         newAmount:
-          editState.amount !== undefined
-            ? Number(editState.amount)
-            : undefined,
+          editState.amount !== undefined ? Number(editState.amount) : undefined,
         newDate: editState.date,
         newCategory: editState.categoryCode,
         newDescription: editState.description,
@@ -144,6 +160,9 @@ export function TransactionItem({
     }
   }
 
+  console.log(editState.date, tx.date);
+  const dateValue = editState.date ? new Date(editState.date) : tx.date ? new Date(tx.date) : undefined;
+  console.log(dateValue);
   return (
     <AccordionItem value={tx.id} key={tx.id}>
       <AccordionTrigger className="py-2">
@@ -158,10 +177,18 @@ export function TransactionItem({
               {tx.description || "(Sem descrição)"}
             </div>
             <div className="text-xs text-gray-400">
-              {new Date(tx.date).toLocaleDateString("pt-BR")} •{" "}
+              {dateOnly(tx.date)} •{" "}
               {categories.find((c) => c.value === tx.categoryCode)?.label ||
-               categories.find((c) => c.value === (typeof tx.category === 'string' ? tx.category : tx.category.code))?.label ||
-               (typeof tx.category === 'object' ? tx.category.name : tx.category)}
+                categories.find(
+                  (c) =>
+                    c.value ===
+                    (typeof tx.category === "string"
+                      ? tx.category
+                      : tx.category.code)
+                )?.label ||
+                (typeof tx.category === "object"
+                  ? tx.category.name
+                  : tx.category)}
             </div>
           </div>
           <div
@@ -198,10 +225,10 @@ export function TransactionItem({
                   }))
                 }
               >
-                <SelectTrigger 
+                <SelectTrigger
                   className={`text-xs ${
-                    (editState.type ?? tx.type) === "income" 
-                      ? "border-green-500 bg-green-100/10" 
+                    (editState.type ?? tx.type) === "income"
+                      ? "border-green-500 bg-green-100/10"
                       : "border-red-500 bg-red-100/10"
                   }`}
                 >
@@ -242,29 +269,18 @@ export function TransactionItem({
               currentTransactionType={editState.type ?? tx.type}
             />
           </div>
-          <Input
-            className="text-xs"
-            value={editState.description ?? tx.description}
-            onChange={(e) =>
-              setEditState((s) => ({
-                ...s,
-                description: e.target.value,
-              }))
-            }
-            placeholder="Descrição"
-          />
-          <Input
-            type="date"
-            className="text-xs"
-            // 
-            value={editState.date ?? tx.date.substring(0, 10)}
-            onChange={(e) =>
-              setEditState((s) => ({
-                ...s,
-                date: e.target.value,
-              }))
-            }
-          />
+          <div className="flex flex-col gap-3">
+            <DatePicker 
+              date={dateValue}
+              onDateChange={(date) =>
+                setEditState((s) => ({
+                  ...s,
+                  date: date?.toISOString(),
+                }))
+              }
+              placeholder="Escolha uma data"
+            />
+          </div>
           <div className="flex gap-2 justify-end">
             <Button type="submit" size="sm" disabled={isSaving}>
               {isSaving ? "Salvando..." : "Salvar"}

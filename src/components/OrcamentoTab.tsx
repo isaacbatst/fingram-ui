@@ -15,7 +15,7 @@ import { useState } from "react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
-
+import { useSearchParams } from "@/hooks/useSearchParams";
 const months = [
   { value: 1, label: "Janeiro" },
   { value: 2, label: "Fevereiro" },
@@ -36,12 +36,18 @@ const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
 export function OrcamentoTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { setBudgets } = useBudgets();
   const { data: categories } = useCategories();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1
-  );
+  const selectedYear = parseInt(searchParams.get("orcamento_ano") || currentYear.toString(), 10);
+  const setSelectedYear = (year: number) => {
+    setSearchParams({ orcamento_ano: year.toString() });
+  }
+  const selectedMonth = parseInt(searchParams.get("orcamento_mes") || (new Date().getMonth() + 1).toString(), 10);
+  const setSelectedMonth = (month: number) => {
+    setSearchParams({ orcamento_mes: month.toString() });
+  }
+
   const [isEditing, setIsEditing] = useState(false);
   const [editingBudgets, setEditingBudgets] = useState<
     Record<string, string>
@@ -50,6 +56,7 @@ export function OrcamentoTab() {
 
   const {
     data: budgetData,
+    isLoading,
     error,
     mutate,
   } = useBudgetSummary(selectedYear, selectedMonth);
@@ -242,6 +249,12 @@ export function OrcamentoTab() {
         </div>
       )}
 
+      {!budgetData && !error && isLoading && (
+        <div className="text-center py-2">
+          <LoadingSpinner />
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <ErrorDisplay error={error.message} onRetry={mutate} className="my-4" />
@@ -320,7 +333,7 @@ export function OrcamentoTab() {
                     </div>
                   );
                 })
-              ) : (
+              ) : !isLoading && (
                 <div className="text-center p-6 text-gray-500">
                   <p className="text-sm">
                     Nenhum orçamento definido para este período
