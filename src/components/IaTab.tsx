@@ -57,16 +57,22 @@ export function IaTab() {
       messages.push({ type: "message", role: "user", content: message });
     }
 
-    setHistory([
-      ...messages,
-      // This is just a placeholder to show on the UI to show the agent is working
-      {
-        type: "message",
-        role: "assistant",
-        content: [],
-        status: "in_progress",
-      },
-    ]);
+    const lastHistory = history[history.length - 1];
+    if (
+      !lastHistory ||
+      ("status" in lastHistory && lastHistory.status !== "in_progress")
+    ) {
+      setHistory([
+        ...messages,
+        // This is just a placeholder to show on the UI to show the agent is working
+        {
+          type: "message",
+          role: "assistant",
+          content: [],
+          status: "in_progress",
+        },
+      ]);
+    }
 
     // We will send the messages to the API route along with the conversation ID if we have one
     // and the decisions if we had any approvals in this turn
@@ -87,7 +93,6 @@ export function IaTab() {
     );
 
     const data = await response.json();
-    console.log("data", data);
     if (data.conversationId) {
       setConversationId(data.conversationId);
     }

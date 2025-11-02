@@ -194,7 +194,7 @@ export default function App() {
           <AppContent />
         </ApiProvider>
       </StorageProvider>
-      <Toaster richColors />
+      <Toaster closeButton richColors />
     </ErrorBoundary>
   );
 }
