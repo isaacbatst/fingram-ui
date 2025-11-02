@@ -1,4 +1,3 @@
-import React from 'react';
 import ClockIcon from '@/components/icons/ClocksIcon';
 import FunctionsIcon from '@/components/icons/FunctionsIcon';
 
