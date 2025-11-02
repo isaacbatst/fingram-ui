@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Check, Loader2, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
@@ -19,6 +20,17 @@ import type { Category } from "../hooks/useCategories";
 import { CategorySelect } from "./CategorySelect";
 import { DatePicker } from "./DatePicker";
 import type { Transaction } from "./TransacoesTab";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 
 type TransactionItemProps = {
   transaction: Transaction;
@@ -40,6 +52,7 @@ export function TransactionItem({
     Partial<Transaction & { transactionFormattedDate: string }>
   >({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Garantir que a transação tenha categoryCode definido
@@ -159,10 +172,27 @@ export function TransactionItem({
       setIsSaving(false);
     }
   }
-
-  console.log(editState.date, tx.date);
-  const dateValue = editState.date ? new Date(editState.date) : tx.date ? new Date(tx.date) : undefined;
-  console.log(dateValue);
+  const deleteTransaction = async () => {
+    try {
+      setIsDeleting(true);
+      const result = await apiService.deleteTransaction(tx.code);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        if (onUpdate) {
+          await onUpdate();
+        }
+        toast.success("Transação deletada com sucesso!");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  const dateValue = editState.date
+    ? new Date(editState.date)
+    : tx.date
+    ? new Date(tx.date)
+    : undefined;
   return (
     <AccordionItem value={tx.id} key={tx.id}>
       <AccordionTrigger className="py-2">
@@ -270,7 +300,7 @@ export function TransactionItem({
             />
           </div>
           <div className="flex flex-col gap-3">
-            <DatePicker 
+            <DatePicker
               date={dateValue}
               onDateChange={(date) =>
                 setEditState((s) => ({
@@ -281,19 +311,71 @@ export function TransactionItem({
               placeholder="Escolha uma data"
             />
           </div>
-          <div className="flex gap-2 justify-end">
-            <Button type="submit" size="sm" disabled={isSaving}>
-              {isSaving ? "Salvando..." : "Salvar"}
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              type="submit"
+              size="sm"
+              disabled={isSaving || isDeleting}
+            >
+              {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+              Salvar
             </Button>
+
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              className="flex-1"
+              variant="secondary"
               onClick={clearEditState}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
             >
+              <X className="size-4" />
               Cancelar
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1"
+                  variant="destructive"
+                  disabled={isSaving || isDeleting}
+                >
+                  {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  Deletar
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Tem certeza que deseja deletar a transação?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Esta transação será
+                    deletada permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel asChild>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isDeleting}
+                    >
+                      <X className="size-4" />
+                      Cancelar
+                    </Button>
+                  </AlertDialogCancel>
+                  <AlertDialogAction asChild onClick={deleteTransaction}>
+                    <Button variant="destructive" type="button" disabled={isDeleting}>
+                      <Trash2 className="size-4" />
+                      Deletar
+                    </Button>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
         </form>

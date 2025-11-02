@@ -16,6 +16,7 @@ import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
 import { useSearchParams } from "@/hooks/useSearchParams";
+import { ScrollArea } from "./ui/scroll-area";
 const months = [
   { value: 1, label: "Janeiro" },
   { value: 2, label: "Fevereiro" },
@@ -131,7 +132,7 @@ export function OrcamentoTab() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4">
         <div className="mb-3 font-semibold text-gray-700 text-base flex justify-between items-center">
           <span>Orçamento por categoria</span>
@@ -173,7 +174,7 @@ export function OrcamentoTab() {
         </div>
 
         {/* Seletores de ano e mês */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2">
           <Select
             value={selectedMonth.toString()}
             onValueChange={(value) => setSelectedMonth(parseInt(value, 10))}
@@ -209,7 +210,7 @@ export function OrcamentoTab() {
 
       {/* Resumo do Orçamento */}
       {orcamento.length > 0 && (
-        <div className="bg-gradient-to-r  border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="bg-gradient-to-r  border border-gray-200 rounded-lg p-4 mb-3">
           <div className="text-center">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
@@ -261,7 +262,7 @@ export function OrcamentoTab() {
       )}
 
       {/* Conteúdo do orçamento */}
-      <div className="space-y-4">
+      <ScrollArea className="space-y-4 flex flex-col flex-1 pr-3 overflow-y-auto">
           {isEditing ? (
             // Modo de edição - mostrar todas as categorias
             <>
@@ -315,7 +316,7 @@ export function OrcamentoTab() {
                   const bgColor = "#e5e7eb"; // gray-200
 
                   return (
-                    <div key={c.categoria}>
+                    <div key={c.categoria} className="mb-1">
                       <div className="flex justify-between mb-1">
                         <span className="font-medium text-gray-600">
                           {c.categoria}
@@ -328,7 +329,7 @@ export function OrcamentoTab() {
                         value={pct}
                         filledColor={filledColor}
                         bgColor={bgColor}
-                        className="h-4"
+                        className="h-3"
                       />
                     </div>
                   );
@@ -345,7 +346,7 @@ export function OrcamentoTab() {
               )}
             </>
           )}
-        </div>
+        </ScrollArea>
     </div>
   );
 }

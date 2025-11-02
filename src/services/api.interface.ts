@@ -1,9 +1,9 @@
 import type { BudgetSummaryData } from "@/hooks/useBudgetSummary";
-import type { SummaryData } from "@/hooks/useSummary";
 import type { Category } from "@/hooks/useCategories";
+import type { SummaryData } from "@/hooks/useSummary";
+import type { TransactionsParams } from "@/hooks/useTransactions";
 import type { Paginated } from "@/utils/paginated";
 import type { TransactionDTO } from "@/utils/transaction.dto,";
-import type { TransactionsParams } from "@/hooks/useTransactions";
 
 export interface Budget {
   categoryId: string;
@@ -60,4 +60,7 @@ export interface ApiService {
   
   // Budgets
   setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse>;
+  deleteTransaction(transactionCode: string): Promise<{
+    error?: string;
+  }>;
 }

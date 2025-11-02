@@ -6,7 +6,7 @@ type SaldoResumoProps = {
 
 export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
   return (
-    <div className="text-center mb-6">
+    <div className="text-center mb-3 sm:mt-3  ">
       <div className="uppercase text-xs tracking-widest font-semibold mb-1 text-gray-500">
         Saldo
       </div>

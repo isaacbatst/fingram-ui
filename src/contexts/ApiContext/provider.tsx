@@ -20,7 +20,6 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
 
   // Always provide an API service
   const apiService = useMemo(() => {
-    console.log("API: Usando Standalone API com cookie authentication");
     return new StandaloneApiService();
   }, []);
 
@@ -195,7 +194,7 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
   }, [authenticateWithTempToken, checkTempToken]);
 
   // Refetch data when authentication status changes
-  useMemo(() => {
+  useEffect(() => {
     if (isAuthenticated) {
       mutate("summary"); // Refetch summary data on authentication change
       mutate("categories"); // Refetch categories data on authentication change

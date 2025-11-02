@@ -65,10 +65,9 @@ export function AccountButton() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full"
             title="Conta"
           >
-            <User className="h-4 w-4" />
+            <User className="text-2xl" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

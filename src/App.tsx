@@ -1,21 +1,28 @@
+import { AccountButton } from "@/components/AccountButton";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OrcamentoTab } from "@/components/OrcamentoTab";
 import { SaldoResumo } from "@/components/SaldoResumo";
-import { TransacoesTab } from "@/components/TransacoesTab";
-import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
+import { TransacoesTab } from "@/components/TransacoesTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StorageProvider } from "@/contexts/StorageContext/provider";
+import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
+import { StorageProvider } from "@/contexts/StorageContext/provider";
+import {
+  ChartPie,
+  DollarSign,
+  MessageCircle,
+  Search
+} from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
+import { IaTab } from "./components/IaTab";
 import { Toaster } from "./components/ui/sonner";
-import { useCategories } from "./hooks/useCategories";
-import { useSummary } from "./hooks/useSummary";
 import { useApi } from "./hooks/useApi";
-import { AccountButton } from "@/components/AccountButton";
+import { useCategories } from "./hooks/useCategories";
 import { useSearchParams } from "./hooks/useSearchParams";
+import { useSummary } from "./hooks/useSummary";
 
 function AppContent() {
   const auth = useApi();
@@ -25,7 +32,7 @@ function AppContent() {
   const currentTab = searchParams.get("aba") || "input";
   const setCurrentTab = (tab: string) => {
     setSearchParams({ aba: tab });
-  }
+  };
 
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
@@ -42,7 +49,7 @@ function AppContent() {
     if (auth.pendingTempToken) {
       return <TempTokenConfirmation />;
     }
-    
+
     // Need authentication
     if (!auth.isAuthenticated) {
       return (
@@ -51,7 +58,7 @@ function AppContent() {
         </div>
       );
     }
-    
+
     // If we have an error and not authenticated, show error
     if (auth.error && !auth.isAuthenticated) {
       return (
@@ -65,48 +72,71 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white text-gray-900">
+    <div className="h-screen flex flex-col items-center bg-white text-gray-900">
       {auth.isAuthenticated && (
-        <div className="flex justify-end self-stretch p-5">
+        <div className="flex justify-end self-stretch px-5 py-2">
           <AccountButton />
         </div>
       )}
 
-      <div className="rounded-3xl p-5 w-full sm:max-w-sm sm:shadow-xl sm:border">
+      <div className="rounded-3xl min-h-0 sm:p-5 w-full flex flex-col flex-1 sm:max-w-md sm:shadow-xl sm:border">
         {summary.data && summary.data.vault ? (
           <>
-            <SaldoResumo
-              saldo={summary.data.vault.balance}
-              receitas={summary.data.vault.totalIncomeAmount}
-              despesas={summary.data.vault.totalSpentAmount}
-            />
-
-            {/* Tabs: Orçamento / Transações / Input */}
-            <Tabs defaultValue={currentTab} className="w-full" onValueChange={setCurrentTab}>
-              <TabsList className="w-full mb-4">
-                <TabsTrigger className="w-1/3" value="input">
-                  Registro
-                </TabsTrigger>
-                <TabsTrigger className="w-1/3" value="orcamento">
-                  Orçamento
-                </TabsTrigger>
-                <TabsTrigger className="w-1/3" value="transacoes">
-                  Transações
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="input">
+            <Tabs
+              defaultValue={currentTab}
+              className="flex-1 min-h-0 w-full"
+              onValueChange={setCurrentTab}
+            >
+              <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
+                <IaTab />
+              </TabsContent>
+              <TabsContent value="input" className="px-4">
+                <SaldoResumo
+                  saldo={summary.data.vault.balance}
+                  receitas={summary.data.vault.totalIncomeAmount}
+                  despesas={summary.data.vault.totalSpentAmount}
+                />
                 <InputTab />
               </TabsContent>
-              <TabsContent value="orcamento">
+              <TabsContent
+                value="orcamento"
+                className="px-4 flex flex-col flex-1 min-h-0"
+              >
+                <SaldoResumo
+                  saldo={summary.data.vault.balance}
+                  receitas={summary.data.vault.totalIncomeAmount}
+                  despesas={summary.data.vault.totalSpentAmount}
+                />
                 <OrcamentoTab />
               </TabsContent>
               {/* Tab Transações */}
-              <TabsContent value="transacoes">
+              <TabsContent value="transacoes" className="px-4">
+                <SaldoResumo
+                  saldo={summary.data.vault.balance}
+                  receitas={summary.data.vault.totalIncomeAmount}
+                  despesas={summary.data.vault.totalSpentAmount}
+                />
                 <TransacoesTab
                   categories={categories.data || []}
                   mutateSummary={summary.mutate}
                 />
               </TabsContent>
+              <div className="flex">
+                <TabsList className="flex-1 w-auto">
+                  <TabsTrigger value="ia">
+                    <MessageCircle className="w-4 h-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="input">
+                    <DollarSign className="w-4 h-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="orcamento">
+                    <ChartPie className="w-4 h-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="transacoes">
+                    <Search className="w-4 h-4" />
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </Tabs>
           </>
         ) : summary.error ? (

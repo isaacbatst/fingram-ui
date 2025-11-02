@@ -17,6 +17,8 @@ import type {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 
 export class StandaloneApiService implements ApiService {
+  static BASE_URL = API_BASE_URL;
+
   constructor() {
     // No need to store tokens - authentication is handled by HTTP-only cookies
   }
@@ -161,6 +163,21 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao conectar com o servidor:", error);
       return { error: "Erro ao conectar com o servidor" };
+    }
+  }
+
+  async deleteTransaction(transactionCode: string): Promise<{
+    error?: string;
+  }> {
+    try {
+      await this.makeRequest('/delete-transaction', {
+        method: "POST",
+        body: JSON.stringify({ transactionCode }),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao conectar com o servidor:", error);
+      return { error: "Erro ao deletar transação" };
     }
   }
 }
