@@ -37,7 +37,7 @@ function AppContent() {
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-gray-900">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-white text-gray-900">
         <LoadingSpinner />
       </div>
     );
@@ -53,7 +53,7 @@ function AppContent() {
     // Need authentication
     if (!auth.isAuthenticated) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white text-gray-900">
+        <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-white text-gray-900">
           <VaultAccessTokenInput />
         </div>
       );
@@ -72,7 +72,7 @@ function AppContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col items-center bg-white text-gray-900">
+    <div className="h-dvh flex flex-col items-center bg-white text-gray-900">
       {auth.isAuthenticated && (
         <div className="flex justify-end self-stretch px-5 py-2">
           <AccountButton />

@@ -119,8 +119,8 @@ export function IaTab() {
   };
 
   return (
-    <div className="flex flex-1 min-h-0 pb-4 justify-center">
-      <div className="sm:p-4  flex flex-col flex-1 min-h-0 max-w-6xl w-full items-center">
+    <div className="flex flex-1 min-h-0 justify-center">
+      <div className="flex flex-col flex-1 min-h-0 max-w-6xl w-full items-center">
         <div className="flex flex-col flex-1 min-h-0 max-w-4xl w-full">
           <div className="flex-1 overflow-y-auto">
             {history && history.length > 0 ? (
@@ -144,7 +144,7 @@ export function IaTab() {
               </div>
             )}
           </div>
-          <form className="mx-2" onSubmit={handleSubmit}>
+          <form className="mx-4 sm:mx-0" onSubmit={handleSubmit}>
             <div className="gap-4 flex items-center w-full border border-gray-300 rounded-4xl p-2 focus-within:border-gray-500">
               <input
                 type="text"
