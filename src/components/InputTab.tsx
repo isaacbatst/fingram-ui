@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker } from "@/components/DatePicker";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { useCategories } from "@/hooks/useCategories";
+import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -22,14 +23,46 @@ export function InputTab() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categorySelectOpened, setCategorySelectOpened] = useState(false);
+  const categoryManuallySelected = useRef(false);
 
   const { createTransaction } = useCreateTransaction();
   const { data: categories } = useCategories();
+  const { apiService } = useApi();
 
   // Filter categories based on transaction type
   const filteredCategories = categories?.filter(cat => 
     cat.transactionType === type || cat.transactionType === 'both'
   ) || [];
+
+  const handleDescriptionBlur = async () => {
+    if (!description.trim() || categorySelectOpened || categoryManuallySelected.current) return;
+    
+    try {
+      const result = await apiService.suggestCategory({
+        description: description.trim(),
+        transactionType: type,
+      });
+      
+      if (result.categoryId && !categorySelectOpened && !categoryManuallySelected.current) {
+        setCategoryId(result.categoryId);
+      }
+    } catch (error) {
+      console.error('Error suggesting category:', error);
+    }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    categoryManuallySelected.current = true;
+    setCategoryId(value);
+  };
+
+  const handleCategorySelectOpenChange = (open: boolean) => {
+    setCategorySelectOpened(open);
+    if (open) {
+      categoryManuallySelected.current = true;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +103,7 @@ export function InputTab() {
         setAmount('');
         setCategoryId('');
         setDate(new Date());
+        categoryManuallySelected.current = false;
       }
     } catch (error) {
       console.error('Error creating transaction:', error);
@@ -105,6 +139,7 @@ export function InputTab() {
             placeholder="Ex: Almoço, Salário, etc."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onBlur={handleDescriptionBlur}
             required
           />
         </div>
@@ -124,21 +159,6 @@ export function InputTab() {
           />
         </div>
 
-        {/* Category */}
-        <div className="space-y-2">
-          <Label htmlFor="category">Categoria</Label>
-          <CategorySelect
-            categories={filteredCategories.map(cat => ({
-              label: cat.name,
-              value: cat.id,
-              type: cat.transactionType
-            }))}
-            value={categoryId}
-            onChange={setCategoryId}
-            currentTransactionType={type}
-          />
-        </div>
-
         {/* Date */}
         <div className="space-y-2">
           <Label htmlFor="date">Data</Label>
@@ -146,6 +166,24 @@ export function InputTab() {
             date={date}
             onDateChange={setDate}
             placeholder="Selecione uma data"
+          />
+        </div>
+
+        {/* Category - moved to last to give time for AI suggestion */}
+        <div className="space-y-2">
+          <Label htmlFor="category">
+            Categoria
+          </Label>
+          <CategorySelect
+            categories={filteredCategories.map(cat => ({
+              label: cat.name,
+              value: cat.id,
+              type: cat.transactionType
+            }))}
+            value={categoryId}
+            onChange={handleCategoryChange}
+            currentTransactionType={type}
+            onOpenChange={handleCategorySelectOpenChange}
           />
         </div>
 

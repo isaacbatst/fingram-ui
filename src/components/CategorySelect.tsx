@@ -19,6 +19,7 @@ type CategorySelectProps = {
   onChange: (value: string) => void;
   currentTransactionType: "income" | "expense";
   className?: string;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function CategorySelect({
@@ -29,6 +30,7 @@ export function CategorySelect({
   // pois já fizemos a filtragem em TransactionItem.tsx
   // mantemos no tipo para compatibilidade da interface
   className = "",
+  onOpenChange,
 }: CategorySelectProps) {
   // Se não houver categorias, não renderizar o componente
   if (categories.length === 0) {
@@ -36,7 +38,7 @@ export function CategorySelect({
   }
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} onOpenChange={onOpenChange}>
       <SelectTrigger className={`text-xs w-full ${className}`}>
         <SelectValue placeholder="Categoria" />
       </SelectTrigger>

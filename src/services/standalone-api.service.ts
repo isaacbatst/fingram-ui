@@ -14,6 +14,8 @@ import type {
   CreateTransactionResponse,
   SetBudgetStartDayResponse,
   GetBudgetStartDayResponse,
+  SuggestCategoryRequest,
+  SuggestCategoryResponse,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -203,6 +205,19 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao obter dia de início do orçamento:", error);
       return { budgetStartDay: 1, error: "Erro ao obter dia de início do orçamento" };
+    }
+  }
+
+  async suggestCategory(request: SuggestCategoryRequest): Promise<SuggestCategoryResponse> {
+    try {
+      const response = await this.makeRequest('/suggest-category', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao sugerir categoria:", error);
+      return { error: "Erro ao sugerir categoria" };
     }
   }
 }

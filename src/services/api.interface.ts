@@ -51,6 +51,16 @@ export interface GetBudgetStartDayResponse {
   error?: string;
 }
 
+export interface SuggestCategoryRequest {
+  description: string;
+  transactionType: 'income' | 'expense';
+}
+
+export interface SuggestCategoryResponse {
+  categoryId?: string;
+  error?: string;
+}
+
 export interface ApiService {
   // Auth
   isAuthenticated(): boolean;
@@ -77,4 +87,7 @@ export interface ApiService {
   // Budget Settings
   setBudgetStartDay(day: number): Promise<SetBudgetStartDayResponse>;
   getBudgetStartDay(): Promise<GetBudgetStartDayResponse>;
+
+  // Category Suggestion
+  suggestCategory(request: SuggestCategoryRequest): Promise<SuggestCategoryResponse>;
 }
