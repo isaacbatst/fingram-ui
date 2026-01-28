@@ -41,26 +41,40 @@ export interface CreateTransactionResponse {
   error?: string;
 }
 
+export interface SetBudgetStartDayResponse {
+  budgetStartDay?: number;
+  error?: string;
+}
+
+export interface GetBudgetStartDayResponse {
+  budgetStartDay: number;
+  error?: string;
+}
+
 export interface ApiService {
   // Auth
   isAuthenticated(): boolean;
   getSessionToken(): string | null;
-  
+
   // Summary
   getSummary(): Promise<SummaryData>;
   getBudgetSummary(year?: number, month?: number): Promise<BudgetSummaryData>;
-  
+
   // Categories
   getCategories(): Promise<Category[]>;
-  
+
   // Transactions
   getTransactions(params?: TransactionsParams): Promise<Paginated<TransactionDTO>>;
   createTransaction(request: CreateTransactionRequest): Promise<CreateTransactionResponse>;
   editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse>;
-  
+
   // Budgets
   setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse>;
   deleteTransaction(transactionCode: string): Promise<{
     error?: string;
   }>;
+
+  // Budget Settings
+  setBudgetStartDay(day: number): Promise<SetBudgetStartDayResponse>;
+  getBudgetStartDay(): Promise<GetBudgetStartDayResponse>;
 }

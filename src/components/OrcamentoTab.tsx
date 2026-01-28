@@ -10,13 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useBudgets } from "@/hooks/useBudgets";
+import { useBudgetStartDay } from "@/hooks/useBudgetStartDay";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useState } from "react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
+import { PencilIcon, CheckIcon, XIcon, SettingsIcon } from "lucide-react";
 import { useSearchParams } from "@/hooks/useSearchParams";
 import { ScrollArea } from "./ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 const months = [
   { value: 1, label: "Janeiro" },
   { value: 2, label: "Fevereiro" },
@@ -36,24 +43,70 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
+// Generate days 1-28 for budget start day selection
+const days = Array.from({ length: 28 }, (_, i) => i + 1);
+
+// Helper function to calculate budget period dates
+function getBudgetPeriodLabel(
+  month: number,
+  year: number,
+  startDay: number
+): string {
+  const startDate = new Date(year, month - 1, startDay);
+  const endDate = new Date(year, month, startDay - 1);
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  };
+
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+}
+
 export function OrcamentoTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { setBudgets } = useBudgets();
   const { data: categories } = useCategories();
-  const selectedYear = parseInt(searchParams.get("orcamento_ano") || currentYear.toString(), 10);
+  const {
+    budgetStartDay,
+    setBudgetStartDay,
+    isLoading: isLoadingStartDay,
+  } = useBudgetStartDay();
+
+  const selectedYear = parseInt(
+    searchParams.get("orcamento_ano") || currentYear.toString(),
+    10
+  );
   const setSelectedYear = (year: number) => {
     setSearchParams({ orcamento_ano: year.toString() });
-  }
-  const selectedMonth = parseInt(searchParams.get("orcamento_mes") || (new Date().getMonth() + 1).toString(), 10);
+  };
+  const selectedMonth = parseInt(
+    searchParams.get("orcamento_mes") || (new Date().getMonth() + 1).toString(),
+    10
+  );
   const setSelectedMonth = (month: number) => {
     setSearchParams({ orcamento_mes: month.toString() });
-  }
+  };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editingBudgets, setEditingBudgets] = useState<
-    Record<string, string>
-  >({});
+  const [editingBudgets, setEditingBudgets] = useState<Record<string, string>>(
+    {}
+  );
   const [isSaving, setIsSaving] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [pendingStartDay, setPendingStartDay] = useState<number | null>(null);
+
+  // Handle start day change
+  const handleStartDayChange = async (value: string) => {
+    const day = parseInt(value, 10);
+    setPendingStartDay(day);
+    const result = await setBudgetStartDay(day);
+    if (result.success) {
+      setIsSettingsOpen(false);
+      // Refresh budget data
+      mutate();
+    }
+    setPendingStartDay(null);
+  };
 
   const {
     data: budgetData,
@@ -136,41 +189,90 @@ export function OrcamentoTab() {
       <div className="mb-4">
         <div className="mb-3 font-semibold text-gray-700 text-base flex justify-between items-center">
           <span>Orçamento por categoria</span>
-          {!isEditing && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleEditClick}
-              className="h-8 w-8 p-0"
-              title="Editar orçamentos"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </Button>
-          )}
-          {isEditing && (
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSaveBudgets}
-                disabled={isSaving}
-                className="h-8 w-8 p-0"
-                title="Salvar orçamentos"
-              >
-                <CheckIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                className="h-8 w-8 p-0"
-                title="Cancelar edição"
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-1">
+            {!isEditing && (
+              <>
+                <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      title="Configurações do orçamento"
+                    >
+                      <SettingsIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="end">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="budget-start-day">
+                          Dia de início do período
+                        </Label>
+                        <Select
+                          value={
+                            pendingStartDay?.toString() ??
+                            budgetStartDay.toString()
+                          }
+                          onValueChange={handleStartDayChange}
+                          disabled={isLoadingStartDay || pendingStartDay !== null}
+                        >
+                          <SelectTrigger id="budget-start-day">
+                            <SelectValue placeholder="Selecione o dia" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {days.map((day) => (
+                              <SelectItem key={day} value={day.toString()}>
+                                Dia {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          O orçamento será calculado do dia {budgetStartDay} de
+                          cada mês até o dia {budgetStartDay - 1 || 28} do mês
+                          seguinte.
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleEditClick}
+                  className="h-8 w-8 p-0"
+                  title="Editar orçamentos"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            {isEditing && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSaveBudgets}
+                  disabled={isSaving}
+                  className="h-8 w-8 p-0"
+                  title="Salvar orçamentos"
+                >
+                  <CheckIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  className="h-8 w-8 p-0"
+                  title="Cancelar edição"
+                >
+                  <XIcon className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Seletores de ano e mês */}
@@ -206,6 +308,14 @@ export function OrcamentoTab() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Period display - only show if budgetStartDay is not 1 */}
+        {budgetStartDay !== 1 && (
+          <div className="mt-2 text-xs text-gray-500 text-center">
+            Período:{" "}
+            {getBudgetPeriodLabel(selectedMonth, selectedYear, budgetStartDay)}
+          </div>
+        )}
       </div>
 
       {/* Resumo do Orçamento */}

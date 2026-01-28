@@ -4,14 +4,16 @@ import type { Category } from "@/hooks/useCategories";
 import type { Paginated } from "@/utils/paginated";
 import type { TransactionDTO } from "@/utils/transaction.dto,";
 import type { TransactionsParams } from "@/hooks/useTransactions";
-import type { 
-  ApiService, 
-  Budget, 
-  SetBudgetsResponse, 
-  EditTransactionRequest, 
+import type {
+  ApiService,
+  Budget,
+  SetBudgetsResponse,
+  EditTransactionRequest,
   EditTransactionResponse,
   CreateTransactionRequest,
-  CreateTransactionResponse
+  CreateTransactionResponse,
+  SetBudgetStartDayResponse,
+  GetBudgetStartDayResponse,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -178,6 +180,29 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao conectar com o servidor:", error);
       return { error: "Erro ao deletar transação" };
+    }
+  }
+
+  async setBudgetStartDay(day: number): Promise<SetBudgetStartDayResponse> {
+    try {
+      const response = await this.makeRequest('/budget-start-day', {
+        method: "POST",
+        body: JSON.stringify({ day }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao definir dia de início do orçamento:", error);
+      return { error: "Erro ao definir dia de início do orçamento" };
+    }
+  }
+
+  async getBudgetStartDay(): Promise<GetBudgetStartDayResponse> {
+    try {
+      const response = await this.makeRequest('/budget-start-day');
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao obter dia de início do orçamento:", error);
+      return { budgetStartDay: 1, error: "Erro ao obter dia de início do orçamento" };
     }
   }
 }

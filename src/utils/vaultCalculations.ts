@@ -30,9 +30,10 @@ export interface SerializedVault {
   // NEW PROPERTIES
   balance: number; // Saldo atual do vault
   totalBudgetedAmount: number;
-percentageTotalBudgetedAmount: number;
-  totalSpentAmount: number; 
-  totalIncomeAmount: number; 
+  percentageTotalBudgetedAmount: number;
+  totalSpentAmount: number;
+  totalIncomeAmount: number;
+  budgetStartDay: number; // Dia de início do período do orçamento (1-28)
 }
 
 
