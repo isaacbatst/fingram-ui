@@ -15,7 +15,9 @@ import {
   X
 } from "lucide-react";
 import type { Category } from "../hooks/useCategories";
+import { useBudgetStartDay } from "../hooks/useBudgetStartDay";
 import { useSearchParams } from "../hooks/useSearchParams";
+import { getCurrentBudgetPeriod } from "../lib/utils";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { TransactionItem } from "./TransactionItem";
@@ -49,17 +51,19 @@ export function TransacoesTab({
   mutateSummary,
 }: TransacoesTabProps) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { budgetStartDay } = useBudgetStartDay();
+  const defaultPeriod = getCurrentBudgetPeriod(budgetStartDay);
 
   const currentPage = parseInt(searchParams.get("transacoes_pagina") || "1", 10);
   const setCurrentPage = (page: number) => {
     setSearchParams({ transacoes_pagina: page.toString() });
   }
 
-  const filtroMes = parseInt(searchParams.get("transacoes_mes") || (new Date().getMonth() + 1).toString(), 10);
+  const filtroMes = parseInt(searchParams.get("transacoes_mes") || defaultPeriod.month.toString(), 10);
   const setFiltroMes = (month: number) => {
     setSearchParams({ transacoes_mes: month.toString() });
   }
-  const filtroAno = parseInt(searchParams.get("transacoes_ano") || new Date().getFullYear().toString(), 10);
+  const filtroAno = parseInt(searchParams.get("transacoes_ano") || defaultPeriod.year.toString(), 10);
   const setFiltroAno = (year: number) => {
     setSearchParams({ transacoes_ano: year.toString() });
   }

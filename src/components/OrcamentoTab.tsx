@@ -24,6 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { getCurrentBudgetPeriod } from "@/lib/utils";
 const months = [
   { value: 1, label: "Janeiro" },
   { value: 2, label: "Fevereiro" },
@@ -43,25 +44,6 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
-/**
- * Returns the current budget period's month/year based on the configured start day.
- * If today is before the start day, we're still in the previous month's budget period.
- */
-function getCurrentBudgetPeriod(budgetStartDay: number): { month: number; year: number } {
-  const now = new Date();
-  let month = now.getMonth() + 1;
-  let year = now.getFullYear();
-
-  if (now.getDate() < budgetStartDay) {
-    month -= 1;
-    if (month < 1) {
-      month = 12;
-      year -= 1;
-    }
-  }
-
-  return { month, year };
-}
 
 // Generate days 1-28 for budget start day selection
 const days = Array.from({ length: 28 }, (_, i) => i + 1);
