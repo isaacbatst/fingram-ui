@@ -43,6 +43,26 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
 
+/**
+ * Returns the current budget period's month/year based on the configured start day.
+ * If today is before the start day, we're still in the previous month's budget period.
+ */
+function getCurrentBudgetPeriod(budgetStartDay: number): { month: number; year: number } {
+  const now = new Date();
+  let month = now.getMonth() + 1;
+  let year = now.getFullYear();
+
+  if (now.getDate() < budgetStartDay) {
+    month -= 1;
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    }
+  }
+
+  return { month, year };
+}
+
 // Generate days 1-28 for budget start day selection
 const days = Array.from({ length: 28 }, (_, i) => i + 1);
 
@@ -72,15 +92,16 @@ export function OrcamentoTab() {
     isLoading: isLoadingStartDay,
   } = useBudgetStartDay();
 
+  const defaultPeriod = getCurrentBudgetPeriod(budgetStartDay);
   const selectedYear = parseInt(
-    searchParams.get("orcamento_ano") || currentYear.toString(),
+    searchParams.get("orcamento_ano") || defaultPeriod.year.toString(),
     10
   );
   const setSelectedYear = (year: number) => {
     setSearchParams({ orcamento_ano: year.toString() });
   };
   const selectedMonth = parseInt(
-    searchParams.get("orcamento_mes") || (new Date().getMonth() + 1).toString(),
+    searchParams.get("orcamento_mes") || defaultPeriod.month.toString(),
     10
   );
   const setSelectedMonth = (month: number) => {
