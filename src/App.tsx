@@ -97,6 +97,7 @@ function AppContent() {
                   receitas={summary.data.vault.totalIncomeAmount}
                   despesas={summary.data.vault.totalSpentAmount}
                 />
+                <BoxesSummary />
                 <InputTab />
               </TabsContent>
               <TabsContent
@@ -108,6 +109,7 @@ function AppContent() {
                   receitas={summary.data.vault.totalIncomeAmount}
                   despesas={summary.data.vault.totalSpentAmount}
                 />
+                <BoxesSummary />
                 <OrcamentoTab />
               </TabsContent>
               {/* Tab Transações */}
@@ -117,6 +119,7 @@ function AppContent() {
                   receitas={summary.data.vault.totalIncomeAmount}
                   despesas={summary.data.vault.totalSpentAmount}
                 />
+                <BoxesSummary />
                 <TransacoesTab
                   categories={categories.data || []}
                   mutateSummary={summary.mutate}
