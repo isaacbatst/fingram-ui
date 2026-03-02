@@ -10,6 +10,7 @@ export interface TransactionsParams {
   month?: number;
   categoryId?: string; // Adicionando filtro por categoria
   description?: string; // Adicionando filtro por descrição
+  boxId?: string;
 }
 
 export function useTransactions(params?: TransactionsParams) {
@@ -24,6 +25,7 @@ export function useTransactions(params?: TransactionsParams) {
     if (params?.year && params?.month) keyParts.push(`date:${params.year}-${params.month}`);
     if (params?.categoryId) keyParts.push(`category:${params.categoryId}`);
     if (params?.description) keyParts.push(`desc:${params.description}`);
+    if (params?.boxId) keyParts.push(`box:${params.boxId}`);
     
     return keyParts.join("|");
   }, [isAuthenticated, params]);

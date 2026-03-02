@@ -16,6 +16,10 @@ import type {
   GetBudgetStartDayResponse,
   SuggestCategoryRequest,
   SuggestCategoryResponse,
+  BoxDTO,
+  CreateBoxRequest,
+  EditBoxRequest,
+  CreateTransferRequest,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -118,6 +122,9 @@ export class StandaloneApiService implements ApiService {
     if (params?.description) {
       url.searchParams.append("description", params.description);
     }
+    if (params?.boxId) {
+      url.searchParams.append("boxId", params.boxId);
+    }
 
     const response = await this.makeRequest(`/transactions?${url.searchParams.toString()}`);
     return response.json();
@@ -218,6 +225,78 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao sugerir categoria:", error);
       return { error: "Erro ao sugerir categoria" };
+    }
+  }
+
+  async getBoxes(): Promise<BoxDTO[]> {
+    const response = await this.makeRequest('/boxes');
+    return response.json();
+  }
+
+  async createBox(request: CreateBoxRequest): Promise<{ box?: BoxDTO; error?: string }> {
+    try {
+      const response = await this.makeRequest('/create-box', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      const box = await response.json();
+      return { box };
+    } catch (error) {
+      console.error("Erro ao criar caixinha:", error);
+      return { error: "Erro ao criar caixinha" };
+    }
+  }
+
+  async editBox(request: EditBoxRequest): Promise<{ error?: string }> {
+    try {
+      await this.makeRequest('/edit-box', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao editar caixinha:", error);
+      return { error: "Erro ao editar caixinha" };
+    }
+  }
+
+  async deleteBox(boxId: string): Promise<{ error?: string }> {
+    try {
+      await this.makeRequest('/delete-box', {
+        method: 'POST',
+        body: JSON.stringify({ boxId }),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao deletar caixinha:", error);
+      return { error: "Erro ao deletar caixinha" };
+    }
+  }
+
+  async createTransfer(request: CreateTransferRequest): Promise<{ transferId?: string; error?: string }> {
+    try {
+      const response = await this.makeRequest('/create-transfer', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      const data = await response.json();
+      return { transferId: data.transferId };
+    } catch (error) {
+      console.error("Erro ao criar transferência:", error);
+      return { error: "Erro ao criar transferência" };
+    }
+  }
+
+  async deleteTransfer(transferId: string): Promise<{ error?: string }> {
+    try {
+      await this.makeRequest('/delete-transfer', {
+        method: 'POST',
+        body: JSON.stringify({ transferId }),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao deletar transferência:", error);
+      return { error: "Erro ao deletar transferência" };
     }
   }
 }

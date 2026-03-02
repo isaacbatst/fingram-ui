@@ -33,6 +33,34 @@ export interface CreateTransactionRequest {
   categoryId?: string;
   date?: string; // ISO date string
   type: 'income' | 'expense';
+  boxId?: string;
+}
+
+export interface BoxDTO {
+  id: string;
+  name: string;
+  goalAmount: number | null;
+  isDefault: boolean;
+  balance: number;
+  goalProgress: number | null;
+}
+
+export interface CreateBoxRequest {
+  name: string;
+  goalAmount?: number;
+}
+
+export interface EditBoxRequest {
+  boxId: string;
+  name?: string;
+  goalAmount?: number | null;
+}
+
+export interface CreateTransferRequest {
+  fromBoxId: string;
+  toBoxId: string;
+  amount: number;
+  date?: string;
 }
 
 export interface CreateTransactionResponse {
@@ -90,4 +118,14 @@ export interface ApiService {
 
   // Category Suggestion
   suggestCategory(request: SuggestCategoryRequest): Promise<SuggestCategoryResponse>;
+
+  // Boxes
+  getBoxes(): Promise<BoxDTO[]>;
+  createBox(request: CreateBoxRequest): Promise<{ box?: BoxDTO; error?: string }>;
+  editBox(request: EditBoxRequest): Promise<{ error?: string }>;
+  deleteBox(boxId: string): Promise<{ error?: string }>;
+
+  // Transfers
+  createTransfer(request: CreateTransferRequest): Promise<{ transferId?: string; error?: string }>;
+  deleteTransfer(transferId: string): Promise<{ error?: string }>;
 }

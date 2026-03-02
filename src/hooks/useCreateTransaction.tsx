@@ -17,6 +17,7 @@ export function useCreateTransaction() {
         
         // Invalidate and refetch related data
         mutate("summary");
+        mutate("boxes");
         mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false);
         
         return result;
