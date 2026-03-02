@@ -3,6 +3,7 @@ import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OrcamentoTab } from "@/components/OrcamentoTab";
+import { BoxesSummary } from "@/components/BoxesSummary";
 import { SaldoResumo } from "@/components/SaldoResumo";
 import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
 import { TransacoesTab } from "@/components/TransacoesTab";

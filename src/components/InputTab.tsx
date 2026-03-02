@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker } from "@/components/DatePicker";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { useCategories } from "@/hooks/useCategories";
+import { useBoxes } from "@/hooks/useBoxes";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -23,12 +24,26 @@ export function InputTab() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedBoxId, setSelectedBoxId] = useState<string>('');
   const [categorySelectOpened, setCategorySelectOpened] = useState(false);
   const categoryManuallySelected = useRef(false);
 
   const { createTransaction } = useCreateTransaction();
   const { data: categories } = useCategories();
+  const { boxes } = useBoxes();
   const { apiService } = useApi();
+
+  // Pre-select the default box when boxes data loads
+  useEffect(() => {
+    if (boxes && boxes.length > 0 && !selectedBoxId) {
+      const defaultBox = boxes.find(box => box.isDefault);
+      if (defaultBox) {
+        setSelectedBoxId(defaultBox.id);
+      } else {
+        setSelectedBoxId(boxes[0].id);
+      }
+    }
+  }, [boxes, selectedBoxId]);
 
   // Filter categories based on transaction type
   const filteredCategories = categories?.filter(cat => 
@@ -91,6 +106,7 @@ export function InputTab() {
         categoryId: categoryId || undefined,
         date: getISODateString(date),
         type: type,
+        boxId: selectedBoxId || undefined,
       });
 
       if (result.error) {
@@ -167,6 +183,23 @@ export function InputTab() {
             onDateChange={setDate}
             placeholder="Selecione uma data"
           />
+        </div>
+
+        {/* Box */}
+        <div className="space-y-2">
+          <Label htmlFor="box">Caixa</Label>
+          <Select value={selectedBoxId} onValueChange={setSelectedBoxId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma caixa" />
+            </SelectTrigger>
+            <SelectContent>
+              {boxes?.map((box) => (
+                <SelectItem key={box.id} value={box.id}>
+                  {box.name} (R$ {box.balance.toFixed(2)})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Category - moved to last to give time for AI suggestion */}
