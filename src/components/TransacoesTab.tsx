@@ -15,6 +15,7 @@ import {
   X
 } from "lucide-react";
 import type { Category } from "../hooks/useCategories";
+import { useBoxes } from "../hooks/useBoxes";
 import { useBudgetStartDay } from "../hooks/useBudgetStartDay";
 import { useSearchParams } from "../hooks/useSearchParams";
 import { getCurrentBudgetPeriod } from "../lib/utils";
@@ -39,6 +40,8 @@ export type Transaction = {
   description: string;
   createdAt: string;
   date: string;
+  boxId?: string;
+  transferId?: string | null;
 };
 
 type TransacoesTabProps = {
@@ -75,6 +78,13 @@ export function TransacoesTab({
   const setFiltroDescricao = (description: string) => {
     setSearchParams({ transacoes_descricao: description });
   }
+  const filtroCaixinha = searchParams.get("transacoes_caixinha") || "";
+  const setFiltroCaixinha = (boxId: string) => {
+    setSearchParams({ transacoes_caixinha: boxId });
+  }
+
+  const { boxes } = useBoxes();
+
   // Usando o hook para buscar as transações
   const {
     data,
@@ -87,6 +97,7 @@ export function TransacoesTab({
     year: filtroAno,
     categoryId: filtroCategoria,
     description: filtroDescricao,
+    boxId: filtroCaixinha || undefined,
   });
 
   const transactions = data?.items
@@ -102,6 +113,8 @@ export function TransacoesTab({
         description: tx.description || "",
         date: tx.date.toString(),
         createdAt: tx.createdAt.toString(),
+        boxId: tx.boxId,
+        transferId: tx.transferId,
       }))
     : [];
 
@@ -165,6 +178,39 @@ export function TransacoesTab({
             onClick={() => {
               setFiltroCategoria("");
               mutateTransactions(); // Recarrega as transações com os filtros resetados
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex">
+          <Select
+            value={filtroCaixinha}
+            onValueChange={(val) => {
+              setFiltroCaixinha(val);
+              setCurrentPage(1);
+              mutateTransactions();
+            }}
+          >
+            <SelectTrigger className="text-xs flex-1">
+              <SelectValue placeholder="Todas caixinhas" />
+            </SelectTrigger>
+            <SelectContent>
+              {boxes?.map((box) => (
+                <SelectItem key={box.id} value={box.id}>
+                  {box.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            className="ml-2"
+            onClick={() => {
+              setFiltroCaixinha("");
+              mutateTransactions();
             }}
           >
             <X className="h-4 w-4" />
@@ -244,6 +290,7 @@ export function TransacoesTab({
                 key={tx.id}
                 transaction={tx}
                 categorias={categories}
+                boxes={boxes}
                 onUpdate={async () => {
                   await Promise.allSettled([
                     mutateTransactions(),

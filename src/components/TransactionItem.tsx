@@ -12,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Loader2, Trash2, X } from "lucide-react";
+import { ArrowRightLeft, Check, Loader2, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { BoxDTO } from "../services/api.interface";
 import { useApi } from "../hooks/useApi";
 import type { Category } from "../hooks/useCategories";
 import { CategorySelect } from "./CategorySelect";
@@ -35,6 +36,7 @@ import {
 type TransactionItemProps = {
   transaction: Transaction;
   categorias?: Category[]; // Agora é opcional
+  boxes?: BoxDTO[];
   onUpdate?: () => Promise<void>;
 };
 
@@ -45,6 +47,7 @@ const dateOnly = (date: string) => {
 export function TransactionItem({
   transaction: txOriginal,
   categorias,
+  boxes,
   onUpdate,
 }: TransactionItemProps) {
   const { apiService, isAuthenticated } = useApi();
@@ -64,6 +67,9 @@ export function TransactionItem({
         ? txOriginal.category.code
         : txOriginal.category),
   };
+
+  const isTransfer = tx.transferId != null;
+  const boxName = boxes?.find((b) => b.id === tx.boxId)?.name;
 
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
   // e a categoria atual não estiver mais na lista
@@ -196,15 +202,24 @@ export function TransactionItem({
   return (
     <AccordionItem value={tx.id} key={tx.id}>
       <AccordionTrigger className="py-2">
-        <div className="flex items-center gap-2 rounded px-1 flex-1 text-base">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              tx.type === "income" ? "bg-green-400" : "bg-red-400"
-            }`}
-          />
-          <div className="flex-1">
-            <div className="font-medium text-gray-600 mb-1">
-              {tx.description || "(Sem descrição)"}
+        <div className={`flex items-center gap-2 rounded px-1 flex-1 text-base ${isTransfer ? "bg-blue-50" : ""}`}>
+          {isTransfer ? (
+            <ArrowRightLeft className="w-4 h-4 text-blue-500 shrink-0" />
+          ) : (
+            <div
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                tx.type === "income" ? "bg-green-400" : "bg-red-400"
+              }`}
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-gray-600 mb-1 flex items-center gap-1.5">
+              <span className="truncate">{tx.description || "(Sem descrição)"}</span>
+              {isTransfer && (
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 whitespace-nowrap">
+                  Transferencia
+                </span>
+              )}
             </div>
             <div className="text-xs text-gray-400">
               {dateOnly(tx.date)} •{" "}
@@ -219,11 +234,20 @@ export function TransactionItem({
                 (typeof tx.category === "object"
                   ? tx.category.name
                   : tx.category)}
+              {boxName && (
+                <span className="ml-1">
+                  • {boxName}
+                </span>
+              )}
             </div>
           </div>
           <div
-            className={`font-semibold ${
-              tx.type === "income" ? "text-green-600" : "text-red-600"
+            className={`font-semibold whitespace-nowrap ${
+              isTransfer
+                ? "text-blue-600"
+                : tx.type === "income"
+                  ? "text-green-600"
+                  : "text-red-600"
             }`}
           >
             {tx.type === "income" ? "+" : "-"} R${" "}
@@ -235,150 +259,160 @@ export function TransactionItem({
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <form
-          className="space-y-2 rounded p-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            saveChanges();
-          }}
-        >
-          <div className="flex gap-2 mb-2">
-            <div className="flex flex-col gap-1 w-[120px]">
-              <Select
-                value={editState.type ?? tx.type}
-                onValueChange={(val) =>
+        {isTransfer ? (
+          <div className="rounded bg-blue-50 p-3 text-sm text-blue-700 flex items-center gap-2">
+            <ArrowRightLeft className="w-4 h-4 shrink-0" />
+            <span>
+              Esta transacao faz parte de uma transferencia entre caixinhas.
+              Gerencie transferencias na aba <strong>Caixinhas</strong>.
+            </span>
+          </div>
+        ) : (
+          <form
+            className="space-y-2 rounded p-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveChanges();
+            }}
+          >
+            <div className="flex gap-2 mb-2">
+              <div className="flex flex-col gap-1 w-[120px]">
+                <Select
+                  value={editState.type ?? tx.type}
+                  onValueChange={(val) =>
+                    setEditState((s) => ({
+                      ...s,
+                      type: val as "income" | "expense",
+                      // Limpar a categoria quando mudar o tipo para evitar tipos incompatíveis
+                      categoryCode: undefined,
+                    }))
+                  }
+                >
+                  <SelectTrigger
+                    className={`text-xs ${
+                      (editState.type ?? tx.type) === "income"
+                        ? "border-green-500 bg-green-100/10"
+                        : "border-red-500 bg-red-100/10"
+                    }`}
+                  >
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="income">Receita</SelectItem>
+                    <SelectItem value="expense">Despesa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                type="number"
+                min={0.01}
+                step={0.01}
+                className="text-xs"
+                value={
+                  editState.amount !== undefined ? editState.amount : tx.amount
+                }
+                onChange={(e) =>
                   setEditState((s) => ({
                     ...s,
-                    type: val as "income" | "expense",
-                    // Limpar a categoria quando mudar o tipo para evitar tipos incompatíveis
-                    categoryCode: undefined,
+                    amount: Number(e.target.value),
                   }))
                 }
-              >
-                <SelectTrigger
-                  className={`text-xs ${
-                    (editState.type ?? tx.type) === "income"
-                      ? "border-green-500 bg-green-100/10"
-                      : "border-red-500 bg-red-100/10"
-                  }`}
-                >
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">💰 Receita</SelectItem>
-                  <SelectItem value="expense">💸 Despesa</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
-            <Input
-              type="number"
-              min={0.01}
-              step={0.01}
-              className="text-xs"
-              value={
-                editState.amount !== undefined ? editState.amount : tx.amount
-              }
-              onChange={(e) =>
-                setEditState((s) => ({
-                  ...s,
-                  amount: Number(e.target.value),
-                }))
-              }
-            />
-          </div>
-          <div className="flex gap-2">
-            <CategorySelect
-              categories={filteredCategories}
-              value={editState.categoryCode ?? tx.categoryCode}
-              onChange={(val) =>
-                setEditState((s) => ({
-                  ...s,
-                  categoryCode: val,
-                }))
-              }
-              currentTransactionType={editState.type ?? tx.type}
-            />
-          </div>
-          <div className="flex flex-col gap-3">
-            <DatePicker
-              date={dateValue}
-              onDateChange={(date) =>
-                setEditState((s) => ({
-                  ...s,
-                  date: date?.toISOString(),
-                }))
-              }
-              placeholder="Escolha uma data"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              className="flex-1"
-              type="submit"
-              size="sm"
-              disabled={isSaving || isDeleting}
-            >
-              {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-              Salvar
-            </Button>
+            <div className="flex gap-2">
+              <CategorySelect
+                categories={filteredCategories}
+                value={editState.categoryCode ?? tx.categoryCode}
+                onChange={(val) =>
+                  setEditState((s) => ({
+                    ...s,
+                    categoryCode: val,
+                  }))
+                }
+                currentTransactionType={editState.type ?? tx.type}
+              />
+            </div>
+            <div className="flex flex-col gap-3">
+              <DatePicker
+                date={dateValue}
+                onDateChange={(date) =>
+                  setEditState((s) => ({
+                    ...s,
+                    date: date?.toISOString(),
+                  }))
+                }
+                placeholder="Escolha uma data"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                type="submit"
+                size="sm"
+                disabled={isSaving || isDeleting}
+              >
+                {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                Salvar
+              </Button>
 
-            <Button
-              type="button"
-              size="sm"
-              className="flex-1"
-              variant="secondary"
-              onClick={clearEditState}
-              disabled={isSaving || isDeleting}
-            >
-              <X className="size-4" />
-              Cancelar
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="flex-1"
-                  variant="destructive"
-                  disabled={isSaving || isDeleting}
-                >
-                  {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-                  Deletar
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Tem certeza que deseja deletar a transação?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Esta transação será
-                    deletada permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel asChild>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={isDeleting}
-                    >
-                      <X className="size-4" />
-                      Cancelar
-                    </Button>
-                  </AlertDialogCancel>
-                  <AlertDialogAction asChild onClick={deleteTransaction}>
-                    <Button variant="destructive" type="button" disabled={isDeleting}>
-                      <Trash2 className="size-4" />
-                      Deletar
-                    </Button>
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-          {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
-        </form>
+              <Button
+                type="button"
+                size="sm"
+                className="flex-1"
+                variant="secondary"
+                onClick={clearEditState}
+                disabled={isSaving || isDeleting}
+              >
+                <X className="size-4" />
+                Cancelar
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="flex-1"
+                    variant="destructive"
+                    disabled={isSaving || isDeleting}
+                  >
+                    {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                    Deletar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Tem certeza que deseja deletar a transacao?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acao nao pode ser desfeita. Esta transacao sera
+                      deletada permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isDeleting}
+                      >
+                        <X className="size-4" />
+                        Cancelar
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild onClick={deleteTransaction}>
+                      <Button variant="destructive" type="button" disabled={isDeleting}>
+                        <Trash2 className="size-4" />
+                        Deletar
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
+          </form>
+        )}
       </AccordionContent>
     </AccordionItem>
   );
