@@ -15,9 +15,11 @@ import {
   ChartPie,
   DollarSign,
   MessageCircle,
-  Search
+  Search,
+  Wallet
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
+import { CaixinhasTab } from "./components/CaixinhasTab";
 import { IaTab } from "./components/IaTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
@@ -101,6 +103,17 @@ function AppContent() {
                 <InputTab />
               </TabsContent>
               <TabsContent
+                value="caixinhas"
+                className="px-4 flex flex-col flex-1 min-h-0"
+              >
+                <SaldoResumo
+                  saldo={summary.data.vault.balance}
+                  receitas={summary.data.vault.totalIncomeAmount}
+                  despesas={summary.data.vault.totalSpentAmount}
+                />
+                <CaixinhasTab />
+              </TabsContent>
+              <TabsContent
                 value="orcamento"
                 className="px-4 flex flex-col flex-1 min-h-0"
               >
@@ -132,6 +145,9 @@ function AppContent() {
                   </TabsTrigger>
                   <TabsTrigger value="input">
                     <DollarSign className="w-4 h-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="caixinhas">
+                    <Wallet className="w-4 h-4" />
                   </TabsTrigger>
                   <TabsTrigger value="orcamento">
                     <ChartPie className="w-4 h-4" />
