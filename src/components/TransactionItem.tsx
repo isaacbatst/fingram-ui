@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRightLeft, Check, Loader2, Trash2, X } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, Check, Loader2, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { BoxDTO } from "../services/api.interface";
@@ -77,9 +77,10 @@ export function TransactionItem({
 
   const transferLabel = (() => {
     if (!isTransfer) return null;
-    if (isCompletePair) return `${boxName ?? "?"} → ${transferToBoxName ?? "?"}`;
-    if (tx.type === "expense") return `${boxName ?? "?"} →`;
-    return `→ ${boxName ?? "?"}`;
+    const arrow = <ArrowRight className="w-3.5 h-3.5 text-blue-400 shrink-0 mx-0.5" />;
+    if (isCompletePair) return <>{boxName ?? "?"} {arrow} {transferToBoxName ?? "?"}</>;
+    if (tx.type === "expense") return <>{boxName ?? "?"} {arrow}</>;
+    return <>{arrow} {boxName ?? "?"}</>;
   })();
 
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
@@ -213,7 +214,7 @@ export function TransactionItem({
   return (
     <AccordionItem value={tx.id} key={tx.id}>
       <AccordionTrigger className="py-2">
-        <div className={`flex items-center gap-2 rounded px-1 flex-1 text-base ${isTransfer ? "bg-blue-50" : ""}`}>
+        <div className="flex items-center gap-2 rounded px-1 flex-1 text-base">
           {isTransfer ? (
             <ArrowRightLeft className="w-4 h-4 text-blue-500 shrink-0" />
           ) : (
@@ -224,30 +225,39 @@ export function TransactionItem({
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-600 mb-1 flex items-center gap-1.5">
-              <span className="truncate">
-                {isTransfer ? transferLabel : (tx.description || "(Sem descrição)")}
-              </span>
+            <div className="font-medium text-gray-600 mb-1 flex items-center gap-2">
+              {isTransfer ? (
+                <span className="flex items-center gap-1 truncate">
+                  {transferLabel}
+                </span>
+              ) : (
+                <span className="truncate">{tx.description || "(Sem descrição)"}</span>
+              )}
+            </div>
+            <div className="text-xs text-gray-400 flex items-center gap-1.5">
+              {dateOnly(tx.date)}
               {isTransfer && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 whitespace-nowrap">
+                <span className="inline-flex items-center rounded-full bg-blue-100/80 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600 whitespace-nowrap ring-1 ring-blue-200/60">
                   Transferencia
                 </span>
               )}
-            </div>
-            <div className="text-xs text-gray-400">
-              {dateOnly(tx.date)} •{" "}
-              {categories.find((c) => c.value === tx.categoryCode)?.label ||
-                categories.find(
-                  (c) =>
-                    c.value ===
-                    (typeof tx.category === "string"
-                      ? tx.category
-                      : tx.category.code)
-                )?.label ||
-                (typeof tx.category === "object"
-                  ? tx.category.name
-                  : tx.category)}
-              {boxName && (
+              {!isTransfer && (
+                <>
+                  {" "}•{" "}
+                  {categories.find((c) => c.value === tx.categoryCode)?.label ||
+                    categories.find(
+                      (c) =>
+                        c.value ===
+                        (typeof tx.category === "string"
+                          ? tx.category
+                          : tx.category.code)
+                    )?.label ||
+                    (typeof tx.category === "object"
+                      ? tx.category.name
+                      : tx.category)}
+                </>
+              )}
+              {boxName && !isCompletePair && (
                 <span className="ml-1">
                   • {boxName}
                 </span>
