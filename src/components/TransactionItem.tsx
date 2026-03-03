@@ -289,12 +289,28 @@ export function TransactionItem({
       </AccordionTrigger>
       <AccordionContent>
         {isTransfer ? (
-          <div className="rounded bg-blue-50 p-3 text-sm text-blue-700 flex items-center gap-2">
-            <ArrowRightLeft className="w-4 h-4 shrink-0" />
-            <span>
-              Esta transacao faz parte de uma transferencia entre caixinhas.
-              Gerencie transferencias na aba <strong>Caixinhas</strong>.
-            </span>
+          <div className="rounded bg-blue-50 p-3 text-sm text-blue-700 space-y-2">
+            <div className="flex items-center gap-2">
+              <ArrowRightLeft className="w-4 h-4 shrink-0" />
+              <span className="font-medium">Transferencia</span>
+            </div>
+            {isCompletePair && (
+              <div className="flex items-center gap-2 text-blue-600">
+                <span>{boxName ?? "?"}</span>
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                <span>{transferToBoxName ?? "?"}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-4 text-xs text-blue-500">
+              <span>{dateOnly(tx.date)}</span>
+              <span className="font-semibold">
+                R${" "}
+                {tx.amount.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
           </div>
         ) : (
           <form
