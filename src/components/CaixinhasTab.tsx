@@ -142,6 +142,7 @@ export function CaixinhasTab() {
         toast.success("Caixinha atualizada com sucesso");
         mutate("boxes");
         mutate("summary");
+        mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
         setIsEditOpen(false);
         setEditingBox(null);
       }
@@ -171,6 +172,7 @@ export function CaixinhasTab() {
         toast.success("Caixinha removida com sucesso");
         mutate("boxes");
         mutate("summary");
+        mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
         setIsDeleteOpen(false);
         setDeletingBox(null);
       }

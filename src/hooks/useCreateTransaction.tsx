@@ -19,6 +19,7 @@ export function useCreateTransaction() {
         mutate("summary");
         mutate("boxes");
         mutate((key) => typeof key === 'string' ? key.startsWith("transactions") : false);
+        mutate((key) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
         
         return result;
       } catch (error) {

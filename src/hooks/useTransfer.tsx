@@ -7,6 +7,13 @@ export function useTransfer() {
   const { apiService } = useApi();
   const { mutate } = useSWRConfig();
 
+  const invalidateAll = () => {
+    mutate("boxes");
+    mutate("summary");
+    mutate((key: unknown) => typeof key === 'string' ? key.startsWith("transactions") : false);
+    mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
+  };
+
   const createTransfer = async (request: CreateTransferRequest) => {
     const result = await apiService.createTransfer(request);
     if (result.error) {
@@ -14,8 +21,7 @@ export function useTransfer() {
       return null;
     }
     toast.success("Transferência realizada com sucesso");
-    mutate("boxes");
-    mutate("summary");
+    invalidateAll();
     return result.transferId;
   };
 
@@ -26,8 +32,7 @@ export function useTransfer() {
       return false;
     }
     toast.success("Transferência removida");
-    mutate("boxes");
-    mutate("summary");
+    invalidateAll();
     return true;
   };
 

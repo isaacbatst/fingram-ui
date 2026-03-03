@@ -14,6 +14,7 @@ import {
   ChevronRight,
   X
 } from "lucide-react";
+import { mutate } from "swr";
 import type { Category } from "../hooks/useCategories";
 import { useBoxes } from "../hooks/useBoxes";
 import { useBudgetStartDay } from "../hooks/useBudgetStartDay";
@@ -296,6 +297,7 @@ export function TransacoesTab({
                     mutateTransactions(),
                     mutateSummary(),
                   ]);
+                  mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
                 }}
               />
             ))}
