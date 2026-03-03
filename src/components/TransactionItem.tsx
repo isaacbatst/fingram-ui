@@ -77,10 +77,9 @@ export function TransactionItem({
 
   const transferLabel = (() => {
     if (!isTransfer) return null;
-    const arrow = <ArrowRight className="w-3.5 h-3.5 text-blue-400 shrink-0 mx-0.5" />;
-    if (isCompletePair) return <>{boxName ?? "?"} {arrow} {transferToBoxName ?? "?"}</>;
-    if (tx.type === "expense") return <>{boxName ?? "?"} {arrow}</>;
-    return <>{arrow} {boxName ?? "?"}</>;
+    if (isCompletePair) return { from: boxName ?? "?", to: transferToBoxName ?? "?" };
+    if (tx.type === "expense") return { from: boxName ?? "?", to: null };
+    return { from: null, to: boxName ?? "?" };
   })();
 
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
@@ -213,8 +212,8 @@ export function TransactionItem({
     : undefined;
   return (
     <AccordionItem value={tx.id} key={tx.id}>
-      <AccordionTrigger className="py-2">
-        <div className="flex items-center gap-2 rounded px-1 flex-1 text-base">
+      <AccordionTrigger className="py-2 min-w-0">
+        <div className="flex items-center gap-2 rounded px-1 flex-1 min-w-0 text-base">
           {isTransfer ? (
             <ArrowRightLeft className="w-4 h-4 text-blue-500 shrink-0" />
           ) : (
@@ -225,11 +224,17 @@ export function TransactionItem({
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-600 mb-1 flex items-center gap-2">
-              {isTransfer ? (
-                <span className="flex items-center gap-1 truncate">
-                  {transferLabel}
-                </span>
+            <div className="font-medium text-gray-600 mb-1 flex items-center min-w-0">
+              {isTransfer && transferLabel ? (
+                <>
+                  {transferLabel.from && (
+                    <span className="truncate">{transferLabel.from}</span>
+                  )}
+                  <ArrowRight className="w-3 h-3 text-blue-400 shrink-0 mx-1" />
+                  {transferLabel.to && (
+                    <span className="truncate">{transferLabel.to}</span>
+                  )}
+                </>
               ) : (
                 <span className="truncate">{tx.description || "(Sem descrição)"}</span>
               )}
