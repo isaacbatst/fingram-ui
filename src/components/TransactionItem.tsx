@@ -239,16 +239,16 @@ export function TransactionItem({
                 <span className="truncate">{tx.description || "(Sem descrição)"}</span>
               )}
             </div>
-            <div className="text-xs text-gray-400 flex items-center gap-1.5">
-              {dateOnly(tx.date)}
+            <div className="text-xs text-gray-400 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
+              <span className="shrink-0">{dateOnly(tx.date)}</span>
               {isTransfer && (
-                <span className="inline-flex items-center rounded-full bg-blue-100/80 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600 whitespace-nowrap ring-1 ring-blue-200/60">
+                <span className="inline-flex items-center rounded-full bg-blue-100/80 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600 whitespace-nowrap ring-1 ring-blue-200/60 shrink-0">
                   Transferencia
                 </span>
               )}
               {!isTransfer && (
-                <>
-                  {" "}•{" "}
+                <span className="truncate">
+                  •{" "}
                   {categories.find((c) => c.value === tx.categoryCode)?.label ||
                     categories.find(
                       (c) =>
@@ -260,11 +260,7 @@ export function TransactionItem({
                     (typeof tx.category === "object"
                       ? tx.category.name
                       : tx.category)}
-                </>
-              )}
-              {boxName && !isCompletePair && (
-                <span className="ml-1">
-                  • {boxName}
+                  {boxName && !isCompletePair && ` • ${boxName}`}
                 </span>
               )}
             </div>
