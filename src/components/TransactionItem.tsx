@@ -70,6 +70,17 @@ export function TransactionItem({
 
   const isTransfer = tx.transferId != null;
   const boxName = boxes?.find((b) => b.id === tx.boxId)?.name;
+  const transferToBoxName = tx.transferToBoxId
+    ? boxes?.find((b) => b.id === tx.transferToBoxId)?.name
+    : undefined;
+  const isCompletePair = isTransfer && tx.transferToBoxId != null;
+
+  const transferLabel = (() => {
+    if (!isTransfer) return null;
+    if (isCompletePair) return `${boxName ?? "?"} → ${transferToBoxName ?? "?"}`;
+    if (tx.type === "expense") return `${boxName ?? "?"} →`;
+    return `→ ${boxName ?? "?"}`;
+  })();
 
   // Efeito para redefinir editState.categoryCode quando as categorias mudarem
   // e a categoria atual não estiver mais na lista
@@ -214,7 +225,9 @@ export function TransactionItem({
           )}
           <div className="flex-1 min-w-0">
             <div className="font-medium text-gray-600 mb-1 flex items-center gap-1.5">
-              <span className="truncate">{tx.description || "(Sem descrição)"}</span>
+              <span className="truncate">
+                {isTransfer ? transferLabel : (tx.description || "(Sem descrição)")}
+              </span>
               {isTransfer && (
                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 whitespace-nowrap">
                   Transferencia
@@ -250,7 +263,8 @@ export function TransactionItem({
                   : "text-red-600"
             }`}
           >
-            {tx.type === "income" ? "+" : "-"} R${" "}
+            {!isCompletePair && (tx.type === "income" ? "+" : "-")}{" "}
+            R${" "}
             {tx.amount.toLocaleString("pt-BR", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
