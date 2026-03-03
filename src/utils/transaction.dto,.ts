@@ -10,6 +10,7 @@ export interface TransactionDTO {
   vaultId: string;
   boxId: string;
   transferId: string | null;
+  transferToBoxId: string | null;
   category: {
     id: string;
     name: string;

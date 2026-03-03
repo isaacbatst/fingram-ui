@@ -101,7 +101,7 @@ export function TransacoesTab({
     boxId: filtroCaixinha || undefined,
   });
 
-  const rawTransactions = data?.items
+  const transactions = data?.items
     ? data.items.map((tx) => ({
         id: tx.id,
         code: tx.code,
@@ -114,40 +114,9 @@ export function TransacoesTab({
         createdAt: tx.createdAt.toString(),
         boxId: tx.boxId,
         transferId: tx.transferId,
+        transferToBoxId: tx.transferToBoxId ?? undefined,
       }))
     : [];
-
-  // Agrupar pares de transferencia em uma unica entrada
-  const transactions = (() => {
-    const transferGroups = new Map<string, Transaction[]>();
-    const nonTransfers: Transaction[] = [];
-
-    for (const tx of rawTransactions) {
-      if (tx.transferId) {
-        const group = transferGroups.get(tx.transferId) || [];
-        group.push(tx);
-        transferGroups.set(tx.transferId, group);
-      } else {
-        nonTransfers.push(tx);
-      }
-    }
-
-    const result: Transaction[] = [...nonTransfers];
-
-    for (const group of transferGroups.values()) {
-      if (group.length === 2) {
-        const expense = group.find((t) => t.type === "expense") || group[0];
-        const income = group.find((t) => t.type === "income") || group[1];
-        result.push({ ...expense, transferToBoxId: income.boxId });
-      } else {
-        result.push(...group);
-      }
-    }
-
-    // Manter a ordem original por data
-    result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return result;
-  })();
 
   return (
     <div>
