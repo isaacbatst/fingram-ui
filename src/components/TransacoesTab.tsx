@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/select";
 import { useTransactions } from "@/hooks/useTransactions";
 import {
+  ChevronsLeft,
   ChevronLeft,
   ChevronRight,
+  ChevronsRight,
   X
 } from "lucide-react";
 import { mutate } from "swr";
@@ -252,6 +254,15 @@ export function TransacoesTab({
               size="icon"
               className="h-8 w-8"
               disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(1)}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage <= 1}
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -269,6 +280,15 @@ export function TransacoesTab({
               }
             >
               <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage >= data.totalPages}
+              onClick={() => setCurrentPage(data.totalPages)}
+            >
+              <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
         )}
