@@ -22,6 +22,7 @@ import { useTransfer } from "../hooks/useTransfer";
 import { CategorySelect } from "./CategorySelect";
 import { DatePicker } from "./DatePicker";
 import type { Transaction } from "./TransacoesTab";
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
+
+const parseDateLocal = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split("T")[0].split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
 
 function TransferEditForm({
   tx,
@@ -59,7 +65,7 @@ function TransferEditForm({
   const currentFromBoxId = editState.fromBoxId ?? tx.boxId;
   const currentToBoxId = editState.toBoxId ?? tx.transferToBoxId ?? "";
   const editDateValue = editState.date
-    ? new Date(editState.date)
+    ? parseDateLocal(editState.date)
     : dateValue;
 
   const saveChanges = async () => {
@@ -149,7 +155,7 @@ function TransferEditForm({
         <DatePicker
           date={editDateValue}
           onDateChange={(date) =>
-            setEditState((s) => ({ ...s, date: date?.toISOString() }))
+            setEditState((s) => ({ ...s, date: date ? format(date, 'yyyy-MM-dd') : undefined }))
           }
           placeholder="Escolha uma data"
         />
@@ -394,9 +400,9 @@ export function TransactionItem({
     }
   };
   const dateValue = editState.date
-    ? new Date(editState.date)
+    ? parseDateLocal(editState.date)
     : tx.date
-    ? new Date(tx.date)
+    ? parseDateLocal(tx.date)
     : undefined;
   return (
     <AccordionItem value={tx.id} key={tx.id}>
@@ -569,7 +575,7 @@ export function TransactionItem({
                 onDateChange={(date) =>
                   setEditState((s) => ({
                     ...s,
-                    date: date?.toISOString(),
+                    date: date ? format(date, 'yyyy-MM-dd') : undefined,
                   }))
                 }
                 placeholder="Escolha uma data"
