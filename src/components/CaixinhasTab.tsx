@@ -40,10 +40,12 @@ import { PencilIcon, Trash2Icon, PlusIcon, ArrowRightLeftIcon } from "lucide-rea
 import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
-import type { BoxDTO } from "@/services/api.interface";
+import type { BoxDTO, BoxType } from "@/services/api.interface";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+const boxTypeLabel = (type: BoxType) => (type === "spending" ? "Conta" : "Caixinha");
 
 const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
@@ -60,6 +62,7 @@ export function CaixinhasTab() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createGoalAmount, setCreateGoalAmount] = useState("");
+  const [createType, setCreateType] = useState<BoxType>("spending");
   const [isCreating, setIsCreating] = useState(false);
 
   // Edit dialog state
@@ -67,6 +70,7 @@ export function CaixinhasTab() {
   const [editingBox, setEditingBox] = useState<BoxDTO | null>(null);
   const [editName, setEditName] = useState("");
   const [editGoalAmount, setEditGoalAmount] = useState("");
+  const [editType, setEditType] = useState<BoxType>("spending");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Delete dialog state
@@ -98,12 +102,14 @@ export function CaixinhasTab() {
       const result = await createBox({
         name: createName.trim(),
         goalAmount: goalAmount && goalAmount > 0 ? goalAmount : undefined,
+        type: createType,
       });
 
       if (result) {
         setIsCreateOpen(false);
         setCreateName("");
         setCreateGoalAmount("");
+        setCreateType("spending");
       }
     } finally {
       setIsCreating(false);
@@ -114,6 +120,7 @@ export function CaixinhasTab() {
     setEditingBox(box);
     setEditName(box.name);
     setEditGoalAmount(box.goalAmount != null ? box.goalAmount.toString() : "");
+    setEditType(box.type);
     setIsEditOpen(true);
   };
 
@@ -134,6 +141,7 @@ export function CaixinhasTab() {
         boxId: editingBox.id,
         name: editName.trim(),
         goalAmount: goalAmount && goalAmount > 0 ? goalAmount : null,
+        type: editType,
       });
 
       if (result.error) {
@@ -261,6 +269,69 @@ export function CaixinhasTab() {
     );
   }
 
+  const spendingBoxes = boxes?.filter((b) => b.type === "spending") ?? [];
+  const savingBoxes = boxes?.filter((b) => b.type === "saving") ?? [];
+
+  const renderBoxCard = (box: BoxDTO) => (
+    <div
+      key={box.id}
+      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-800">
+            {box.name}
+          </span>
+          {box.isDefault && (
+            <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+              padrao
+            </span>
+          )}
+        </div>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title="Editar"
+            onClick={() => handleOpenEdit(box)}
+          >
+            <PencilIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title={getDeleteDisabledReason(box) || "Remover"}
+            disabled={!canDeleteBox(box)}
+            onClick={() => handleOpenDelete(box)}
+          >
+            <Trash2Icon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="text-lg font-bold text-gray-900">
+        {formatCurrency(box.balance)}
+      </div>
+
+      {box.goalAmount != null && box.goalProgress != null && (
+        <div className="mt-2">
+          <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <span>Meta: {formatCurrency(box.goalAmount)}</span>
+            <span>{Math.min(100, Math.round(box.goalProgress))}%</span>
+          </div>
+          <Progress
+            value={Math.min(100, box.goalProgress)}
+            filledColor={box.goalProgress >= 100 ? "#22c55e" : "#6366f1"}
+            bgColor="#e5e7eb"
+            className="h-2"
+          />
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
@@ -280,7 +351,7 @@ export function CaixinhasTab() {
             onClick={() => setIsCreateOpen(true)}
           >
             <PlusIcon className="h-4 w-4 mr-1" />
-            Nova Caixinha
+            Nova
           </Button>
         </div>
       </div>
@@ -288,72 +359,33 @@ export function CaixinhasTab() {
       {/* Box List */}
       <ScrollArea className="flex flex-col flex-1 pr-3 overflow-y-auto">
         {boxes && boxes.length > 0 ? (
-          <div className="space-y-3">
-            {boxes.map((box) => (
-              <div
-                key={box.id}
-                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-800">
-                      {box.name}
-                    </span>
-                    {box.isDefault && (
-                      <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
-                        padrao
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      title="Editar caixinha"
-                      onClick={() => handleOpenEdit(box)}
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      title={getDeleteDisabledReason(box) || "Remover caixinha"}
-                      disabled={!canDeleteBox(box)}
-                      onClick={() => handleOpenDelete(box)}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </div>
+          <div className="space-y-4">
+            {spendingBoxes.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Contas
+                </h3>
+                <div className="space-y-3">
+                  {spendingBoxes.map(renderBoxCard)}
                 </div>
-
-                <div className="text-lg font-bold text-gray-900">
-                  {formatCurrency(box.balance)}
-                </div>
-
-                {box.goalAmount != null && box.goalProgress != null && (
-                  <div className="mt-2">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span>Meta: {formatCurrency(box.goalAmount)}</span>
-                      <span>{Math.min(100, Math.round(box.goalProgress))}%</span>
-                    </div>
-                    <Progress
-                      value={Math.min(100, box.goalProgress)}
-                      filledColor={box.goalProgress >= 100 ? "#22c55e" : "#6366f1"}
-                      bgColor="#e5e7eb"
-                      className="h-2"
-                    />
-                  </div>
-                )}
               </div>
-            ))}
+            )}
+            {savingBoxes.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Caixinhas
+                </h3>
+                <div className="space-y-3">
+                  {savingBoxes.map(renderBoxCard)}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center p-6 text-gray-500">
             <p className="text-sm">Nenhuma caixinha encontrada</p>
             <p className="text-xs text-gray-400 mt-1">
-              Crie uma nova caixinha para organizar suas finanças
+              Crie uma nova caixinha para organizar suas financas
             </p>
           </div>
         )}
@@ -371,27 +403,44 @@ export function CaixinhasTab() {
           <form onSubmit={handleCreate}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={createType}
+                  onValueChange={(v) => setCreateType(v as BoxType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="spending">Conta</SelectItem>
+                    <SelectItem value="saving">Caixinha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="create-name">Nome</Label>
                 <Input
                   id="create-name"
-                  placeholder="Ex: Reserva de emergência"
+                  placeholder={createType === "spending" ? "Ex: Nubank" : "Ex: Reserva de emergencia"}
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-goal">Meta (opcional)</Label>
-                <Input
-                  id="create-goal"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  value={createGoalAmount}
-                  onChange={(e) => setCreateGoalAmount(e.target.value)}
-                />
-              </div>
+              {createType === "saving" && (
+                <div className="space-y-2">
+                  <Label htmlFor="create-goal">Meta (opcional)</Label>
+                  <Input
+                    id="create-goal"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={createGoalAmount}
+                    onChange={(e) => setCreateGoalAmount(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button
@@ -414,35 +463,52 @@ export function CaixinhasTab() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Caixinha</DialogTitle>
+            <DialogTitle>Editar {boxTypeLabel(editType)}</DialogTitle>
             <DialogDescription>
-              Altere o nome ou a meta da caixinha.
+              Altere as propriedades da {boxTypeLabel(editType).toLowerCase()}.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveEdit}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={editType}
+                  onValueChange={(v) => setEditType(v as BoxType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="spending">Conta</SelectItem>
+                    <SelectItem value="saving">Caixinha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="edit-name">Nome</Label>
                 <Input
                   id="edit-name"
-                  placeholder="Nome da caixinha"
+                  placeholder="Nome"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-goal">Meta (opcional)</Label>
-                <Input
-                  id="edit-goal"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  value={editGoalAmount}
-                  onChange={(e) => setEditGoalAmount(e.target.value)}
-                />
-              </div>
+              {editType === "saving" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-goal">Meta (opcional)</Label>
+                  <Input
+                    id="edit-goal"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={editGoalAmount}
+                    onChange={(e) => setEditGoalAmount(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button

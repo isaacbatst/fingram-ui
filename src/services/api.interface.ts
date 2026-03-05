@@ -37,11 +37,14 @@ export interface CreateTransactionRequest {
   boxId?: string;
 }
 
+export type BoxType = 'spending' | 'saving';
+
 export interface BoxDTO {
   id: string;
   name: string;
   goalAmount: number | null;
   isDefault: boolean;
+  type: BoxType;
   balance: number;
   goalProgress: number | null;
 }
@@ -49,12 +52,14 @@ export interface BoxDTO {
 export interface CreateBoxRequest {
   name: string;
   goalAmount?: number;
+  type?: BoxType;
 }
 
 export interface EditBoxRequest {
   boxId: string;
   name?: string;
   goalAmount?: number | null;
+  type?: BoxType;
 }
 
 export interface CreateTransferRequest {
