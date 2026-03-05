@@ -20,6 +20,7 @@ import type {
   CreateBoxRequest,
   EditBoxRequest,
   CreateTransferRequest,
+  EditTransferRequest,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -284,6 +285,19 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao criar transferência:", error);
       return { error: "Erro ao criar transferência" };
+    }
+  }
+
+  async editTransfer(request: EditTransferRequest): Promise<{ error?: string }> {
+    try {
+      await this.makeRequest('/edit-transfer', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao editar transferência:", error);
+      return { error: "Erro ao editar transferência" };
     }
   }
 

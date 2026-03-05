@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import type { BoxDTO } from "../services/api.interface";
 import { useApi } from "../hooks/useApi";
 import type { Category } from "../hooks/useCategories";
+import { useTransfer } from "../hooks/useTransfer";
 import { CategorySelect } from "./CategorySelect";
 import { DatePicker } from "./DatePicker";
 import type { Transaction } from "./TransacoesTab";
@@ -32,6 +33,192 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
+
+function TransferEditForm({
+  tx,
+  boxes,
+  onUpdate,
+  dateValue,
+}: {
+  tx: Transaction;
+  boxes?: BoxDTO[];
+  onUpdate?: () => Promise<void>;
+  dateValue?: Date;
+}) {
+  const { editTransfer, deleteTransfer } = useTransfer();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [editState, setEditState] = useState<{
+    amount?: number;
+    date?: string;
+    fromBoxId?: string;
+    toBoxId?: string;
+  }>({});
+  const [error, setError] = useState<string | null>(null);
+
+  const currentFromBoxId = editState.fromBoxId ?? tx.boxId;
+  const currentToBoxId = editState.toBoxId ?? tx.transferToBoxId ?? "";
+  const editDateValue = editState.date
+    ? new Date(editState.date)
+    : dateValue;
+
+  const saveChanges = async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const success = await editTransfer({
+        transferId: tx.transferId!,
+        amount: editState.amount,
+        date: editState.date,
+        fromBoxId: editState.fromBoxId,
+        toBoxId: editState.toBoxId,
+      });
+      if (success) {
+        if (onUpdate) await onUpdate();
+        setEditState({});
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const success = await deleteTransfer(tx.transferId!);
+      if (success && onUpdate) await onUpdate();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <form
+      className="space-y-2 rounded p-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        saveChanges();
+      }}
+    >
+      <div className="flex gap-2 mb-2">
+        <Input
+          type="number"
+          min={0.01}
+          step={0.01}
+          className="text-xs"
+          value={editState.amount !== undefined ? editState.amount : tx.amount}
+          onChange={(e) =>
+            setEditState((s) => ({ ...s, amount: Number(e.target.value) }))
+          }
+        />
+      </div>
+      {boxes && boxes.length > 0 && (
+        <div className="flex gap-2 items-center">
+          <Select
+            value={currentFromBoxId}
+            onValueChange={(val) => setEditState((s) => ({ ...s, fromBoxId: val }))}
+          >
+            <SelectTrigger className="text-xs flex-1">
+              <SelectValue placeholder="Origem" />
+            </SelectTrigger>
+            <SelectContent>
+              {boxes.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ArrowRight className="w-4 h-4 text-blue-400 shrink-0" />
+          <Select
+            value={currentToBoxId}
+            onValueChange={(val) => setEditState((s) => ({ ...s, toBoxId: val }))}
+          >
+            <SelectTrigger className="text-xs flex-1">
+              <SelectValue placeholder="Destino" />
+            </SelectTrigger>
+            <SelectContent>
+              {boxes.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div className="flex flex-col gap-3">
+        <DatePicker
+          date={editDateValue}
+          onDateChange={(date) =>
+            setEditState((s) => ({ ...s, date: date?.toISOString() }))
+          }
+          placeholder="Escolha uma data"
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          className="flex-1"
+          type="submit"
+          size="sm"
+          disabled={isSaving || isDeleting}
+        >
+          {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+          Salvar
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          className="flex-1"
+          variant="secondary"
+          onClick={() => { setEditState({}); setError(null); }}
+          disabled={isSaving || isDeleting}
+        >
+          <X className="size-4" />
+          Cancelar
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              className="flex-1"
+              variant="destructive"
+              disabled={isSaving || isDeleting}
+            >
+              {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              Deletar
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Tem certeza que deseja deletar a transferencia?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acao nao pode ser desfeita. Esta transferencia sera
+                deletada permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <Button type="button" variant="secondary" disabled={isDeleting}>
+                  <X className="size-4" />
+                  Cancelar
+                </Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild onClick={handleDelete}>
+                <Button variant="destructive" type="button" disabled={isDeleting}>
+                  <Trash2 className="size-4" />
+                  Deletar
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
+    </form>
+  );
+}
 
 type TransactionItemProps = {
   transaction: Transaction;
@@ -285,29 +472,12 @@ export function TransactionItem({
       </AccordionTrigger>
       <AccordionContent>
         {isTransfer ? (
-          <div className="rounded bg-blue-50 p-3 text-sm text-blue-700 space-y-2">
-            <div className="flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4 shrink-0" />
-              <span className="font-medium">Transferencia</span>
-            </div>
-            {isCompletePair && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <span>{boxName ?? "?"}</span>
-                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-                <span>{transferToBoxName ?? "?"}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-4 text-xs text-blue-500">
-              <span>{dateOnly(tx.date)}</span>
-              <span className="font-semibold">
-                R${" "}
-                {tx.amount.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-          </div>
+          <TransferEditForm
+            tx={tx}
+            boxes={boxes}
+            onUpdate={onUpdate}
+            dateValue={dateValue}
+          />
         ) : (
           <form
             className="space-y-2 rounded p-2"

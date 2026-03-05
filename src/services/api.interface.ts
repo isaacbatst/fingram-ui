@@ -63,6 +63,14 @@ export interface CreateTransferRequest {
   date?: string;
 }
 
+export interface EditTransferRequest {
+  transferId: string;
+  amount?: number;
+  date?: string;
+  fromBoxId?: string;
+  toBoxId?: string;
+}
+
 export interface CreateTransactionResponse {
   transaction?: TransactionDTO;
   vault?: any;
@@ -127,5 +135,6 @@ export interface ApiService {
 
   // Transfers
   createTransfer(request: CreateTransferRequest): Promise<{ transferId?: string; error?: string }>;
+  editTransfer(request: EditTransferRequest): Promise<{ error?: string }>;
   deleteTransfer(transferId: string): Promise<{ error?: string }>;
 }

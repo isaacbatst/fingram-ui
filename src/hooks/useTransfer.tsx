@@ -1,7 +1,7 @@
 import { useApi } from "./useApi";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
-import type { CreateTransferRequest } from "@/services/api.interface";
+import type { CreateTransferRequest, EditTransferRequest } from "@/services/api.interface";
 
 export function useTransfer() {
   const { apiService } = useApi();
@@ -25,6 +25,17 @@ export function useTransfer() {
     return result.transferId;
   };
 
+  const editTransfer = async (request: EditTransferRequest) => {
+    const result = await apiService.editTransfer(request);
+    if (result.error) {
+      toast.error(result.error);
+      return false;
+    }
+    toast.success("Transferência editada com sucesso");
+    invalidateAll();
+    return true;
+  };
+
   const deleteTransfer = async (transferId: string) => {
     const result = await apiService.deleteTransfer(transferId);
     if (result.error) {
@@ -36,5 +47,5 @@ export function useTransfer() {
     return true;
   };
 
-  return { createTransfer, deleteTransfer };
+  return { createTransfer, editTransfer, deleteTransfer };
 }
