@@ -296,6 +296,7 @@ export function TransacoesTab({
                   await Promise.allSettled([
                     mutateTransactions(),
                     mutateSummary(),
+                    mutate("boxes"),
                   ]);
                   mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
                 }}

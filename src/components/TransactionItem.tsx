@@ -357,6 +357,7 @@ export function TransactionItem({
         newCategory: editState.categoryCode,
         newDescription: editState.description,
         newType: editState.type,
+        newBoxId: editState.boxId,
       });
 
       if (result.error) {
@@ -543,6 +544,25 @@ export function TransactionItem({
                 currentTransactionType={editState.type ?? tx.type}
               />
             </div>
+            {boxes && boxes.length > 0 && (
+              <div className="flex gap-2">
+                <Select
+                  value={editState.boxId ?? tx.boxId ?? ""}
+                  onValueChange={(val) =>
+                    setEditState((s) => ({ ...s, boxId: val }))
+                  }
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Caixinha" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boxes.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <DatePicker
                 date={dateValue}

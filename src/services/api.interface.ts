@@ -21,6 +21,7 @@ export interface EditTransactionRequest {
   newCategory?: string;
   newDescription?: string;
   newType?: 'income' | 'expense';
+  newBoxId?: string;
 }
 
 export interface EditTransactionResponse {
