@@ -120,7 +120,7 @@ export function TransacoesTab({
     : [];
 
   return (
-    <div>
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4 flex flex-col gap-2">
         <Select
           value={`${filtroAno}-${filtroMes.toString().padStart(2, "0")}`}
@@ -274,7 +274,7 @@ export function TransacoesTab({
         )}
       </div>
 
-      <div className="space-y-3 pb-2">
+      <div className="space-y-3 pb-2 pr-2 overflow-y-auto flex-1 min-h-0">
         {data && data.items.length === 0 ? (
           <div className="text-gray-400 text-center py-8">
             Nenhuma transação encontrada

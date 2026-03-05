@@ -123,7 +123,7 @@ function AppContent() {
                 <OrcamentoTab />
               </TabsContent>
               {/* Tab Transações */}
-              <TabsContent value="transacoes" className="px-4">
+              <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
                 <SaldoResumo
                   saldo={summary.data.vault.balance}
                   receitas={summary.data.vault.totalIncomeAmount}
