@@ -440,23 +440,29 @@ export function TransactionItem({
                   Transferencia
                 </span>
               )}
-              {!isTransfer && (
-                <span className="truncate">
-                  •{" "}
-                  {categories.find((c) => c.value === tx.categoryCode)?.label ||
-                    categories.find(
-                      (c) =>
-                        c.value ===
-                        (typeof tx.category === "string"
-                          ? tx.category
-                          : tx.category.code)
-                    )?.label ||
-                    (typeof tx.category === "object"
-                      ? tx.category.name
-                      : tx.category)}
-                  {boxName && !isCompletePair && ` • ${boxName}`}
-                </span>
-              )}
+              {!isTransfer && (() => {
+                const categoryLabel =
+                  categories.find((c) => c.value === tx.categoryCode)?.label ||
+                  categories.find(
+                    (c) =>
+                      c.value ===
+                      (typeof tx.category === "string"
+                        ? tx.category
+                        : tx.category?.code)
+                  )?.label ||
+                  (typeof tx.category === "object"
+                    ? tx.category?.name
+                    : tx.category) ||
+                  null;
+                const showBox = boxName && !isCompletePair;
+                if (!categoryLabel && !showBox) return null;
+                return (
+                  <span className="truncate">
+                    {categoryLabel && `• ${categoryLabel}`}
+                    {showBox && ` • ${boxName}`}
+                  </span>
+                );
+              })()}
             </div>
           </div>
           <div
