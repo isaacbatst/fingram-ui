@@ -82,9 +82,9 @@ export function TransacoesTab({
   const setFiltroDescricao = (description: string) => {
     setSearchParams({ transacoes_descricao: description });
   }
-  const filtroCaixinha = searchParams.get("transacoes_caixinha") || "";
+  const filtroCaixinha = searchParams.get("transacoes_carteira") || "";
   const setFiltroCaixinha = (boxId: string) => {
-    setSearchParams({ transacoes_caixinha: boxId });
+    setSearchParams({ transacoes_carteira: boxId });
   }
 
   const { boxes } = useBoxes();
@@ -197,7 +197,7 @@ export function TransacoesTab({
             }}
           >
             <SelectTrigger className="text-xs flex-1">
-              <SelectValue placeholder="Todas caixinhas" />
+              <SelectValue placeholder="Todas carteiras" />
             </SelectTrigger>
             <SelectContent>
               {boxes?.map((box) => (

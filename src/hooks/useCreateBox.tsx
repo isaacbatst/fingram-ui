@@ -13,7 +13,7 @@ export function useCreateBox() {
       toast.error(result.error);
       return null;
     }
-    toast.success("Caixinha criada com sucesso");
+    toast.success("Carteira criada com sucesso");
     mutate("boxes");
     mutate("summary");
     return result.box;

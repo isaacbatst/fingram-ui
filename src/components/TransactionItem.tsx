@@ -565,7 +565,7 @@ export function TransactionItem({
                   }
                 >
                   <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Caixinha" />
+                    <SelectValue placeholder="Carteira" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes.map((b) => (

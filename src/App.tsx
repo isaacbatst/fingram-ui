@@ -18,7 +18,7 @@ import {
   Wallet
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import { CaixinhasTab } from "./components/CaixinhasTab";
+import { CarteirasTab } from "./components/CarteirasTab";
 import { IaTab } from "./components/IaTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
@@ -101,7 +101,7 @@ function AppContent() {
                 <InputTab />
               </TabsContent>
               <TabsContent
-                value="caixinhas"
+                value="carteiras"
                 className="px-4 flex flex-col flex-1 min-h-0"
               >
                 <SaldoResumo
@@ -109,7 +109,7 @@ function AppContent() {
                   receitas={summary.data.vault.totalIncomeAmount}
                   despesas={summary.data.vault.totalSpentAmount}
                 />
-                <CaixinhasTab />
+                <CarteirasTab />
               </TabsContent>
               <TabsContent
                 value="orcamento"
@@ -142,7 +142,7 @@ function AppContent() {
                   <TabsTrigger value="input">
                     <DollarSign className="w-4 h-4" />
                   </TabsTrigger>
-                  <TabsTrigger value="caixinhas">
+                  <TabsTrigger value="carteiras">
                     <Wallet className="w-4 h-4" />
                   </TabsTrigger>
                   <TabsTrigger value="orcamento">

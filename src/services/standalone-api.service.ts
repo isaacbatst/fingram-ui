@@ -243,8 +243,8 @@ export class StandaloneApiService implements ApiService {
       const box = await response.json();
       return { box };
     } catch (error) {
-      console.error("Erro ao criar caixinha:", error);
-      return { error: "Erro ao criar caixinha" };
+      console.error("Erro ao criar carteira:", error);
+      return { error: "Erro ao criar carteira" };
     }
   }
 
@@ -256,8 +256,8 @@ export class StandaloneApiService implements ApiService {
       });
       return {};
     } catch (error) {
-      console.error("Erro ao editar caixinha:", error);
-      return { error: "Erro ao editar caixinha" };
+      console.error("Erro ao editar carteira:", error);
+      return { error: "Erro ao editar carteira" };
     }
   }
 
@@ -269,8 +269,8 @@ export class StandaloneApiService implements ApiService {
       });
       return {};
     } catch (error) {
-      console.error("Erro ao deletar caixinha:", error);
-      return { error: "Erro ao deletar caixinha" };
+      console.error("Erro ao deletar carteira:", error);
+      return { error: "Erro ao deletar carteira" };
     }
   }
 

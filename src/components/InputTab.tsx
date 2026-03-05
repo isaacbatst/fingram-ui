@@ -290,12 +290,12 @@ function TransferForm() {
     e.preventDefault();
 
     if (!fromBoxId || !toBoxId) {
-      toast.error("Selecione as caixinhas de origem e destino");
+      toast.error("Selecione as carteiras de origem e destino");
       return;
     }
 
     if (fromBoxId === toBoxId) {
-      toast.error("As caixinhas de origem e destino devem ser diferentes");
+      toast.error("As carteiras de origem e destino devem ser diferentes");
       return;
     }
 
@@ -338,7 +338,7 @@ function TransferForm() {
         <Label>Origem</Label>
         <Select value={fromBoxId} onValueChange={setFromBoxId}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione a caixinha de origem" />
+            <SelectValue placeholder="Selecione a carteira de origem" />
           </SelectTrigger>
           <SelectContent>
             {boxes?.map((box) => (
@@ -355,7 +355,7 @@ function TransferForm() {
         <Label>Destino</Label>
         <Select value={toBoxId} onValueChange={setToBoxId}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione a caixinha de destino" />
+            <SelectValue placeholder="Selecione a carteira de destino" />
           </SelectTrigger>
           <SelectContent>
             {boxes?.map((box) => (

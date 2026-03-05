@@ -51,7 +51,7 @@ const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
 };
 
-export function CaixinhasTab() {
+export function CarteirasTab() {
   const { boxes, isLoading, error, mutate: mutateBoxes } = useBoxes();
   const { createBox } = useCreateBox();
   const { createTransfer } = useTransfer();
@@ -92,7 +92,7 @@ export function CaixinhasTab() {
     e.preventDefault();
 
     if (!createName.trim()) {
-      toast.error("Por favor, insira um nome para a caixinha");
+      toast.error("Por favor, insira um nome");
       return;
     }
 
@@ -130,7 +130,7 @@ export function CaixinhasTab() {
     if (!editingBox) return;
 
     if (!editName.trim()) {
-      toast.error("Por favor, insira um nome para a caixinha");
+      toast.error("Por favor, insira um nome");
       return;
     }
 
@@ -147,7 +147,7 @@ export function CaixinhasTab() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Caixinha atualizada com sucesso");
+        toast.success("Carteira atualizada com sucesso");
         mutate("boxes");
         mutate("summary");
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
@@ -156,7 +156,7 @@ export function CaixinhasTab() {
       }
     } catch (err) {
       console.error("Error editing box:", err);
-      toast.error("Erro ao atualizar caixinha");
+      toast.error("Erro ao atualizar carteira");
     } finally {
       setIsSavingEdit(false);
     }
@@ -177,7 +177,7 @@ export function CaixinhasTab() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Caixinha removida com sucesso");
+        toast.success("Carteira removida com sucesso");
         mutate("boxes");
         mutate("summary");
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
@@ -186,7 +186,7 @@ export function CaixinhasTab() {
       }
     } catch (err) {
       console.error("Error deleting box:", err);
-      toast.error("Erro ao remover caixinha");
+      toast.error("Erro ao remover carteira");
     } finally {
       setIsDeleting(false);
     }
@@ -196,12 +196,12 @@ export function CaixinhasTab() {
     e.preventDefault();
 
     if (!transferFromBoxId || !transferToBoxId) {
-      toast.error("Selecione as caixinhas de origem e destino");
+      toast.error("Selecione as carteiras de origem e destino");
       return;
     }
 
     if (transferFromBoxId === transferToBoxId) {
-      toast.error("As caixinhas de origem e destino devem ser diferentes");
+      toast.error("As carteiras de origem e destino devem ser diferentes");
       return;
     }
 
@@ -244,8 +244,8 @@ export function CaixinhasTab() {
   };
 
   const getDeleteDisabledReason = (box: BoxDTO): string | undefined => {
-    if (box.isDefault) return "Caixinha padrão não pode ser removida";
-    if (box.balance !== 0) return "Caixinha com saldo não pode ser removida";
+    if (box.isDefault) return "Carteira padrao nao pode ser removida";
+    if (box.balance !== 0) return "Carteira com saldo nao pode ser removida";
     return undefined;
   };
 
@@ -336,7 +336,7 @@ export function CaixinhasTab() {
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-gray-700 text-base">Caixinhas</h2>
+        <h2 className="font-semibold text-gray-700 text-base">Carteiras</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -383,9 +383,9 @@ export function CaixinhasTab() {
           </div>
         ) : (
           <div className="text-center p-6 text-gray-500">
-            <p className="text-sm">Nenhuma caixinha encontrada</p>
+            <p className="text-sm">Nenhuma carteira encontrada</p>
             <p className="text-xs text-gray-400 mt-1">
-              Crie uma nova caixinha para organizar suas financas
+              Crie uma nova carteira para organizar suas financas
             </p>
           </div>
         )}
@@ -395,9 +395,9 @@ export function CaixinhasTab() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova Caixinha</DialogTitle>
+            <DialogTitle>Nova Carteira</DialogTitle>
             <DialogDescription>
-              Crie uma nova caixinha para organizar seus recursos.
+              Crie uma nova carteira para organizar seus recursos.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate}>
@@ -531,9 +531,9 @@ export function CaixinhasTab() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover caixinha</AlertDialogTitle>
+            <AlertDialogTitle>Remover carteira</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover a caixinha &quot;{deletingBox?.name}&quot;?
+              Tem certeza que deseja remover a carteira &quot;{deletingBox?.name}&quot;?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -554,9 +554,9 @@ export function CaixinhasTab() {
       <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Transferir entre caixinhas</DialogTitle>
+            <DialogTitle>Transferir entre carteiras</DialogTitle>
             <DialogDescription>
-              Transfira recursos de uma caixinha para outra.
+              Transfira recursos de uma carteira para outra.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleTransfer}>
@@ -568,7 +568,7 @@ export function CaixinhasTab() {
                   onValueChange={setTransferFromBoxId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a caixinha de origem" />
+                    <SelectValue placeholder="Selecione a carteira de origem" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes?.map((box) => (
@@ -586,7 +586,7 @@ export function CaixinhasTab() {
                   onValueChange={setTransferToBoxId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a caixinha de destino" />
+                    <SelectValue placeholder="Selecione a carteira de destino" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes?.map((box) => (
