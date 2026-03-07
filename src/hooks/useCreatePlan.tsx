@@ -1,0 +1,27 @@
+import { planService, type CreatePlanRequest } from "@/services/plan.service";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import { mutate } from "swr";
+
+export function useCreatePlan() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const createPlan = useCallback(async (data: CreatePlanRequest) => {
+    setIsLoading(true);
+    try {
+      const plan = await planService.createPlan(data);
+      mutate("plans");
+      toast.success("Plano criado com sucesso");
+      return plan;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Erro ao criar plano";
+      toast.error(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { createPlan, isLoading };
+}

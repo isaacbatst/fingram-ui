@@ -15,11 +15,13 @@ import {
   DollarSign,
   MessageCircle,
   Search,
+  TrendingUp,
   Wallet
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { CarteirasTab } from "./components/CarteirasTab";
 import { IaTab } from "./components/IaTab";
+import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
 import { useCategories } from "./hooks/useCategories";
@@ -122,6 +124,12 @@ function AppContent() {
                 />
                 <OrcamentoTab />
               </TabsContent>
+              <TabsContent
+                value="plano"
+                className="px-4 flex flex-col flex-1 min-h-0"
+              >
+                <PlanoTab />
+              </TabsContent>
               {/* Tab Transações */}
               <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
                 <SaldoResumo
@@ -147,6 +155,9 @@ function AppContent() {
                   </TabsTrigger>
                   <TabsTrigger value="orcamento">
                     <ChartPie className="w-4 h-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="plano">
+                    <TrendingUp className="w-4 h-4" />
                   </TabsTrigger>
                   <TabsTrigger value="transacoes">
                     <Search className="w-4 h-4" />
