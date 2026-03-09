@@ -190,7 +190,7 @@ export function OrcamentoTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4">
-        <div className="mb-3 font-semibold text-gray-700 text-base flex justify-between items-center">
+        <div className="mb-3 font-semibold text-foreground text-base flex justify-between items-center">
           <span>Orçamento por categoria</span>
           <div className="flex gap-1">
             {!isEditing && (
@@ -231,7 +231,7 @@ export function OrcamentoTab() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           O orçamento será calculado do dia {budgetStartDay} de
                           cada mês até o dia {budgetStartDay - 1 || 28} do mês
                           seguinte.
@@ -314,7 +314,7 @@ export function OrcamentoTab() {
 
         {/* Period display - only show if budgetStartDay is not 1 */}
         {budgetStartDay !== 1 && (
-          <div className="mt-2 text-xs text-gray-500 text-center">
+          <div className="mt-2 text-xs text-muted-foreground text-center">
             Período:{" "}
             {getBudgetPeriodLabel(selectedMonth, selectedYear, budgetStartDay)}
           </div>
@@ -323,39 +323,39 @@ export function OrcamentoTab() {
 
       {/* Resumo do Orçamento */}
       {orcamento.length > 0 && (
-        <div className="bg-gradient-to-r  border border-gray-200 rounded-lg p-4 mb-3">
+        <div className="bg-card border border-border rounded-lg p-4 mb-3">
           <div className="text-center">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-xs text-gray-500 mb-1">Orçamento Total</div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-xs text-muted-foreground mb-1">Orçamento Total</div>
+                <div className="text-lg font-bold text-foreground font-mono">
                   R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500 mb-1">Total Gasto</div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-xs text-muted-foreground mb-1">Total Gasto</div>
+                <div className="text-lg font-bold text-foreground font-mono">
                   R$ {totalGasto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="mt-3 pt-3 border-t border-border">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Orçamento Dísponivel</span>
-                <span className={`text-sm font-medium ${saldoRestante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span className="text-sm text-muted-foreground">Orçamento Dísponivel</span>
+                <span className={`text-sm font-medium font-mono ${saldoRestante >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                   R$ {saldoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div 
+              <div className="w-full rounded-full h-4" style={{ backgroundColor: 'var(--color-border)' }}>
+                <div
                   className={`h-4 rounded-full transition-all duration-300 ${
-                    percentualUso > 90 ? 'bg-red-500' : 
-                    percentualUso > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                    percentualUso > 90 ? 'bg-[var(--color-danger)]' :
+                    percentualUso > 70 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-success)]'
                   }`}
                   style={{ width: `${Math.min(100, percentualUso)}%` }}
                 ></div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 {percentualUso.toFixed(1)}% do orçamento utilizado
               </div>
             </div>
@@ -388,15 +388,15 @@ export function OrcamentoTab() {
                 return (
                   <div key={category.id} className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-600 text-sm">
+                      <span className="font-medium text-foreground text-sm">
                         {category.name}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground font-mono">
                         Usado: R$ {currentBudget?.usado.toFixed(2) || "0.00"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">R$</span>
+                      <span className="text-sm text-muted-foreground">R$</span>
                       <Input
                         type="text"
                         value={budgetValue}
@@ -425,16 +425,16 @@ export function OrcamentoTab() {
                   const pct = Math.min(100, (c.usado / c.valor) * 100);
 
                   // Cores para a barra de progresso
-                  const filledColor = pct > 90 ? "#ef4444" : "#00c950"; // red-500 : green-500
-                  const bgColor = "#e5e7eb"; // gray-200
+                  const filledColor = pct > 90 ? "var(--color-danger)" : "var(--color-success)";
+                  const bgColor = "var(--color-border)";
 
                   return (
                     <div key={c.categoria} className="mb-1">
                       <div className="flex justify-between mb-1">
-                        <span className="font-medium text-gray-600">
+                        <span className="font-medium text-foreground">
                           {c.categoria}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground font-mono">
                           R$ {c.usado.toFixed(2)}/{c.valor.toFixed(2)}
                         </span>
                       </div>
@@ -448,11 +448,11 @@ export function OrcamentoTab() {
                   );
                 })
               ) : !isLoading && (
-                <div className="text-center p-6 text-gray-500">
+                <div className="text-center p-6 text-muted-foreground">
                   <p className="text-sm">
                     Nenhum orçamento definido para este período
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Clique no ícone de edição para definir orçamentos
                   </p>
                 </div>
