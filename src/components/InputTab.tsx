@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/MoneyInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker } from "@/components/DatePicker";
@@ -24,9 +25,9 @@ const formatCurrency = (value: number) =>
 
 type InputMode = 'transaction' | 'transfer';
 
-// ── Bespoke Segmented Control ──
+// ── Mode Tabs (top-level navigation — minimal text + underline) ──
 
-function SegmentedControl({
+function ModeTabs({
   value,
   onChange,
   options,
@@ -35,13 +36,44 @@ function SegmentedControl({
   onChange: (v: string) => void;
   options: { value: string; label: string; icon: React.ReactNode }[];
 }) {
+  return (
+    <div className="flex gap-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex items-center gap-1.5 pb-2 px-1 text-sm font-medium transition-colors duration-200 border-b-2 ${
+            value === opt.value
+              ? "text-foreground border-foreground"
+              : "text-muted-foreground border-transparent hover:text-foreground"
+          }`}
+        >
+          {opt.icon}
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Type Toggle (form-level — subtle pill) ──
+
+function TypeToggle({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
   const activeIndex = options.findIndex((o) => o.value === value);
 
   return (
-    <div className="relative flex rounded-lg border border-border p-0.5 bg-background">
-      {/* Animated pill indicator */}
+    <div className="relative flex rounded-full p-0.5 bg-muted/50">
       <div
-        className="absolute top-0.5 bottom-0.5 rounded-md bg-[var(--color-accent)] transition-all duration-200"
+        className="absolute top-0.5 bottom-0.5 rounded-full bg-muted transition-all duration-200"
         style={{
           width: `calc(${100 / options.length}% - 2px)`,
           left: `calc(${(activeIndex * 100) / options.length}% + 1px)`,
@@ -52,13 +84,12 @@ function SegmentedControl({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors duration-200 ${
+          className={`relative z-10 flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-colors duration-200 ${
             value === opt.value
-              ? "text-[var(--color-bg)]"
+              ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          {opt.icon}
           {opt.label}
         </button>
       ))}
@@ -70,8 +101,8 @@ export function InputTab() {
   const [mode, setMode] = useState<InputMode>('transaction');
 
   return (
-    <div className="space-y-4">
-      <SegmentedControl
+    <div className="space-y-5">
+      <ModeTabs
         value={mode}
         onChange={(v) => setMode(v as InputMode)}
         options={[
@@ -88,7 +119,7 @@ export function InputTab() {
 function TransactionForm() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(0);
   const [categoryId, setCategoryId] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,7 +181,7 @@ function TransactionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (amount <= 0) {
       toast.error("Por favor, insira um valor valido");
       return;
     }
@@ -169,7 +200,7 @@ function TransactionForm() {
 
     try {
       const result = await createTransaction({
-        amount: parseFloat(amount),
+        amount,
         description: description.trim(),
         categoryId: categoryId || undefined,
         date: getISODateString(date),
@@ -184,7 +215,7 @@ function TransactionForm() {
 
         // Reset form
         setDescription('');
-        setAmount('');
+        setAmount(0);
         setCategoryId('');
         setDate(new Date());
         categoryManuallySelected.current = false;
@@ -199,29 +230,23 @@ function TransactionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Transaction Type */}
-      <SegmentedControl
-        value={type}
-        onChange={(v) => setType(v as 'income' | 'expense')}
-        options={[
-          { value: "expense", label: "Despesa", icon: null },
-          { value: "income", label: "Receita", icon: null },
-        ]}
-      />
-
-      {/* Amount — protagonist input */}
-      <div className="py-2">
+      {/* Hero section: type + amount grouped */}
+      <div className="flex flex-col items-center gap-3 py-2">
+        <TypeToggle
+          value={type}
+          onChange={(v) => setType(v as 'income' | 'expense')}
+          options={[
+            { value: "expense", label: "Despesa" },
+            { value: "income", label: "Receita" },
+          ]}
+        />
         <div className="flex items-baseline justify-center gap-2">
           <span className="text-lg font-mono text-muted-foreground">R$</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0,00"
+          <MoneyInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={setAmount}
             required
-            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground placeholder:text-muted-foreground focus:outline-none border-b-2 border-[var(--color-border)] focus:border-[var(--color-accent)] transition-colors pb-1"
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none pb-1"
           />
         </div>
       </div>
@@ -300,7 +325,7 @@ function TransactionForm() {
 function TransferForm() {
   const [fromBoxId, setFromBoxId] = useState('');
   const [toBoxId, setToBoxId] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(0);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -320,8 +345,7 @@ function TransferForm() {
       return;
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (!parsedAmount || parsedAmount <= 0) {
+    if (!amount || amount <= 0) {
       toast.error("Por favor, insira um valor valido");
       return;
     }
@@ -336,7 +360,7 @@ function TransferForm() {
       const result = await createTransfer({
         fromBoxId,
         toBoxId,
-        amount: parsedAmount,
+        amount,
         date: getISODateString(date),
       });
 
@@ -344,7 +368,7 @@ function TransferForm() {
         // Reset form
         setFromBoxId('');
         setToBoxId('');
-        setAmount('');
+        setAmount(0);
         setDate(new Date());
       }
     } finally {
@@ -358,15 +382,11 @@ function TransferForm() {
       <div className="py-2">
         <div className="flex items-baseline justify-center gap-2">
           <span className="text-lg font-mono text-muted-foreground">R$</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0,00"
+          <MoneyInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={setAmount}
             required
-            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground placeholder:text-muted-foreground focus:outline-none border-b-2 border-[var(--color-border)] focus:border-[var(--color-accent)] transition-colors pb-1"
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none pb-1"
           />
         </div>
       </div>

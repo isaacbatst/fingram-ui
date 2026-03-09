@@ -4,7 +4,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MoneyInput } from "@/components/MoneyInput";
 import { ArrowRight, ArrowRightLeft, Check, Loader2, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -109,14 +109,11 @@ function TransferEditForm({
       }}
     >
       <div className="flex gap-2 mb-2">
-        <Input
-          type="number"
-          min={0.01}
-          step={0.01}
+        <MoneyInput
           className="text-xs"
           value={editState.amount !== undefined ? editState.amount : tx.amount}
-          onChange={(e) =>
-            setEditState((s) => ({ ...s, amount: Number(e.target.value) }))
+          onChange={(val) =>
+            setEditState((s) => ({ ...s, amount: val }))
           }
         />
       </div>
@@ -527,18 +524,15 @@ export function TransactionItem({
                   </SelectContent>
                 </Select>
               </div>
-              <Input
-                type="number"
-                min={0.01}
-                step={0.01}
+              <MoneyInput
                 className="text-xs"
                 value={
                   editState.amount !== undefined ? editState.amount : tx.amount
                 }
-                onChange={(e) =>
+                onChange={(val) =>
                   setEditState((s) => ({
                     ...s,
-                    amount: Number(e.target.value),
+                    amount: val,
                   }))
                 }
               />

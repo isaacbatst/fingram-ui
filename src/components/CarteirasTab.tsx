@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/MoneyInput";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -61,7 +62,7 @@ export function CarteirasTab() {
   // Create dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
-  const [createGoalAmount, setCreateGoalAmount] = useState("");
+  const [createGoalAmount, setCreateGoalAmount] = useState(0);
   const [createType, setCreateType] = useState<BoxType>("spending");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -69,7 +70,7 @@ export function CarteirasTab() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingBox, setEditingBox] = useState<BoxDTO | null>(null);
   const [editName, setEditName] = useState("");
-  const [editGoalAmount, setEditGoalAmount] = useState("");
+  const [editGoalAmount, setEditGoalAmount] = useState(0);
   const [editType, setEditType] = useState<BoxType>("spending");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -82,7 +83,7 @@ export function CarteirasTab() {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferFromBoxId, setTransferFromBoxId] = useState("");
   const [transferToBoxId, setTransferToBoxId] = useState("");
-  const [transferAmount, setTransferAmount] = useState("");
+  const [transferAmount, setTransferAmount] = useState(0);
   const [transferDate, setTransferDate] = useState<Date | undefined>(new Date());
   const [isTransferring, setIsTransferring] = useState(false);
 
@@ -98,17 +99,16 @@ export function CarteirasTab() {
 
     setIsCreating(true);
     try {
-      const goalAmount = createGoalAmount ? parseFloat(createGoalAmount) : undefined;
       const result = await createBox({
         name: createName.trim(),
-        goalAmount: goalAmount && goalAmount > 0 ? goalAmount : undefined,
+        goalAmount: createGoalAmount > 0 ? createGoalAmount : undefined,
         type: createType,
       });
 
       if (result) {
         setIsCreateOpen(false);
         setCreateName("");
-        setCreateGoalAmount("");
+        setCreateGoalAmount(0);
         setCreateType("spending");
       }
     } finally {
@@ -119,7 +119,7 @@ export function CarteirasTab() {
   const handleOpenEdit = (box: BoxDTO) => {
     setEditingBox(box);
     setEditName(box.name);
-    setEditGoalAmount(box.goalAmount != null ? box.goalAmount.toString() : "");
+    setEditGoalAmount(box.goalAmount ?? 0);
     setEditType(box.type);
     setIsEditOpen(true);
   };
@@ -136,11 +136,10 @@ export function CarteirasTab() {
 
     setIsSavingEdit(true);
     try {
-      const goalAmount = editGoalAmount ? parseFloat(editGoalAmount) : null;
       const result = await apiService.editBox({
         boxId: editingBox.id,
         name: editName.trim(),
-        goalAmount: goalAmount && goalAmount > 0 ? goalAmount : null,
+        goalAmount: editGoalAmount > 0 ? editGoalAmount : null,
         type: editType,
       });
 
@@ -205,8 +204,7 @@ export function CarteirasTab() {
       return;
     }
 
-    const amount = parseFloat(transferAmount);
-    if (!amount || amount <= 0) {
+    if (!transferAmount || transferAmount <= 0) {
       toast.error("Por favor, insira um valor válido");
       return;
     }
@@ -221,7 +219,7 @@ export function CarteirasTab() {
       const result = await createTransfer({
         fromBoxId: transferFromBoxId,
         toBoxId: transferToBoxId,
-        amount,
+        amount: transferAmount,
         date: getISODateString(transferDate),
       });
 
@@ -229,7 +227,7 @@ export function CarteirasTab() {
         setIsTransferOpen(false);
         setTransferFromBoxId("");
         setTransferToBoxId("");
-        setTransferAmount("");
+        setTransferAmount(0);
         setTransferDate(new Date());
       }
     } finally {
@@ -439,14 +437,10 @@ export function CarteirasTab() {
               {createType === "saving" && (
                 <div className="space-y-2">
                   <Label htmlFor="create-goal">Meta (opcional)</Label>
-                  <Input
+                  <MoneyInput
                     id="create-goal"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
                     value={createGoalAmount}
-                    onChange={(e) => setCreateGoalAmount(e.target.value)}
+                    onChange={setCreateGoalAmount}
                   />
                 </div>
               )}
@@ -507,14 +501,10 @@ export function CarteirasTab() {
               {editType === "saving" && (
                 <div className="space-y-2">
                   <Label htmlFor="edit-goal">Meta (opcional)</Label>
-                  <Input
+                  <MoneyInput
                     id="edit-goal"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
                     value={editGoalAmount}
-                    onChange={(e) => setEditGoalAmount(e.target.value)}
+                    onChange={setEditGoalAmount}
                   />
                 </div>
               )}
@@ -608,14 +598,10 @@ export function CarteirasTab() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transfer-amount">Valor (R$)</Label>
-                <Input
+                <MoneyInput
                   id="transfer-amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
                   value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
+                  onChange={setTransferAmount}
                   required
                 />
               </div>

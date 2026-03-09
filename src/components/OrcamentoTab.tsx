@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/MoneyInput";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useBudgetStartDay } from "@/hooks/useBudgetStartDay";
@@ -91,7 +91,7 @@ export function OrcamentoTab() {
   };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editingBudgets, setEditingBudgets] = useState<Record<string, string>>(
+  const [editingBudgets, setEditingBudgets] = useState<Record<string, number>>(
     {}
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -135,15 +135,15 @@ export function OrcamentoTab() {
   const handleEditClick = () => {
     setIsEditing(true);
     // Inicializar os valores dos inputs com os valores atuais
-    const initialValues: Record<string, string> = {};
+    const initialValues: Record<string, number> = {};
     orcamento.forEach((item) => {
-      initialValues[item.categoryId] = item.valor.toString();
+      initialValues[item.categoryId] = item.valor;
     });
-    
+
     // Adicionar categorias que não têm orçamento definido
     categories?.forEach((cat: Category) => {
       if (!initialValues[cat.id]) {
-        initialValues[cat.id] = "0";
+        initialValues[cat.id] = 0;
       }
     });
     
@@ -159,11 +159,11 @@ export function OrcamentoTab() {
     setIsSaving(true);
     try {
       const budgetsToSave = Object.entries(editingBudgets)
-        .map(([categoryId, amountStr]) => ({
+        .map(([categoryId, amount]) => ({
           categoryId,
-          amount: parseFloat(amountStr) || 0,
+          amount,
         }))
-        .filter((budget) => budget.amount > 0); // Só enviar orçamentos > 0
+        .filter((budget) => budget.amount > 0);
 
       const result = await setBudgets(budgetsToSave);
       if (result.success) {
@@ -177,14 +177,11 @@ export function OrcamentoTab() {
     }
   };
 
-  const handleBudgetChange = (categoryId: string, value: string) => {
-    // Permitir apenas números e pontos decimais
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      setEditingBudgets((prev) => ({
-        ...prev,
-        [categoryId]: value,
-      }));
-    }
+  const handleBudgetChange = (categoryId: string, value: number) => {
+    setEditingBudgets((prev) => ({
+      ...prev,
+      [categoryId]: value,
+    }));
   };
 
   return (
@@ -381,7 +378,7 @@ export function OrcamentoTab() {
                 const currentBudget = orcamento.find(
                   (o) => o.categoryId === category.id
                 );
-                const budgetValue = editingBudgets[category.id] || "0";
+                const budgetValue = editingBudgets[category.id] || 0;
 
                 return (
                   <div key={category.id} className="space-y-2">
@@ -395,13 +392,11 @@ export function OrcamentoTab() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">R$</span>
-                      <Input
-                        type="text"
+                      <MoneyInput
                         value={budgetValue}
-                        onChange={(e) =>
-                          handleBudgetChange(category.id, e.target.value)
+                        onChange={(val) =>
+                          handleBudgetChange(category.id, val)
                         }
-                        placeholder="0.00"
                         className="flex-1"
                         disabled={isSaving}
                       />
