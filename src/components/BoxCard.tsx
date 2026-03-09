@@ -10,7 +10,7 @@ interface BoxCardProps {
 
 export function BoxCard({ box }: BoxCardProps) {
   return (
-    <div className="min-w-[150px] max-w-[180px] shrink-0 rounded-lg border border-border bg-[var(--color-bg-surface)] p-3 shadow-sm duna-card duna-glass">
+    <div className="min-w-[150px] max-w-[180px] shrink-0 rounded-lg border border-border p-3 shadow-sm duna-card duna-surface">
       <div className="flex items-center gap-1.5 mb-1">
         <span className="font-semibold text-sm text-foreground truncate">
           {box.name}

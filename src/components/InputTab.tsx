@@ -38,7 +38,7 @@ function SegmentedControl({
   const activeIndex = options.findIndex((o) => o.value === value);
 
   return (
-    <div className="relative flex rounded-lg border border-border p-0.5 bg-[var(--color-bg-surface)]">
+    <div className="relative flex rounded-lg border border-border p-0.5 bg-background">
       {/* Animated pill indicator */}
       <div
         className="absolute top-0.5 bottom-0.5 rounded-md bg-[var(--color-accent)] transition-all duration-200"

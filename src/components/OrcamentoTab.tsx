@@ -323,7 +323,7 @@ export function OrcamentoTab() {
 
       {/* Resumo do Orçamento */}
       {orcamento.length > 0 && (
-        <div className="bg-[var(--color-bg-surface)] border border-border rounded-lg p-3 mb-3 duna-card duna-glass">
+        <div className="border border-border rounded-lg p-3 mb-3 duna-card duna-surface">
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Orçamento</div>

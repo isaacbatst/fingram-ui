@@ -39,7 +39,7 @@ export function FunctionCallMessage({ message }: FunctionCallMessageProps) {
             </div>
           </div>
 
-          <div className="bg-muted rounded-xl py-2 ml-4 mt-2">
+          <div className="duna-surface rounded-xl py-2 ml-4 mt-2">
             <div className="max-h-96 overflow-y-scroll text-xs border-b mx-6 p-2">
               <pre>
                 {JSON.stringify(JSON.parse(message.arguments), null, 2)}

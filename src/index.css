@@ -208,7 +208,25 @@
   animation: duna-fade-up 0.35s var(--ease-out) both;
 }
 
-/* Backdrop blur for glass surfaces */
+/* Glass surface with gradient light — replaces flat surface tint */
+.duna-surface {
+  background: linear-gradient(
+    180deg,
+    rgba(217, 175, 120, 0.06) 0%,
+    rgba(217, 175, 120, 0.015) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.duna-surface:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(217, 175, 120, 0.09) 0%,
+    rgba(217, 175, 120, 0.025) 100%
+  );
+}
+
+/* Backdrop blur for glass surfaces (legacy — prefer duna-surface) */
 .duna-glass {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

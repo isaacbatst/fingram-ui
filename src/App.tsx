@@ -133,7 +133,7 @@ function AppContent() {
         onValueChange={setCurrentTab}
       >
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex flex-col w-52 border-r border-[var(--color-border)] bg-[var(--color-bg-surface)] duna-glass shrink-0">
+        <aside className="hidden lg:flex flex-col w-52 border-r border-[var(--color-border)] bg-background shrink-0">
           <div className="px-5 pt-5 pb-2">
             <DunaLogo size={28} showWordmark />
           </div>

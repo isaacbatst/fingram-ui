@@ -275,7 +275,7 @@ export function CarteirasTab() {
   const renderBoxCard = (box: BoxDTO, index: number) => (
     <div
       key={box.id}
-      className={`rounded-lg border border-border bg-[var(--color-bg-surface)] p-3 shadow-sm duna-card duna-glass duna-stagger-${Math.min(index + 1, 6)}`}
+      className={`rounded-lg border border-border p-3 shadow-sm duna-card duna-surface duna-stagger-${Math.min(index + 1, 6)}`}
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5 min-w-0">
