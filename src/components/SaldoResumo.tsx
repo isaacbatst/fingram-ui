@@ -7,14 +7,14 @@ type SaldoResumoProps = {
 export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
   return (
     <div className="text-center mb-3 sm:mt-3  ">
-      <div className="uppercase text-xs tracking-widest font-semibold mb-1 text-gray-500">
+      <div className="uppercase text-xs tracking-widest font-semibold mb-1 text-muted-foreground">
         Saldo
       </div>
-      <div className="text-4xl font-extrabold drop-shadow-sm mb-2 text-gray-900">
+      <div className="text-4xl font-extrabold font-mono drop-shadow-sm mb-2 text-foreground">
         R$ {saldo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
       </div>
       <div className="flex justify-center mt-1 space-x-6 text-sm">
-        <div className="flex items-center gap-1 font-medium text-green-600">
+        <div className="flex items-center gap-1 font-medium text-[var(--color-success)]">
           <svg width="16" height="16" fill="none" className="inline">
             <path
               d="M8 2v12M8 2l4 4M8 2L4 6"
@@ -25,7 +25,7 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
           </svg>
           + R$ {receitas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </div>
-        <div className="flex items-center gap-1 font-medium text-red-600">
+        <div className="flex items-center gap-1 font-medium text-[var(--color-danger)]">
           <svg width="16" height="16" fill="none" className="inline">
             <path
               d="M8 14V2M8 14l4-4M8 14l-4-4"
@@ -37,7 +37,7 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
           - R$ {despesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </div>
       </div>
-      <p className="text-xs text-gray-400 my-2">
+      <p className="text-xs text-muted-foreground my-2">
         (receitas e despesas deste mês)
       </p>
     </div>
