@@ -41,7 +41,7 @@ function AppContent() {
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-white text-gray-900">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-background text-foreground">
         <LoadingSpinner />
       </div>
     );
@@ -57,7 +57,7 @@ function AppContent() {
     // Need authentication
     if (!auth.isAuthenticated) {
       return (
-        <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-white text-gray-900">
+        <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-background text-foreground">
           <VaultAccessTokenInput />
         </div>
       );
@@ -76,14 +76,14 @@ function AppContent() {
   }
 
   return (
-    <div className="h-dvh flex flex-col items-center bg-white text-gray-900">
+    <div className="h-dvh flex flex-col items-center bg-background text-foreground">
       {auth.isAuthenticated && (
         <div className="flex justify-end self-stretch px-5 py-2">
           <AccountButton />
         </div>
       )}
 
-      <div className="rounded-3xl min-h-0 sm:p-5 w-full flex flex-col flex-1 sm:max-w-md sm:shadow-xl sm:border">
+      <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl lg:max-w-5xl mx-auto">
         {summary.data && summary.data.vault ? (
           <>
             <Tabs
@@ -176,7 +176,7 @@ function AppContent() {
           <LoadingSpinner />
         ) : (
           <div className="text-center p-6">
-            <div className="text-gray-500 mb-4">
+            <div className="text-muted-foreground mb-4">
               <svg
                 className="w-12 h-12 mx-auto mb-2"
                 fill="none"
@@ -191,7 +191,7 @@ function AppContent() {
                 />
               </svg>
               <p className="text-sm">Nenhum cofre encontrado</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Use /create no bot para criar um cofre
               </p>
             </div>
