@@ -66,19 +66,19 @@ function processItems(items: AgentInputItem[]): ProcessedItem[] {
         content:
           typeof item.content === "string"
             ? item.content
-            : item.content
-                .map((content: { type: string; text?: string; transcript?: string; refusal?: string }) => {
+            : (item.content as Array<Record<string, unknown>>)
+                .map((content) => {
                   if (
                     content.type === "input_text" ||
                     content.type === "output_text"
                   ) {
-                    return content.text;
+                    return content.text as string;
                   }
                   if (content.type === "audio") {
-                    return content.transcript ?? "⚫︎⚫︎⚫︎";
+                    return (content.transcript as string) ?? "⚫︎⚫︎⚫︎";
                   }
                   if (content.type === "refusal") {
-                    return content.refusal;
+                    return content.refusal as string;
                   }
                   return "";
                 })
