@@ -296,7 +296,7 @@ export function TransacoesTab({
 
       <div className="space-y-3 pb-2 pr-2 overflow-y-auto flex-1 min-h-0">
         {data && data.items.length === 0 ? (
-          <div className="text-gray-400 text-center py-8">
+          <div className="text-muted-foreground text-center py-8">
             Nenhuma transação encontrada
           </div>
         ) : data && data.items.length > 0 ? (
@@ -332,7 +332,7 @@ export function TransacoesTab({
         ) : isLoading ? (
           <LoadingSpinner />
         ) : (
-          <div className="text-gray-400 text-center py-8">
+          <div className="text-muted-foreground text-center py-8">
             Nenhuma transação encontrada
           </div>
         )}
