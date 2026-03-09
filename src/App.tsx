@@ -1,4 +1,6 @@
 import { AccountButton } from "@/components/AccountButton";
+import { AccentGlow } from "@/components/AccentGlow";
+import { GrainOverlay } from "@/components/GrainOverlay";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -175,26 +177,16 @@ function AppContent() {
         ) : summary.isLoading ? (
           <LoadingSpinner />
         ) : (
-          <div className="text-center p-6">
-            <div className="text-muted-foreground mb-4">
-              <svg
-                className="w-12 h-12 mx-auto mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-              <p className="text-sm">Nenhum cofre encontrado</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Use /create no bot para criar um cofre
-              </p>
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
+              <Wallet className="w-8 h-8 text-muted-foreground" />
             </div>
+            <h2 className="font-display text-xl font-semibold text-foreground mb-3 tracking-tight">
+              Nenhum cofre encontrado
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+              Use /create no bot do Telegram para criar um cofre.
+            </p>
           </div>
         )}
       </div>
@@ -222,6 +214,8 @@ export default function App() {
         </ApiProvider>
       </StorageProvider>
       <Toaster closeButton richColors />
+      <AccentGlow />
+      <GrainOverlay />
     </ErrorBoundary>
   );
 }

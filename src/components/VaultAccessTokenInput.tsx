@@ -33,12 +33,12 @@ export function VaultAccessTokenInput() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-[var(--color-bg-surface)] border-[var(--color-border)]">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 w-12 h-12 bg-[var(--color-info-bg)] rounded-full flex items-center justify-center">
-          <Key className="w-6 h-6 text-[var(--color-info)]" />
+        <div className="mx-auto mb-4">
+          <span className="font-display text-2xl font-semibold italic text-[var(--color-accent)] tracking-tight">duna</span>
         </div>
-        <CardTitle>Acesso ao Cofre</CardTitle>
+        <CardTitle className="font-display tracking-tight">Acesso ao Cofre</CardTitle>
         <CardDescription>
           Digite seu token de acesso para acessar seu cofre
         </CardDescription>

@@ -36,24 +36,24 @@ export function InputTab() {
           onClick={() => setMode('transaction')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
             mode === 'transaction'
-              ? 'bg-card text-foreground shadow-sm'
+              ? 'bg-[var(--color-bg-surface)] text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <DollarSignIcon className="h-3.5 w-3.5" />
-          Transacao
+          Transação
         </button>
         <button
           type="button"
           onClick={() => setMode('transfer')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
             mode === 'transfer'
-              ? 'bg-card text-foreground shadow-sm'
+              ? 'bg-[var(--color-bg-surface)] text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <ArrowRightLeftIcon className="h-3.5 w-3.5" />
-          Transferencia
+          Transferência
         </button>
       </div>
 

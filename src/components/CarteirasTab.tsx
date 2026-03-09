@@ -36,7 +36,7 @@ import { useApi } from "@/hooks/useApi";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PencilIcon, Trash2Icon, PlusIcon, ArrowRightLeftIcon } from "lucide-react";
+import { PencilIcon, Trash2Icon, PlusIcon, ArrowRightLeftIcon, Wallet } from "lucide-react";
 import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
@@ -275,7 +275,7 @@ export function CarteirasTab() {
   const renderBoxCard = (box: BoxDTO) => (
     <div
       key={box.id}
-      className="rounded-lg border border-border bg-card p-4 shadow-sm"
+      className="rounded-lg border border-border bg-[var(--color-bg-surface)] p-4 shadow-sm hover:shadow-[var(--shadow-glow)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5"
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export function CarteirasTab() {
           </span>
           {box.isDefault && (
             <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
-              padrao
+              padrão
             </span>
           )}
         </div>
@@ -336,7 +336,7 @@ export function CarteirasTab() {
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-foreground text-base">Carteiras</h2>
+        <h2 className="font-semibold text-foreground text-base font-display tracking-tight">Carteiras</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -362,7 +362,7 @@ export function CarteirasTab() {
           <div className="space-y-4">
             {spendingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 font-display">
                   Contas
                 </h3>
                 <div className="space-y-3">
@@ -372,7 +372,7 @@ export function CarteirasTab() {
             )}
             {savingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 font-display">
                   Caixinhas
                 </h3>
                 <div className="space-y-3">
@@ -382,10 +382,15 @@ export function CarteirasTab() {
             )}
           </div>
         ) : (
-          <div className="text-center p-6 text-muted-foreground">
-            <p className="text-sm">Nenhuma carteira encontrada</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Crie uma nova carteira para organizar suas financas
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
+              <Wallet className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <h3 className="font-display text-lg font-semibold text-foreground mb-2 tracking-tight">
+              Nenhuma carteira
+            </h3>
+            <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+              Crie uma nova carteira para organizar suas finanças.
             </p>
           </div>
         )}
