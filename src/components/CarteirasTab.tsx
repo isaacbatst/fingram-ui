@@ -275,15 +275,15 @@ export function CarteirasTab() {
   const renderBoxCard = (box: BoxDTO) => (
     <div
       key={box.id}
-      className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+      className="rounded-lg border border-border bg-card p-4 shadow-sm"
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-800">
+          <span className="font-semibold text-foreground">
             {box.name}
           </span>
           {box.isDefault && (
-            <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
               padrao
             </span>
           )}
@@ -311,20 +311,20 @@ export function CarteirasTab() {
         </div>
       </div>
 
-      <div className="text-lg font-bold text-gray-900">
+      <div className="text-lg font-bold text-foreground font-mono">
         {formatCurrency(box.balance)}
       </div>
 
       {box.goalAmount != null && box.goalProgress != null && (
         <div className="mt-2">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
             <span>Meta: {formatCurrency(box.goalAmount)}</span>
             <span>{Math.min(100, Math.round(box.goalProgress))}%</span>
           </div>
           <Progress
             value={Math.min(100, box.goalProgress)}
-            filledColor={box.goalProgress >= 100 ? "#22c55e" : "#6366f1"}
-            bgColor="#e5e7eb"
+            filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
+            bgColor="var(--color-border)"
             className="h-2"
           />
         </div>
@@ -336,7 +336,7 @@ export function CarteirasTab() {
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-gray-700 text-base">Carteiras</h2>
+        <h2 className="font-semibold text-foreground text-base">Carteiras</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -362,7 +362,7 @@ export function CarteirasTab() {
           <div className="space-y-4">
             {spendingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Contas
                 </h3>
                 <div className="space-y-3">
@@ -372,7 +372,7 @@ export function CarteirasTab() {
             )}
             {savingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Caixinhas
                 </h3>
                 <div className="space-y-3">
@@ -382,9 +382,9 @@ export function CarteirasTab() {
             )}
           </div>
         ) : (
-          <div className="text-center p-6 text-gray-500">
+          <div className="text-center p-6 text-muted-foreground">
             <p className="text-sm">Nenhuma carteira encontrada</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Crie uma nova carteira para organizar suas financas
             </p>
           </div>
@@ -542,7 +542,7 @@ export function CarteirasTab() {
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Removendo..." : "Remover"}
             </AlertDialogAction>
