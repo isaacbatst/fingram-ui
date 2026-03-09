@@ -1,7 +1,9 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+
+const DesignConceptsV2 = lazy(() => import('./design-concepts-v2.tsx'))
 
 // PWA Service Worker Registration
 import { registerSW } from 'virtual:pwa-register'
@@ -17,8 +19,22 @@ registerSW({
   },
 })
 
+function Root() {
+  const path = window.location.pathname
+
+  if (path === '/design-v2') {
+    return (
+      <Suspense fallback={null}>
+        <DesignConceptsV2 />
+      </Suspense>
+    )
+  }
+
+  return <App />
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Root />
   </StrictMode>,
 )
