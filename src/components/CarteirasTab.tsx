@@ -272,10 +272,10 @@ export function CarteirasTab() {
   const spendingBoxes = boxes?.filter((b) => b.type === "spending") ?? [];
   const savingBoxes = boxes?.filter((b) => b.type === "saving") ?? [];
 
-  const renderBoxCard = (box: BoxDTO) => (
+  const renderBoxCard = (box: BoxDTO, index: number) => (
     <div
       key={box.id}
-      className="rounded-lg border border-border bg-[var(--color-bg-surface)] p-4 shadow-sm hover:shadow-[var(--shadow-glow)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5"
+      className={`rounded-lg border border-border bg-[var(--color-bg-surface)] p-4 shadow-sm duna-card duna-glass duna-stagger-${Math.min(index + 1, 6)}`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">

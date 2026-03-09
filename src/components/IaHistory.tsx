@@ -96,7 +96,7 @@ export function History({ history }: HistoryProps) {
 
   return (
     <ScrollArea
-      className="overflow-y-scroll px-4 flex-1 rounded-lg bg-card space-y-4 pb-8"
+      className="overflow-y-scroll px-4 flex-1 rounded-lg bg-[var(--color-bg-surface)] space-y-4 pb-8"
       id="chatHistory"
     >
       {processedItems.map((item, idx) => {

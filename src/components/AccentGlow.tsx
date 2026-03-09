@@ -11,6 +11,7 @@ export function AccentGlow() {
         filter: "blur(120px)",
         top: "8%",
         right: "5%",
+        animation: "duna-glow-pulse 6s ease-in-out infinite",
       }}
     />
   );

@@ -466,7 +466,7 @@ export function TransactionItem({
             </div>
           </div>
           <div
-            className={`font-semibold whitespace-nowrap ${
+            className={`font-semibold font-mono whitespace-nowrap ${
               isTransfer
                 ? "text-[var(--color-info)]"
                 : tx.type === "income"

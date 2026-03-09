@@ -1,5 +1,6 @@
 import { AccountButton } from "@/components/AccountButton";
 import { AccentGlow } from "@/components/AccentGlow";
+import { DunaLogo } from "@/components/DunaLogo";
 import { GrainOverlay } from "@/components/GrainOverlay";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { InputTab } from "@/components/InputTab";
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
 import { StorageProvider } from "@/contexts/StorageContext/provider";
+import type { LucideIcon } from "lucide-react";
 import {
   ChartPie,
   DollarSign,
@@ -29,6 +31,15 @@ import { useApi } from "./hooks/useApi";
 import { useCategories } from "./hooks/useCategories";
 import { useSearchParams } from "./hooks/useSearchParams";
 import { useSummary } from "./hooks/useSummary";
+
+const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
+  { value: "ia", icon: MessageCircle, label: "IA" },
+  { value: "input", icon: DollarSign, label: "Entrada" },
+  { value: "carteiras", icon: Wallet, label: "Carteiras" },
+  { value: "orcamento", icon: ChartPie, label: "Orçamento" },
+  { value: "plano", icon: TrendingUp, label: "Plano" },
+  { value: "transacoes", icon: Search, label: "Busca" },
+];
 
 function AppContent() {
   const auth = useApi();
@@ -77,119 +88,146 @@ function AppContent() {
     }
   }
 
-  return (
-    <div className="h-dvh flex flex-col items-center bg-background text-foreground">
-      {auth.isAuthenticated && (
-        <div className="flex justify-end self-stretch px-5 py-2">
+  const vault = summary.data?.vault;
+
+  // Non-vault states (error, loading, empty)
+  if (!vault) {
+    return (
+      <div className="h-dvh flex flex-col items-center bg-background text-foreground">
+        <div className="flex justify-between items-center self-stretch px-5 py-2">
+          <DunaLogo size={24} />
           <AccountButton />
         </div>
-      )}
-
-      <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl lg:max-w-5xl mx-auto">
-        {summary.data && summary.data.vault ? (
-          <>
-            <Tabs
-              defaultValue={currentTab}
-              className="flex-1 min-h-0 w-full"
-              onValueChange={setCurrentTab}
-            >
-              <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
-                <IaTab />
-              </TabsContent>
-              <TabsContent value="input" className="px-4">
-                <SaldoResumo
-                  saldo={summary.data.vault.balance}
-                  receitas={summary.data.vault.totalIncomeAmount}
-                  despesas={summary.data.vault.totalSpentAmount}
-                />
-                <InputTab />
-              </TabsContent>
-              <TabsContent
-                value="carteiras"
-                className="px-4 flex flex-col flex-1 min-h-0"
-              >
-                <SaldoResumo
-                  saldo={summary.data.vault.balance}
-                  receitas={summary.data.vault.totalIncomeAmount}
-                  despesas={summary.data.vault.totalSpentAmount}
-                />
-                <CarteirasTab />
-              </TabsContent>
-              <TabsContent
-                value="orcamento"
-                className="px-4 flex flex-col flex-1 min-h-0"
-              >
-                <SaldoResumo
-                  saldo={summary.data.vault.balance}
-                  receitas={summary.data.vault.totalIncomeAmount}
-                  despesas={summary.data.vault.totalSpentAmount}
-                />
-                <OrcamentoTab />
-              </TabsContent>
-              <TabsContent
-                value="plano"
-                className="px-4 flex flex-col flex-1 min-h-0"
-              >
-                <PlanoTab />
-              </TabsContent>
-              {/* Tab Transações */}
-              <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
-                <SaldoResumo
-                  saldo={summary.data.vault.balance}
-                  receitas={summary.data.vault.totalIncomeAmount}
-                  despesas={summary.data.vault.totalSpentAmount}
-                />
-                <TransacoesTab
-                  categories={categories.data || []}
-                  mutateSummary={summary.mutate}
-                />
-              </TabsContent>
-              <div className="flex">
-                <TabsList className="flex-1 w-auto">
-                  <TabsTrigger value="ia">
-                    <MessageCircle className="w-4 h-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="input">
-                    <DollarSign className="w-4 h-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="carteiras">
-                    <Wallet className="w-4 h-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="orcamento">
-                    <ChartPie className="w-4 h-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="plano">
-                    <TrendingUp className="w-4 h-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="transacoes">
-                    <Search className="w-4 h-4" />
-                  </TabsTrigger>
-                </TabsList>
+        <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
+          {summary.error ? (
+            <ErrorDisplay
+              error={summary.error.message}
+              onRetry={summary.mutate}
+              className="my-4"
+            />
+          ) : summary.isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
+                <Wallet className="w-8 h-8 text-muted-foreground" />
               </div>
-            </Tabs>
-          </>
-        ) : summary.error ? (
-          <ErrorDisplay
-            error={summary.error.message}
-            onRetry={summary.mutate}
-            className="my-4"
-          />
-        ) : summary.isLoading ? (
-          <LoadingSpinner />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
-              <Wallet className="w-8 h-8 text-muted-foreground" />
+              <h2 className="font-display text-xl font-semibold text-foreground mb-3 tracking-tight">
+                Nenhum cofre encontrado
+              </h2>
+              <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+                Use /create no bot do Telegram para criar um cofre.
+              </p>
             </div>
-            <h2 className="font-display text-xl font-semibold text-foreground mb-3 tracking-tight">
-              Nenhum cofre encontrado
-            </h2>
-            <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-              Use /create no bot do Telegram para criar um cofre.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="h-dvh flex flex-col lg:flex-row bg-background text-foreground">
+      <Tabs
+        defaultValue={currentTab}
+        className="flex-1 min-h-0 flex flex-col lg:flex-row"
+        onValueChange={setCurrentTab}
+      >
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex flex-col w-52 border-r border-[var(--color-border)] bg-[var(--color-bg-surface)] duna-glass shrink-0">
+          <div className="px-5 pt-5 pb-2">
+            <DunaLogo size={28} showWordmark />
+          </div>
+          <TabsList className="flex flex-col items-stretch bg-transparent border-none rounded-none p-0 h-auto w-full mt-6">
+            {TAB_ITEMS.map(({ value, icon: Icon, label }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="justify-start gap-3 px-5 py-2.5 h-auto border-t-0 border-l-2 border-transparent data-[state=active]:border-l-[var(--color-accent)] data-[state=active]:border-t-0 rounded-none text-sm"
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <div className="mt-auto p-4">
+            <AccountButton />
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {/* Mobile header */}
+          <div className="lg:hidden flex justify-between items-center px-5 py-2">
+            <DunaLogo size={24} />
+            <AccountButton />
+          </div>
+
+          {/* Tab content area */}
+          <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
+            <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
+              <IaTab />
+            </TabsContent>
+            <TabsContent value="input" className="px-4">
+              <SaldoResumo
+                saldo={vault.balance}
+                receitas={vault.totalIncomeAmount}
+                despesas={vault.totalSpentAmount}
+              />
+              <InputTab />
+            </TabsContent>
+            <TabsContent
+              value="carteiras"
+              className="px-4 flex flex-col flex-1 min-h-0"
+            >
+              <SaldoResumo
+                saldo={vault.balance}
+                receitas={vault.totalIncomeAmount}
+                despesas={vault.totalSpentAmount}
+              />
+              <CarteirasTab />
+            </TabsContent>
+            <TabsContent
+              value="orcamento"
+              className="px-4 flex flex-col flex-1 min-h-0"
+            >
+              <SaldoResumo
+                saldo={vault.balance}
+                receitas={vault.totalIncomeAmount}
+                despesas={vault.totalSpentAmount}
+              />
+              <OrcamentoTab />
+            </TabsContent>
+            <TabsContent
+              value="plano"
+              className="px-4 flex flex-col flex-1 min-h-0"
+            >
+              <PlanoTab />
+            </TabsContent>
+            <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
+              <SaldoResumo
+                saldo={vault.balance}
+                receitas={vault.totalIncomeAmount}
+                despesas={vault.totalSpentAmount}
+              />
+              <TransacoesTab
+                categories={categories.data || []}
+                mutateSummary={summary.mutate}
+              />
+            </TabsContent>
+          </div>
+
+          {/* Mobile bottom bar */}
+          <div className="lg:hidden flex">
+            <TabsList className="flex-1 w-auto">
+              {TAB_ITEMS.map(({ value, icon: Icon }) => (
+                <TabsTrigger key={value} value={value}>
+                  <Icon className="w-4 h-4" />
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </div>
+      </Tabs>
     </div>
   );
 }

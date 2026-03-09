@@ -10,7 +10,7 @@ interface BoxCardProps {
 
 export function BoxCard({ box }: BoxCardProps) {
   return (
-    <div className="min-w-[150px] max-w-[180px] shrink-0 rounded-lg border border-border bg-card p-3 shadow-sm">
+    <div className="min-w-[150px] max-w-[180px] shrink-0 rounded-lg border border-border bg-[var(--color-bg-surface)] p-3 shadow-sm duna-card duna-glass">
       <div className="flex items-center gap-1.5 mb-1">
         <span className="font-semibold text-sm text-foreground truncate">
           {box.name}
@@ -38,7 +38,7 @@ export function BoxCard({ box }: BoxCardProps) {
             bgColor="var(--color-border)"
             className="h-1.5"
           />
-          <div className="text-[10px] text-muted-foreground mt-0.5 text-right">
+          <div className="text-[10px] text-muted-foreground mt-0.5 text-right font-mono">
             {formatCurrency(box.goalAmount)}
           </div>
         </div>

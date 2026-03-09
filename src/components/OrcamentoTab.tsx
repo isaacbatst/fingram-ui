@@ -190,7 +190,7 @@ export function OrcamentoTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-4">
-        <div className="mb-3 font-semibold text-foreground text-base flex justify-between items-center">
+        <div className="mb-3 font-semibold text-foreground text-base flex justify-between items-center font-display tracking-tight">
           <span>Orçamento por categoria</span>
           <div className="flex gap-1">
             {!isEditing && (
@@ -323,7 +323,7 @@ export function OrcamentoTab() {
 
       {/* Resumo do Orçamento */}
       {orcamento.length > 0 && (
-        <div className="bg-card border border-border rounded-lg p-4 mb-3">
+        <div className="bg-[var(--color-bg-surface)] border border-border rounded-lg p-4 mb-3 duna-card duna-glass">
           <div className="text-center">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
@@ -448,12 +448,15 @@ export function OrcamentoTab() {
                   );
                 })
               ) : !isLoading && (
-                <div className="text-center p-6 text-muted-foreground">
-                  <p className="text-sm">
-                    Nenhum orçamento definido para este período
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Clique no ícone de edição para definir orçamentos
+                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
+                    <PencilIcon className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-foreground mb-2 tracking-tight">
+                    Nenhum orçamento definido
+                  </h3>
+                  <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+                    Clique no ícone de edição para definir orçamentos para este período.
                   </p>
                 </div>
               )}

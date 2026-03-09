@@ -55,7 +55,7 @@ function TransactionDetails({ args }: { args: TransactionArgs }) {
   const isIncome = transaction.type === 'income';
 
   return (
-    <div className="border rounded-lg p-4 bg-muted space-y-3">
+    <div className="border rounded-lg p-4 bg-[var(--color-bg-surface)] space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Tipo:</span>
         <span
@@ -130,14 +130,14 @@ function ToolApprovalEntry({
 
   return (
     <div key={approval.rawItem?.id} className="flex flex-col gap-3">
-      <h3 className="font-medium text-base">
+      <h3 className="font-medium text-base font-display">
         {isAddTransaction ? 'Adicionar Transação' : `Tool: ${functionName}`}
       </h3>
       
       {isAddTransaction && parsedArgs?.transaction ? (
         <TransactionDetails args={parsedArgs} />
       ) : (
-        <div className="border rounded-lg p-4 bg-muted">
+        <div className="border rounded-lg p-4 bg-[var(--color-bg-surface)]">
           <p className="text-sm text-foreground">
             {parsedArgs 
               ? `Ação: ${functionName}` 
