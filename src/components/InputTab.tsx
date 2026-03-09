@@ -71,12 +71,12 @@ function TypeToggle({
   const activeIndex = options.findIndex((o) => o.value === value);
 
   return (
-    <div className="relative flex rounded-full p-0.5 bg-muted/50">
+    <div className="relative flex w-full max-w-[240px] rounded-lg p-1 bg-muted/50 border border-[var(--color-border)]">
       <div
-        className="absolute top-0.5 bottom-0.5 rounded-full bg-muted transition-all duration-200"
+        className="absolute top-1 bottom-1 rounded-md bg-muted border border-[var(--color-border-strong)] transition-all duration-200"
         style={{
-          width: `calc(${100 / options.length}% - 2px)`,
-          left: `calc(${(activeIndex * 100) / options.length}% + 1px)`,
+          width: `calc(${100 / options.length}% - 4px)`,
+          left: `calc(${(activeIndex * 100) / options.length}% + 2px)`,
         }}
       />
       {options.map((opt) => (
@@ -84,7 +84,7 @@ function TypeToggle({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`relative z-10 flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-colors duration-200 ${
+          className={`relative z-10 flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
             value === opt.value
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground"
