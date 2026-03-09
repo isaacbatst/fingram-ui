@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useApi } from "@/hooks/useApi";
-import { Loader2, Key } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { CreateVaultDialog } from "./CreateVaultDialog";
 
 export function VaultAccessTokenInput() {

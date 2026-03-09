@@ -67,7 +67,7 @@ function processItems(items: AgentInputItem[]): ProcessedItem[] {
           typeof item.content === "string"
             ? item.content
             : item.content
-                .map((content) => {
+                .map((content: { type: string; text?: string; transcript?: string; refusal?: string }) => {
                   if (
                     content.type === "input_text" ||
                     content.type === "output_text"
