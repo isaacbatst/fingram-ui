@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Libre+Franklin:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Serif+Text&family=Libre+Franklin:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -55,7 +55,7 @@
   --color-data-5:          #c45c4a;
 
   /* Typography */
-  --font-display:          'Playfair Display', Georgia, serif;
+  --font-display:          'DM Serif Text', Georgia, serif;
   --font-body:             'Libre Franklin', 'Helvetica Neue', sans-serif;
   --font-mono-family:      'JetBrains Mono', 'Fira Code', monospace;
 
@@ -119,11 +119,11 @@
 @theme inline {
   --font-sans: 'Libre Franklin', 'Helvetica Neue', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-display: 'DM Serif Text', Georgia, serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -201,6 +201,11 @@
   transform: translateY(-2px);
   box-shadow: var(--shadow-glow);
   border-color: var(--color-border-strong);
+}
+
+/* Tab content entrance animation */
+[data-slot="tabs-content"][data-state="active"] > * {
+  animation: duna-fade-up 0.35s var(--ease-out) both;
 }
 
 /* Backdrop blur for glass surfaces */

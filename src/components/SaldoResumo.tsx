@@ -4,42 +4,62 @@ type SaldoResumoProps = {
   despesas: number;
 };
 
+const fmt = (v: number) =>
+  v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
 export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
   return (
-    <div className="text-center mb-3 sm:mt-3">
-      <div className="uppercase text-xs tracking-widest font-semibold mb-1 text-muted-foreground font-display duna-stagger-1">
-        Saldo
+    <div
+      className="rounded-lg border border-[var(--color-accent-border)] p-4 sm:p-5 mb-4 sm:mt-3 duna-glass duna-stagger-1"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(217,175,120,0.08) 0%, rgba(217,175,120,0.02) 100%)",
+      }}
+    >
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="uppercase text-[11px] tracking-widest font-semibold text-muted-foreground font-display">
+          Saldo total
+        </span>
+        <span className="text-[11px] text-muted-foreground font-mono">
+          este mês
+        </span>
       </div>
-      <div className="text-4xl font-extrabold font-mono drop-shadow-[0_0_12px_rgba(217,175,120,0.15)] mb-2 text-foreground duna-stagger-2">
-        R$ {saldo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+
+      <div
+        className="text-3xl sm:text-4xl font-bold font-mono text-[var(--color-accent)] mb-4 duna-stagger-2"
+        style={{ textShadow: "0 0 24px rgba(217,175,120,0.15)" }}
+      >
+        R$ {fmt(saldo)}
       </div>
-      <div className="flex justify-center mt-1 space-x-6 text-sm duna-stagger-3">
-        <div className="flex items-center gap-1 font-medium font-mono text-[var(--color-success)]">
-          <svg width="16" height="16" fill="none" className="inline">
+
+      <div className="flex gap-4 duna-stagger-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-success-bg)] border border-[var(--color-success-border)]">
+          <svg width="12" height="12" fill="none" className="shrink-0">
             <path
-              d="M8 2v12M8 2l4 4M8 2L4 6"
-              stroke="currentColor"
-              strokeWidth="2"
+              d="M6 1v10M6 1l3 3M6 1L3 4"
+              stroke="var(--color-success)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
           </svg>
-          + R$ {receitas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <span className="text-sm font-medium font-mono text-[var(--color-success)]">
+            {fmt(receitas)}
+          </span>
         </div>
-        <div className="flex items-center gap-1 font-medium font-mono text-[var(--color-danger)]">
-          <svg width="16" height="16" fill="none" className="inline">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-danger-bg)] border border-[var(--color-danger-border)]">
+          <svg width="12" height="12" fill="none" className="shrink-0">
             <path
-              d="M8 14V2M8 14l4-4M8 14l-4-4"
-              stroke="currentColor"
-              strokeWidth="2"
+              d="M6 11V1M6 11l3-3M6 11L3 8"
+              stroke="var(--color-danger)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
           </svg>
-          - R$ {despesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <span className="text-sm font-medium font-mono text-[var(--color-danger)]">
+            {fmt(despesas)}
+          </span>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground my-2">
-        (receitas e despesas deste mês)
-      </p>
     </div>
   );
 }

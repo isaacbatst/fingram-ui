@@ -275,58 +275,62 @@ export function CarteirasTab() {
   const renderBoxCard = (box: BoxDTO, index: number) => (
     <div
       key={box.id}
-      className={`rounded-lg border border-border bg-[var(--color-bg-surface)] p-4 shadow-sm duna-card duna-glass duna-stagger-${Math.min(index + 1, 6)}`}
+      className={`rounded-lg border border-border bg-[var(--color-bg-surface)] p-3 shadow-sm duna-card duna-glass duna-stagger-${Math.min(index + 1, 6)}`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs font-medium text-muted-foreground truncate">
             {box.name}
           </span>
           {box.isDefault && (
-            <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+            <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1 py-0.5 rounded-full shrink-0">
               padrão
             </span>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 shrink-0">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
             title="Editar"
             onClick={() => handleOpenEdit(box)}
           >
-            <PencilIcon className="h-4 w-4" />
+            <PencilIcon className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
             title={getDeleteDisabledReason(box) || "Remover"}
             disabled={!canDeleteBox(box)}
             onClick={() => handleOpenDelete(box)}
           >
-            <Trash2Icon className="h-4 w-4" />
+            <Trash2Icon className="h-3 w-3" />
           </Button>
         </div>
       </div>
 
-      <div className="text-lg font-bold text-foreground font-mono">
+      <div className="text-xl font-bold text-foreground font-mono tracking-tight">
         {formatCurrency(box.balance)}
       </div>
 
       {box.goalAmount != null && box.goalProgress != null && (
         <div className="mt-2">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Meta: {formatCurrency(box.goalAmount)}</span>
-            <span>{Math.min(100, Math.round(box.goalProgress))}%</span>
+          <div className="flex justify-between items-center gap-2">
+            <Progress
+              value={Math.min(100, box.goalProgress)}
+              filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
+              bgColor="var(--color-border)"
+              className="h-1.5 flex-1"
+            />
+            <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+              {Math.min(100, Math.round(box.goalProgress))}%
+            </span>
           </div>
-          <Progress
-            value={Math.min(100, box.goalProgress)}
-            filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
-            bgColor="var(--color-border)"
-            className="h-2"
-          />
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            Meta: {formatCurrency(box.goalAmount)}
+          </div>
         </div>
       )}
     </div>
@@ -362,20 +366,20 @@ export function CarteirasTab() {
           <div className="space-y-4">
             {spendingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 font-display">
                   Contas
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
                   {spendingBoxes.map(renderBoxCard)}
                 </div>
               </div>
             )}
             {savingBoxes.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 font-display">
                   Caixinhas
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
                   {savingBoxes.map(renderBoxCard)}
                 </div>
               </div>

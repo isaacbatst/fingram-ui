@@ -323,42 +323,40 @@ export function OrcamentoTab() {
 
       {/* Resumo do Orçamento */}
       {orcamento.length > 0 && (
-        <div className="bg-[var(--color-bg-surface)] border border-border rounded-lg p-4 mb-3 duna-card duna-glass">
-          <div className="text-center">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">Orçamento Total</div>
-                <div className="text-lg font-bold text-foreground font-mono">
-                  R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">Total Gasto</div>
-                <div className="text-lg font-bold text-foreground font-mono">
-                  R$ {totalGasto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </div>
+        <div className="bg-[var(--color-bg-surface)] border border-border rounded-lg p-3 mb-3 duna-card duna-glass">
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Orçamento</div>
+              <div className="text-sm font-bold text-foreground font-mono">
+                R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-border">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Orçamento Dísponivel</span>
-                <span className={`text-sm font-medium font-mono ${saldoRestante >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                  R$ {saldoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="w-full rounded-full h-4" style={{ backgroundColor: 'var(--color-border)' }}>
-                <div
-                  className={`h-4 rounded-full transition-all duration-300 ${
-                    percentualUso > 90 ? 'bg-[var(--color-danger)]' :
-                    percentualUso > 70 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-success)]'
-                  }`}
-                  style={{ width: `${Math.min(100, percentualUso)}%` }}
-                ></div>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {percentualUso.toFixed(1)}% do orçamento utilizado
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Gasto</div>
+              <div className="text-sm font-bold text-foreground font-mono">
+                R$ {totalGasto.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
               </div>
             </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Disponível</div>
+              <div className={`text-sm font-bold font-mono ${saldoRestante >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                R$ {saldoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 rounded-full h-2" style={{ backgroundColor: 'var(--color-border)' }}>
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  percentualUso > 90 ? 'bg-[var(--color-danger)]' :
+                  percentualUso > 70 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-success)]'
+                }`}
+                style={{ width: `${Math.min(100, percentualUso)}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+              {percentualUso.toFixed(0)}%
+            </span>
           </div>
         </div>
       )}
@@ -423,26 +421,24 @@ export function OrcamentoTab() {
               {orcamento.length > 0 ? (
                 orcamento.map((c) => {
                   const pct = Math.min(100, (c.usado / c.valor) * 100);
-
-                  // Cores para a barra de progresso
-                  const filledColor = pct > 90 ? "var(--color-danger)" : "var(--color-success)";
+                  const filledColor = pct > 90 ? "var(--color-danger)" : pct > 70 ? "var(--color-warning)" : "var(--color-success)";
                   const bgColor = "var(--color-border)";
 
                   return (
-                    <div key={c.categoria} className="mb-1">
-                      <div className="flex justify-between mb-1">
-                        <span className="font-medium text-foreground">
+                    <div key={c.categoria} className="mb-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium text-foreground">
                           {c.categoria}
                         </span>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          R$ {c.usado.toFixed(2)}/{c.valor.toFixed(2)}
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          {c.usado.toFixed(0)} / {c.valor.toFixed(0)}
                         </span>
                       </div>
                       <Progress
                         value={pct}
                         filledColor={filledColor}
                         bgColor={bgColor}
-                        className="h-3"
+                        className="h-1.5"
                       />
                     </div>
                   );

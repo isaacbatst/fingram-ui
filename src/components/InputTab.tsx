@@ -24,38 +24,61 @@ const formatCurrency = (value: number) =>
 
 type InputMode = 'transaction' | 'transfer';
 
+// ── Bespoke Segmented Control ──
+
+function SegmentedControl({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; icon: React.ReactNode }[];
+}) {
+  const activeIndex = options.findIndex((o) => o.value === value);
+
+  return (
+    <div className="relative flex rounded-lg border border-border p-0.5 bg-[var(--color-bg-surface)]">
+      {/* Animated pill indicator */}
+      <div
+        className="absolute top-0.5 bottom-0.5 rounded-md bg-[var(--color-accent)] transition-all duration-200"
+        style={{
+          width: `calc(${100 / options.length}% - 2px)`,
+          left: `calc(${(activeIndex * 100) / options.length}% + 1px)`,
+        }}
+      />
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors duration-200 ${
+            value === opt.value
+              ? "text-[var(--color-bg)]"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {opt.icon}
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function InputTab() {
   const [mode, setMode] = useState<InputMode>('transaction');
 
   return (
     <div className="space-y-4">
-      {/* Mode toggle */}
-      <div className="flex rounded-lg border border-border p-0.5 bg-muted">
-        <button
-          type="button"
-          onClick={() => setMode('transaction')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            mode === 'transaction'
-              ? 'bg-[var(--color-bg-surface)] text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <DollarSignIcon className="h-3.5 w-3.5" />
-          Transação
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('transfer')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            mode === 'transfer'
-              ? 'bg-[var(--color-bg-surface)] text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <ArrowRightLeftIcon className="h-3.5 w-3.5" />
-          Transferência
-        </button>
-      </div>
+      <SegmentedControl
+        value={mode}
+        onChange={(v) => setMode(v as InputMode)}
+        options={[
+          { value: "transaction", label: "Transação", icon: <DollarSignIcon className="h-3.5 w-3.5" /> },
+          { value: "transfer", label: "Transferência", icon: <ArrowRightLeftIcon className="h-3.5 w-3.5" /> },
+        ]}
+      />
 
       {mode === 'transaction' ? <TransactionForm /> : <TransferForm />}
     </div>
@@ -177,44 +200,42 @@ function TransactionForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Transaction Type */}
-      <div className="space-y-2">
-        <Label htmlFor="type">Tipo</Label>
-        <Select value={type} onValueChange={(value: 'income' | 'expense') => setType(value)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="expense">Despesa</SelectItem>
-            <SelectItem value="income">Receita</SelectItem>
-          </SelectContent>
-        </Select>
+      <SegmentedControl
+        value={type}
+        onChange={(v) => setType(v as 'income' | 'expense')}
+        options={[
+          { value: "expense", label: "Despesa", icon: null },
+          { value: "income", label: "Receita", icon: null },
+        ]}
+      />
+
+      {/* Amount — protagonist input */}
+      <div className="py-2">
+        <div className="flex items-baseline justify-center gap-2">
+          <span className="text-lg font-mono text-muted-foreground">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0,00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground placeholder:text-muted-foreground focus:outline-none border-b-2 border-[var(--color-border)] focus:border-[var(--color-accent)] transition-colors pb-1"
+          />
+        </div>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description">Descricao</Label>
+        <Label htmlFor="description">Descrição</Label>
         <Input
           id="description"
           type="text"
-          placeholder="Ex: Almoco, Salario, etc."
+          placeholder="Ex: Almoço, Salário, etc."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={handleDescriptionBlur}
-          required
-        />
-      </div>
-
-      {/* Amount */}
-      <div className="space-y-2">
-        <Label htmlFor="amount">Valor (R$)</Label>
-        <Input
-          id="amount"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0,00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
           required
         />
       </div>
@@ -333,6 +354,23 @@ function TransferForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Amount — protagonist input */}
+      <div className="py-2">
+        <div className="flex items-baseline justify-center gap-2">
+          <span className="text-lg font-mono text-muted-foreground">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0,00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground placeholder:text-muted-foreground focus:outline-none border-b-2 border-[var(--color-border)] focus:border-[var(--color-accent)] transition-colors pb-1"
+          />
+        </div>
+      </div>
+
       {/* From box */}
       <div className="space-y-2">
         <Label>Origem</Label>
@@ -365,20 +403,6 @@ function TransferForm() {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Amount */}
-      <div className="space-y-2">
-        <Label>Valor (R$)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0,00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-        />
       </div>
 
       {/* Date */}

@@ -19,7 +19,7 @@ export function DunaLogo({ size = 28, showWordmark = false }: DunaLogoProps) {
       {showWordmark && (
         <span
           style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "'DM Serif Text', Georgia, serif",
             fontStyle: "italic",
             fontWeight: 600,
             fontSize: size * 0.75,

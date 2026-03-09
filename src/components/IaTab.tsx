@@ -127,7 +127,7 @@ export function IaTab() {
               <History history={history} />
             ) : (
               <div className="h-full flex flex-col gap-4 items-center justify-center text-center px-2">
-                <p className="text-3xl text-center mb-3">
+                <p className="text-3xl text-center mb-3 font-display">
                   Descreva qual seus últimos gastos.
                 </p>
                 <div className="flex gap-2 flex-wrap justify-center">

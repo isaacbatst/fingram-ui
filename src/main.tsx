@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 const DesignConceptsV2 = lazy(() => import('./design-concepts-v2.tsx'))
+const TypeTest = lazy(() => import('./type-test.tsx'))
 
 // PWA Service Worker Registration
 import { registerSW } from 'virtual:pwa-register'
@@ -26,6 +27,14 @@ function Root() {
     return (
       <Suspense fallback={null}>
         <DesignConceptsV2 />
+      </Suspense>
+    )
+  }
+
+  if (path === '/type-test') {
+    return (
+      <Suspense fallback={null}>
+        <TypeTest />
       </Suspense>
     )
   }
