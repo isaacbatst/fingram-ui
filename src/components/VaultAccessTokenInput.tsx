@@ -35,8 +35,8 @@ export function VaultAccessTokenInput() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-          <Key className="w-6 h-6 text-blue-600" />
+        <div className="mx-auto mb-2 w-12 h-12 bg-[var(--color-info-bg)] rounded-full flex items-center justify-center">
+          <Key className="w-6 h-6 text-[var(--color-info)]" />
         </div>
         <CardTitle>Acesso ao Cofre</CardTitle>
         <CardDescription>
@@ -59,7 +59,7 @@ export function VaultAccessTokenInput() {
           </div>
           
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+            <div className="text-sm text-destructive bg-[var(--color-danger-bg)] border border-[var(--color-danger-border)] rounded-md p-3">
               {error}
             </div>
           )}
@@ -80,12 +80,12 @@ export function VaultAccessTokenInput() {
           </Button>
         </form>
         
-        <div className="mt-4 text-xs text-gray-500 text-center">
+        <div className="mt-4 text-xs text-muted-foreground text-center">
           <p>Você pode obter seu token de acesso através do bot do Telegram</p>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="text-center text-sm text-gray-600 mb-3">
+        <div className="mt-4 pt-4 border-t border-border">
+          <div className="text-center text-sm text-muted-foreground mb-3">
             Ou crie um novo cofre
           </div>
           <CreateVaultDialog />

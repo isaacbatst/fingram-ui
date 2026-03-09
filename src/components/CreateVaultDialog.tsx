@@ -66,7 +66,7 @@ export function CreateVaultDialog() {
         </AlertDialogHeader>
         
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="text-sm text-destructive bg-[var(--color-danger-bg)] border border-[var(--color-danger-border)] rounded-md p-3">
             {error}
           </div>
         )}
@@ -78,7 +78,7 @@ export function CreateVaultDialog() {
           <AlertDialogAction 
             onClick={handleCreateVault}
             disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
           >
             {isLoading ? (
               <>

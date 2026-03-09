@@ -14,8 +14,8 @@ export function TempTokenConfirmation() {
     <div className="min-h-dvh flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Shield className="h-6 w-6 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-info-bg)]">
+            <Shield className="h-6 w-6 text-[var(--color-info)]" />
           </div>
           <CardTitle>Confirmar Acesso ao Cofre</CardTitle>
           <CardDescription>
@@ -51,7 +51,7 @@ export function TempTokenConfirmation() {
           </div>
           
           {auth.error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <div className="text-sm text-destructive bg-[var(--color-danger-bg)] p-3 rounded-md">
               {auth.error}
             </div>
           )}
