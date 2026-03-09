@@ -135,7 +135,7 @@ function TransferEditForm({
               ))}
             </SelectContent>
           </Select>
-          <ArrowRight className="w-4 h-4 text-blue-400 shrink-0" />
+          <ArrowRight className="w-4 h-4 text-[var(--color-info)] shrink-0" />
           <Select
             value={currentToBoxId}
             onValueChange={(val) => setEditState((s) => ({ ...s, toBoxId: val }))}
@@ -221,7 +221,7 @@ function TransferEditForm({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
+      {error && <div className="text-xs text-destructive mt-2">{error}</div>}
     </form>
   );
 }
@@ -409,22 +409,22 @@ export function TransactionItem({
       <AccordionTrigger className="py-2 min-w-0">
         <div className="flex items-center gap-2 rounded px-1 flex-1 min-w-0 text-base">
           {isTransfer ? (
-            <ArrowRightLeft className="w-4 h-4 text-blue-500 shrink-0" />
+            <ArrowRightLeft className="w-4 h-4 text-[var(--color-info)] shrink-0" />
           ) : (
             <div
               className={`w-2 h-2 rounded-full shrink-0 ${
-                tx.type === "income" ? "bg-green-400" : "bg-red-400"
+                tx.type === "income" ? "bg-[var(--color-success)]" : "bg-[var(--color-danger)]"
               }`}
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-600 mb-1 flex items-center min-w-0">
+            <div className="font-medium text-foreground mb-1 flex items-center min-w-0">
               {isTransfer && transferLabel ? (
                 <>
                   {transferLabel.from && (
                     <span className="truncate">{transferLabel.from}</span>
                   )}
-                  <ArrowRight className="w-3 h-3 text-blue-400 shrink-0 mx-1" />
+                  <ArrowRight className="w-3 h-3 text-[var(--color-info)] shrink-0 mx-1" />
                   {transferLabel.to && (
                     <span className="truncate">{transferLabel.to}</span>
                   )}
@@ -433,10 +433,10 @@ export function TransactionItem({
                 <span className="truncate">{tx.description || "(Sem descrição)"}</span>
               )}
             </div>
-            <div className="text-xs text-gray-400 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
               <span className="shrink-0">{dateOnly(tx.date)}</span>
               {isTransfer && (
-                <span className="inline-flex items-center rounded-full bg-blue-100/80 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-blue-600 whitespace-nowrap ring-1 ring-blue-200/60 shrink-0">
+                <span className="inline-flex items-center rounded-full bg-[var(--color-info-bg)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--color-info)] whitespace-nowrap ring-1 ring-[var(--color-info-border)] shrink-0">
                   Transferencia
                 </span>
               )}
@@ -468,10 +468,10 @@ export function TransactionItem({
           <div
             className={`font-semibold whitespace-nowrap ${
               isTransfer
-                ? "text-blue-600"
+                ? "text-[var(--color-info)]"
                 : tx.type === "income"
-                  ? "text-green-600"
-                  : "text-red-600"
+                  ? "text-[var(--color-success)]"
+                  : "text-[var(--color-danger)]"
             }`}
           >
             {!isCompletePair && (tx.type === "income" ? "+" : "-")}{" "}
@@ -515,8 +515,8 @@ export function TransactionItem({
                   <SelectTrigger
                     className={`text-xs ${
                       (editState.type ?? tx.type) === "income"
-                        ? "border-green-500 bg-green-100/10"
-                        : "border-red-500 bg-red-100/10"
+                        ? "border-[var(--color-success-border)] bg-[var(--color-success-bg)]"
+                        : "border-[var(--color-danger-border)] bg-[var(--color-danger-bg)]"
                     }`}
                   >
                     <SelectValue placeholder="Tipo" />
@@ -653,7 +653,7 @@ export function TransactionItem({
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
+            {error && <div className="text-xs text-destructive mt-2">{error}</div>}
           </form>
         )}
       </AccordionContent>
