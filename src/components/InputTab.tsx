@@ -30,14 +30,14 @@ export function InputTab() {
   return (
     <div className="space-y-4">
       {/* Mode toggle */}
-      <div className="flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+      <div className="flex rounded-lg border border-border p-0.5 bg-muted">
         <button
           type="button"
           onClick={() => setMode('transaction')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
             mode === 'transaction'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <DollarSignIcon className="h-3.5 w-3.5" />
@@ -48,8 +48,8 @@ export function InputTab() {
           onClick={() => setMode('transfer')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
             mode === 'transfer'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <ArrowRightLeftIcon className="h-3.5 w-3.5" />
