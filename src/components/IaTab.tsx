@@ -145,7 +145,7 @@ export function IaTab() {
             )}
           </div>
           <form className="mx-4 sm:mx-0" onSubmit={handleSubmit}>
-            <div className="gap-4 flex items-center w-full border border-gray-300 rounded-4xl p-2 focus-within:border-gray-500">
+            <div className="gap-4 flex items-center w-full border border-border rounded-4xl p-2 focus-within:border-input">
               <input
                 type="text"
                 className="flex-1 p-2 focus:outline-none"

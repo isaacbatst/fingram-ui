@@ -55,9 +55,9 @@ function TransactionDetails({ args }: { args: TransactionArgs }) {
   const isIncome = transaction.type === 'income';
 
   return (
-    <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
+    <div className="border rounded-lg p-4 bg-muted space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">Tipo:</span>
+        <span className="text-sm font-medium text-foreground">Tipo:</span>
         <span
           className={`text-sm`}
         >
@@ -66,10 +66,10 @@ function TransactionDetails({ args }: { args: TransactionArgs }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">Valor:</span>
+        <span className="text-sm font-medium text-foreground">Valor:</span>
         <span
           className={`text-base font-bold ${
-            isExpense ? 'text-red-600' : isIncome ? 'text-green-600' : 'text-gray-600'
+            isExpense ? 'text-[var(--color-danger)]' : isIncome ? 'text-[var(--color-success)]' : 'text-muted-foreground'
           }`}
         >
           {isExpense ? '-' : '+'} {formatCurrency(transaction.amount)}
@@ -78,22 +78,22 @@ function TransactionDetails({ args }: { args: TransactionArgs }) {
 
       {transaction.description && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Descrição:</span>
-          <span className="text-sm text-gray-900">{transaction.description}</span>
+          <span className="text-sm font-medium text-foreground">Descrição:</span>
+          <span className="text-sm text-foreground">{transaction.description}</span>
         </div>
       )}
 
       {transaction.categoryName && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Categoria:</span>
-          <span className="text-sm text-gray-900">{transaction.categoryName}</span>
+          <span className="text-sm font-medium text-foreground">Categoria:</span>
+          <span className="text-sm text-foreground">{transaction.categoryName}</span>
         </div>
       )}
 
       {transaction.date && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Data:</span>
-          <span className="text-sm text-gray-900">{formatDate(transaction.date)}</span>
+          <span className="text-sm font-medium text-foreground">Data:</span>
+          <span className="text-sm text-foreground">{formatDate(transaction.date)}</span>
         </div>
       )}
     </div>
@@ -137,8 +137,8 @@ function ToolApprovalEntry({
       {isAddTransaction && parsedArgs?.transaction ? (
         <TransactionDetails args={parsedArgs} />
       ) : (
-        <div className="border rounded-lg p-4 bg-gray-50">
-          <p className="text-sm text-gray-700">
+        <div className="border rounded-lg p-4 bg-muted">
+          <p className="text-sm text-foreground">
             {parsedArgs 
               ? `Ação: ${functionName}` 
               : 'Detalhes da ação não disponíveis'}
@@ -157,10 +157,10 @@ function ToolApprovalEntry({
         </div>
       )}
       {decision === 'approved' && (
-        <p className="text-sm text-green-700 font-medium">✔︎ Aprovado</p>
+        <p className="text-sm text-[var(--color-success)] font-medium">✔︎ Aprovado</p>
       )}
       {decision === 'rejected' && (
-        <p className="text-sm text-red-600 font-medium">✖︎ Rejeitado</p>
+        <p className="text-sm text-[var(--color-danger)] font-medium">✖︎ Rejeitado</p>
       )}
     </div>
   );
