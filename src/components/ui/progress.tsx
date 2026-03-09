@@ -12,8 +12,8 @@ interface ProgressProps extends React.ComponentProps<typeof ProgressPrimitive.Ro
 function Progress({
   className,
   value = 0,
-  filledColor = "#6366f1", // cor padrão (indigo)
-  bgColor = "#e0e7ff", // cor padrão (indigo-100)
+  filledColor = "var(--color-accent)",
+  bgColor = "var(--color-border)",
   ...props
 }: ProgressProps) {
   return (
