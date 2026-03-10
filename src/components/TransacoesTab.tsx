@@ -270,7 +270,7 @@ export function TransacoesTab({
     const toBox = tx.transferToBoxId
       ? (boxes?.find((b) => b.id === tx.transferToBoxId)?.name ?? "?")
       : "?";
-    return `${fromBox} \u2192 ${toBox}`;
+    return { fromBox, toBox };
   };
 
   // Open drawer
@@ -656,10 +656,16 @@ export function TransacoesTab({
 
                       {/* Description + metadata */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-base text-foreground tracking-tight truncate">
-                          {txIsTransfer
-                            ? getTransferLabel(tx)
-                            : tx.description || "(Sem descrição)"}
+                        <div className="text-base text-foreground tracking-tight truncate flex items-center gap-1">
+                          {txIsTransfer ? (
+                            <>
+                              {getTransferLabel(tx).fromBox}
+                              <ArrowRight className="size-3 text-muted-foreground shrink-0" />
+                              {getTransferLabel(tx).toBox}
+                            </>
+                          ) : (
+                            tx.description || "(Sem descrição)"
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
                           {txIsTransfer
@@ -738,10 +744,16 @@ export function TransacoesTab({
           {selectedTx && drawerMode === "view" && (
             <>
               <DrawerHeader>
-                <DrawerTitle className="font-display text-xl tracking-tight">
-                  {isTransfer
-                    ? getTransferLabel(selectedTx)
-                    : selectedTx.description || "(Sem descrição)"}
+                <DrawerTitle className="font-display text-xl tracking-tight flex items-center gap-1.5">
+                  {isTransfer ? (
+                    <>
+                      {getTransferLabel(selectedTx).fromBox}
+                      <ArrowRight className="size-4 text-muted-foreground shrink-0" />
+                      {getTransferLabel(selectedTx).toBox}
+                    </>
+                  ) : (
+                    selectedTx.description || "(Sem descrição)"
+                  )}
                 </DrawerTitle>
                 <DrawerDescription className="sr-only">
                   Detalhes da transação

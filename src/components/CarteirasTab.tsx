@@ -301,7 +301,7 @@ export function CarteirasTab() {
       onClick={() => handleOpenDetail(box)}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="font-display text-base text-foreground tracking-tight">
+        <span className="font-display tracking-tight text-base text-foreground">
           {box.name}
         </span>
         {box.isDefault && (
@@ -311,11 +311,11 @@ export function CarteirasTab() {
         )}
       </div>
 
-      <div className="text-xl font-bold text-foreground font-mono tracking-tight">
+      <div className="text-sm text-muted-foreground font-mono tracking-tight">
         {formatCurrency(box.balance)}
       </div>
 
-      {box.goalAmount != null && box.goalProgress != null && (
+      {box.goalAmount != null && box.goalProgress != null ? (
         <div className="mt-3">
           <div className="flex justify-between items-center gap-2">
             <Progress
@@ -332,38 +332,40 @@ export function CarteirasTab() {
             Meta: {formatCurrency(box.goalAmount)}
           </div>
         </div>
-      )}
+      ) : box.type === "saving" ? (
+        <div className="text-[11px] text-muted-foreground/50 mt-2">
+          Sem meta definida
+        </div>
+      ) : null}
     </button>
   );
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="mb-4">
-        <div className="flex justify-between items-start mb-1">
-          <div>
-            <h2 className="font-display text-2xl text-foreground tracking-tight">Carteiras</h2>
-            <p className="text-lg font-mono text-foreground mt-0.5">
-              {formatCurrency(totalBalance)}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsTransferOpen(true)}
-            >
-              <ArrowRightLeftIcon className="h-4 w-4 mr-1" />
-              Transferir
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setIsCreateOpen(true)}
-            >
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Nova
-            </Button>
-          </div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-2xl text-foreground tracking-tight">
+          Carteiras
+        </h2>
+        <div className="flex gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9"
+            onClick={() => setIsTransferOpen(true)}
+            aria-label="Transferir"
+          >
+            <ArrowRightLeftIcon className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9"
+            onClick={() => setIsCreateOpen(true)}
+            aria-label="Nova carteira"
+          >
+            <PlusIcon className="size-4" />
+          </Button>
         </div>
       </div>
 
