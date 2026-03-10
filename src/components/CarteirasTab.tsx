@@ -29,6 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBoxes } from "@/hooks/useBoxes";
 import { useCreateBox } from "@/hooks/useCreateBox";
@@ -37,7 +45,7 @@ import { useApi } from "@/hooks/useApi";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PencilIcon, Trash2Icon, PlusIcon, ArrowRightLeftIcon, Wallet } from "lucide-react";
+import { PlusIcon, ArrowRightLeftIcon, Wallet, PencilIcon, Trash2Icon } from "lucide-react";
 import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
@@ -66,9 +74,12 @@ export function CarteirasTab() {
   const [createType, setCreateType] = useState<BoxType>("spending");
   const [isCreating, setIsCreating] = useState(false);
 
-  // Edit dialog state
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingBox, setEditingBox] = useState<BoxDTO | null>(null);
+  // Detail drawer state
+  const [selectedBox, setSelectedBox] = useState<BoxDTO | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Edit state (used inside drawer)
   const [editName, setEditName] = useState("");
   const [editGoalAmount, setEditGoalAmount] = useState(0);
   const [editType, setEditType] = useState<BoxType>("spending");
@@ -116,18 +127,28 @@ export function CarteirasTab() {
     }
   };
 
-  const handleOpenEdit = (box: BoxDTO) => {
-    setEditingBox(box);
-    setEditName(box.name);
-    setEditGoalAmount(box.goalAmount ?? 0);
-    setEditType(box.type);
-    setIsEditOpen(true);
+  const handleOpenDetail = (box: BoxDTO) => {
+    setSelectedBox(box);
+    setIsEditMode(false);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEnterEditMode = () => {
+    if (!selectedBox) return;
+    setEditName(selectedBox.name);
+    setEditGoalAmount(selectedBox.goalAmount ?? 0);
+    setEditType(selectedBox.type);
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!editingBox) return;
+    if (!selectedBox) return;
 
     if (!editName.trim()) {
       toast.error("Por favor, insira um nome");
@@ -137,7 +158,7 @@ export function CarteirasTab() {
     setIsSavingEdit(true);
     try {
       const result = await apiService.editBox({
-        boxId: editingBox.id,
+        boxId: selectedBox.id,
         name: editName.trim(),
         goalAmount: editGoalAmount > 0 ? editGoalAmount : null,
         type: editType,
@@ -150,8 +171,9 @@ export function CarteirasTab() {
         mutate("boxes");
         mutate("summary");
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
-        setIsEditOpen(false);
-        setEditingBox(null);
+        setIsDrawerOpen(false);
+        setSelectedBox(null);
+        setIsEditMode(false);
       }
     } catch (err) {
       console.error("Error editing box:", err);
@@ -182,6 +204,8 @@ export function CarteirasTab() {
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
         setIsDeleteOpen(false);
         setDeletingBox(null);
+        setIsDrawerOpen(false);
+        setSelectedBox(null);
       }
     } catch (err) {
       console.error("Error deleting box:", err);
@@ -269,44 +293,24 @@ export function CarteirasTab() {
 
   const spendingBoxes = boxes?.filter((b) => b.type === "spending") ?? [];
   const savingBoxes = boxes?.filter((b) => b.type === "saving") ?? [];
+  const totalBalance = boxes?.reduce((sum, b) => sum + b.balance, 0) ?? 0;
 
   const renderBoxCard = (box: BoxDTO, index: number) => (
-    <div
+    <button
       key={box.id}
-      className={`rounded-lg border border-border p-3 shadow-sm duna-card duna-surface duna-stagger-${Math.min(index + 1, 6)}`}
+      type="button"
+      className={`w-full text-left rounded-xl border border-border p-4 duna-card duna-surface duna-stagger-${Math.min(index + 1, 6)} transition-colors active:bg-muted/50`}
+      onClick={() => handleOpenDetail(box)}
     >
       <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-xs font-medium text-muted-foreground truncate">
-            {box.name}
+        <span className="font-display text-base text-foreground tracking-tight">
+          {box.name}
+        </span>
+        {box.isDefault && (
+          <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full shrink-0">
+            padrão
           </span>
-          {box.isDefault && (
-            <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1 py-0.5 rounded-full shrink-0">
-              padrão
-            </span>
-          )}
-        </div>
-        <div className="flex gap-0.5 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            title="Editar"
-            onClick={() => handleOpenEdit(box)}
-          >
-            <PencilIcon className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            title={getDeleteDisabledReason(box) || "Remover"}
-            disabled={!canDeleteBox(box)}
-            onClick={() => handleOpenDelete(box)}
-          >
-            <Trash2Icon className="h-3 w-3" />
-          </Button>
-        </div>
+        )}
       </div>
 
       <div className="text-xl font-bold text-foreground font-mono tracking-tight">
@@ -314,70 +318,77 @@ export function CarteirasTab() {
       </div>
 
       {box.goalAmount != null && box.goalProgress != null && (
-        <div className="mt-2">
+        <div className="mt-3">
           <div className="flex justify-between items-center gap-2">
             <Progress
               value={Math.min(100, box.goalProgress)}
               filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
               bgColor="var(--color-border)"
-              className="h-1.5 flex-1"
+              className="h-2 flex-1"
             />
-            <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+            <span className="text-xs font-mono text-muted-foreground shrink-0">
               {Math.min(100, Math.round(box.goalProgress))}%
             </span>
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">
+          <div className="text-[10px] text-muted-foreground mt-1">
             Meta: {formatCurrency(box.goalAmount)}
           </div>
         </div>
       )}
-    </div>
+    </button>
   );
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-foreground text-base font-display tracking-tight">Carteiras</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsTransferOpen(true)}
-          >
-            <ArrowRightLeftIcon className="h-4 w-4 mr-1" />
-            Transferir
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Nova
-          </Button>
+      <div className="mb-4">
+        <div className="flex justify-between items-start mb-1">
+          <div>
+            <h2 className="font-display text-2xl text-foreground tracking-tight">Carteiras</h2>
+            <p className="text-lg font-mono text-foreground mt-0.5">
+              {formatCurrency(totalBalance)}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsTransferOpen(true)}
+            >
+              <ArrowRightLeftIcon className="h-4 w-4 mr-1" />
+              Transferir
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Nova
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Box List */}
       <ScrollArea className="flex flex-col flex-1 pr-3 overflow-y-auto">
         {boxes && boxes.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {spendingBoxes.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 font-display">
                   Contas
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {spendingBoxes.map(renderBoxCard)}
                 </div>
               </div>
             )}
             {savingBoxes.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 font-display">
                   Caixinhas
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {savingBoxes.map(renderBoxCard)}
                 </div>
               </div>
@@ -397,6 +408,172 @@ export function CarteirasTab() {
           </div>
         )}
       </ScrollArea>
+
+      {/* Detail Drawer (bottom sheet) */}
+      <Drawer open={isDrawerOpen} onOpenChange={(open) => {
+        setIsDrawerOpen(open);
+        if (!open) {
+          setIsEditMode(false);
+          setSelectedBox(null);
+        }
+      }}>
+        <DrawerContent>
+          {selectedBox && !isEditMode && (
+            <>
+              <DrawerHeader>
+                <DrawerTitle className="font-display text-xl tracking-tight">
+                  {selectedBox.name}
+                </DrawerTitle>
+                <DrawerDescription>
+                  {boxTypeLabel(selectedBox.type)}
+                  {selectedBox.isDefault && " · Padrão"}
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <div className="px-4 pb-2">
+                <div className="text-2xl font-bold text-foreground font-mono tracking-tight mb-4">
+                  {formatCurrency(selectedBox.balance)}
+                </div>
+
+                {selectedBox.goalAmount != null && selectedBox.goalProgress != null && (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center gap-2 mb-1">
+                      <Progress
+                        value={Math.min(100, selectedBox.goalProgress)}
+                        filledColor={selectedBox.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
+                        bgColor="var(--color-border)"
+                        className="h-2 flex-1"
+                      />
+                      <span className="text-xs font-mono text-muted-foreground shrink-0">
+                        {Math.min(100, Math.round(selectedBox.goalProgress))}%
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Meta: {formatCurrency(selectedBox.goalAmount)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DrawerFooter>
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleEnterEditMode}
+                  >
+                    <PencilIcon className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={!canDeleteBox(selectedBox)}
+                    title={getDeleteDisabledReason(selectedBox) || "Remover"}
+                    onClick={() => handleOpenDelete(selectedBox)}
+                  >
+                    <Trash2Icon className="h-4 w-4 mr-1" />
+                    Remover
+                  </Button>
+                </div>
+              </DrawerFooter>
+            </>
+          )}
+
+          {selectedBox && isEditMode && (
+            <>
+              <DrawerHeader>
+                <DrawerTitle className="font-display text-xl tracking-tight">
+                  Editar {boxTypeLabel(editType)}
+                </DrawerTitle>
+                <DrawerDescription>
+                  Altere as propriedades da {boxTypeLabel(editType).toLowerCase()}.
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <form onSubmit={handleSaveEdit} className="flex flex-col flex-1">
+                <div className="space-y-4 px-4 pb-4">
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select
+                      value={editType}
+                      onValueChange={(v) => setEditType(v as BoxType)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="spending">Conta</SelectItem>
+                        <SelectItem value="saving">Caixinha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Nome</Label>
+                    <Input
+                      id="edit-name"
+                      placeholder="Nome"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {editType === "saving" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-goal">Meta (opcional)</Label>
+                      <MoneyInput
+                        id="edit-goal"
+                        value={editGoalAmount}
+                        onChange={setEditGoalAmount}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <DrawerFooter>
+                  <div className="flex gap-2 w-full">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleCancelEdit}
+                      disabled={isSavingEdit}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={isSavingEdit}>
+                      {isSavingEdit ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
+                </DrawerFooter>
+              </form>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover carteira</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover a carteira &quot;{deletingBox?.name}&quot;?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Removendo..." : "Remover"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create Box Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -461,93 +638,6 @@ export function CarteirasTab() {
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Box Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar {boxTypeLabel(editType)}</DialogTitle>
-            <DialogDescription>
-              Altere as propriedades da {boxTypeLabel(editType).toLowerCase()}.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSaveEdit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select
-                  value={editType}
-                  onValueChange={(v) => setEditType(v as BoxType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="spending">Conta</SelectItem>
-                    <SelectItem value="saving">Caixinha</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Nome</Label>
-                <Input
-                  id="edit-name"
-                  placeholder="Nome"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  required
-                />
-              </div>
-              {editType === "saving" && (
-                <div className="space-y-2">
-                  <Label htmlFor="edit-goal">Meta (opcional)</Label>
-                  <MoneyInput
-                    id="edit-goal"
-                    value={editGoalAmount}
-                    onChange={setEditGoalAmount}
-                  />
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditOpen(false)}
-                disabled={isSavingEdit}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSavingEdit}>
-                {isSavingEdit ? "Salvando..." : "Salvar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover carteira</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja remover a carteira &quot;{deletingBox?.name}&quot;?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Removendo..." : "Remover"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Transfer Dialog */}
       <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
