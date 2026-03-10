@@ -19,7 +19,7 @@ import { useTransfer } from "@/hooks/useTransfer";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
 // ── Helpers ──
 
@@ -74,14 +74,14 @@ function ModeSelector({
 
   return (
     <div className="flex justify-center">
-      <div className="relative flex w-full max-w-xs rounded-lg p-1 bg-muted/50 border border-[var(--color-border)]">
+      <div className="relative flex w-full rounded-lg p-1 bg-muted/50 border border-[var(--color-border)]">
         {/* Sliding indicator */}
         <div
           className="absolute top-1 bottom-1 rounded-md bg-muted transition-all duration-200"
           style={{
-            width: `calc(${100 / MODES.length}% - 4px)`,
-            left: `calc(${(activeIndex * 100) / MODES.length}% + 2px)`,
-            borderWidth: 1,
+            width: `calc((100% - 8px) / ${MODES.length})`,
+            left: `calc(${activeIndex} * (100% - 8px) / ${MODES.length} + 4px)`,
+            borderWidth: 2,
             borderStyle: "solid",
             borderColor: activeColor,
           }}
@@ -91,7 +91,8 @@ function ModeSelector({
             key={mode}
             type="button"
             onClick={() => onChange(mode)}
-            className={`relative z-10 flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+            className={`relative z-10 flex-1 flex justify-center items-center py-2 px-1 rounded-md text-sm font-medium transition-colors 
+              truncate  duration-200 ${
               value === mode
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -304,38 +305,37 @@ export function InputTab() {
           <>
             {/* From → To boxes */}
             <div className="space-y-2">
-              <Label>Origem e destino</Label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <Select value={fromBoxId} onValueChange={setFromBoxId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Origem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {boxes?.map((box) => (
-                        <SelectItem key={box.id} value={box.id}>
-                          {box.name} ({formatCurrency(box.balance)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="flex-1">
-                  <Select value={toBoxId} onValueChange={setToBoxId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Destino" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {boxes?.map((box) => (
-                        <SelectItem key={box.id} value={box.id}>
-                          {box.name} ({formatCurrency(box.balance)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <Label>Origem</Label>
+              <Select value={fromBoxId} onValueChange={setFromBoxId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione a origem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {boxes?.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.name} ({formatCurrency(box.balance)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-center">
+              <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <Label>Destino</Label>
+              <Select value={toBoxId} onValueChange={setToBoxId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  {boxes?.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.name} ({formatCurrency(box.balance)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Date */}
@@ -365,7 +365,7 @@ export function InputTab() {
             </div>
 
             {/* Date + Box: 2-column grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Data</Label>
                 <DatePicker
