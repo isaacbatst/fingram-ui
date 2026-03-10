@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface MoneyInputProps {
@@ -33,6 +33,7 @@ export function MoneyInput({
 }: MoneyInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const cents = Math.round(value * 100);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -68,25 +69,37 @@ export function MoneyInput({
   );
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="numeric"
-      id={id}
-      value={formatCents(cents)}
-      onChange={() => {}}
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      required={required}
-      disabled={disabled}
-      autoFocus={autoFocus}
-      style={style}
+    <div
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        "relative flex items-center min-w-0 h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
+        "has-[:focus-visible]:border-ring has-[:focus-visible]:ring-ring/50 has-[:focus-visible]:ring-[3px]",
+        disabled && "pointer-events-none cursor-not-allowed opacity-50",
         className,
       )}
-    />
+      style={style}
+    >
+      <input
+        ref={inputRef}
+        id={id}
+        type="text"
+        inputMode="numeric"
+        value={cents > 0 ? formatCents(cents) : ""}
+        onChange={() => {}}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        required={required}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text"
+      />
+      <span className="block w-full truncate pointer-events-none" aria-hidden="true">
+        {formatCents(cents)}
+        {isFocused && (
+          <span className="hidden md:inline-block w-[2px] h-[1em] bg-current align-middle ml-px animate-caret-blink" />
+        )}
+      </span>
+    </div>
   );
 }
