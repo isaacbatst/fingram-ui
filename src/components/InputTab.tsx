@@ -44,12 +44,12 @@ const MODE_CONFIG: Record<
   expense: {
     label: "Despesa",
     color: "var(--color-danger)",
-    cta: "Registrar Despesa",
+    cta: "Registrar",
   },
   income: {
     label: "Receita",
     color: "var(--color-success)",
-    cta: "Registrar Receita",
+    cta: "Registrar",
   },
   transfer: {
     label: "Transferência",
@@ -410,7 +410,11 @@ export function InputTab() {
         )}
 
         {/* Submit */}
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+          disabled={isSubmitting}
+        >
           {isSubmitting
             ? isTransfer
               ? "Transferindo..."
