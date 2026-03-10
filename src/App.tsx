@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AccountButton } from "@/components/AccountButton";
 import { AccentGlow } from "@/components/AccentGlow";
 import { DunaLogo } from "@/components/DunaLogo";
@@ -243,6 +244,7 @@ export default function App() {
       <Toaster closeButton style={{ zIndex: 10000 }} />
       <AccentGlow />
       <GrainOverlay />
+      <SpeedInsights />
     </ErrorBoundary>
   );
 }
