@@ -89,6 +89,15 @@
   --ease-out:              cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out:           cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Atmospheric textures */
+  --grain-opacity:         1;
+  --grain-blend:           soft-light;
+  --glow-size:             500px;
+  --glow-blur:             150px;
+  --glow-opacity:          0.25;
+  --glow-pulse-min:        0.15;
+  --glow-pulse-max:        0.25;
+
   /* ─── shadcn semantic bridge ─── */
   --radius: 10px;
   --background: var(--color-bg);
@@ -176,8 +185,8 @@
 }
 
 @keyframes duna-glow-pulse {
-  0%, 100% { opacity: 0.15; }
-  50%      { opacity: 0.25; }
+  0%, 100% { opacity: var(--glow-pulse-min); }
+  50%      { opacity: var(--glow-pulse-max); }
 }
 
 @keyframes duna-scale-in {

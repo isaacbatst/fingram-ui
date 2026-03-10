@@ -1,8 +1,11 @@
-export function GrainOverlay({ opacity = 1 }: { opacity?: number }) {
+export function GrainOverlay() {
   return (
     <div
-      className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ opacity, mixBlendMode: "soft-light" }}
+      className="fixed inset-0 pointer-events-none z-[9999] will-change-[opacity]"
+      style={{
+        opacity: "var(--grain-opacity)",
+        mixBlendMode: "var(--grain-blend)" as React.CSSProperties["mixBlendMode"],
+      }}
     >
       <svg width="100%" height="100%" className="block">
         <filter id="grain">
