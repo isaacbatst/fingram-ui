@@ -19,7 +19,7 @@ export function TempTokenConfirmation() {
           </div>
           <CardTitle>Confirmar Acesso ao Duna</CardTitle>
           <CardDescription>
-            Você recebeu um link de acesso ao seu cofre. 
+            Você recebeu um link de acesso ao Duna. 
             Clique em "Confirmar" para acessar ou "Cancelar" para descartar.
           </CardDescription>
         </CardHeader>
