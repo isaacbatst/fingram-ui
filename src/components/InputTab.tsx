@@ -365,7 +365,7 @@ export function InputTab() {
             </div>
 
             {/* Date + Box: 2-column grid */}
-            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 self-stretch">
               <div className="space-y-2">
                 <Label>Data</Label>
                 <DatePicker
@@ -374,7 +374,7 @@ export function InputTab() {
                   placeholder="Selecione uma data"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col">
                 <Label>Caixa</Label>
                 <Select
                   value={selectedBoxId}
