@@ -45,7 +45,13 @@ import { useApi } from "@/hooks/useApi";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PlusIcon, ArrowRightLeftIcon, Layers, PencilIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, ArrowRightLeftIcon, Layers, PencilIcon, Trash2Icon, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
@@ -269,6 +275,26 @@ export function EstratosTab() {
     return undefined;
   };
 
+  // --- Language / onboarding ---
+
+  const isFirstEstrato = !boxes || boxes.length === 0;
+  const createButtonLabel = isFirstEstrato ? "Adicionar conta ou reserva" : "Novo estrato";
+  const createDialogTitle = isFirstEstrato ? "Adicionar conta ou reserva" : "Novo Estrato";
+  const createDialogDescription = isFirstEstrato
+    ? "Escolha o tipo para começar."
+    : "Adicione um novo estrato ao seu patrimônio.";
+
+  const [subtitleDismissed, setSubtitleDismissed] = useState(() => {
+    return localStorage.getItem("duna:estratos-subtitle-dismissed") === "true";
+  });
+
+  const handleDismissSubtitle = () => {
+    setSubtitleDismissed(true);
+    localStorage.setItem("duna:estratos-subtitle-dismissed", "true");
+  };
+
+  const showSubtitle = !isFirstEstrato && !subtitleDismissed;
+
   // --- Render ---
 
   if (isLoading) {
@@ -342,30 +368,55 @@ export function EstratosTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-2xl text-foreground tracking-tight">
-          Estratos
-        </h2>
-        <div className="flex gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9"
-            onClick={() => setIsTransferOpen(true)}
-            aria-label="Transferir"
-          >
-            <ArrowRightLeftIcon className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9"
-            onClick={() => setIsCreateOpen(true)}
-            aria-label="Novo estrato"
-          >
-            <PlusIcon className="size-4" />
-          </Button>
+      <div className="flex flex-col gap-1 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-2xl text-foreground tracking-tight">
+              Estratos
+            </h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground/60 transition-colors">
+                    <Info className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[240px] text-xs">
+                  Estratos são as camadas do seu patrimônio — cada conta, reserva ou investimento é um estrato.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9"
+              onClick={() => setIsTransferOpen(true)}
+              aria-label="Transferir"
+            >
+              <ArrowRightLeftIcon className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9"
+              onClick={() => setIsCreateOpen(true)}
+              aria-label={createButtonLabel}
+            >
+              <PlusIcon className="size-4" />
+            </Button>
+          </div>
         </div>
+        {showSubtitle && (
+          <button
+            type="button"
+            onClick={handleDismissSubtitle}
+            className="text-xs text-muted-foreground leading-relaxed hover:text-foreground/50 transition-colors cursor-pointer text-left"
+          >
+            Suas contas, reservas e investimentos — camada por camada.
+          </button>
+        )}
       </div>
 
       {/* Box List */}
@@ -578,10 +629,8 @@ export function EstratosTab() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo Estrato</DialogTitle>
-            <DialogDescription>
-              Adicione um novo estrato ao seu patrimônio.
-            </DialogDescription>
+            <DialogTitle>{createDialogTitle}</DialogTitle>
+            <DialogDescription>{createDialogDescription}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate}>
             <div className="space-y-4 py-4">
@@ -595,8 +644,8 @@ export function EstratosTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="spending">Conta</SelectItem>
-                    <SelectItem value="saving">Caixinha</SelectItem>
+                    <SelectItem value="spending">Corrente — Conta do dia a dia</SelectItem>
+                    <SelectItem value="saving">Reserva — Dinheiro guardado com destino</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
