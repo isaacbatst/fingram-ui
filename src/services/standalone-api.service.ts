@@ -243,8 +243,8 @@ export class StandaloneApiService implements ApiService {
       const box = await response.json();
       return { box };
     } catch (error) {
-      console.error("Erro ao criar carteira:", error);
-      return { error: "Erro ao criar carteira" };
+      console.error("Erro ao criar estrato:", error);
+      return { error: "Erro ao criar estrato" };
     }
   }
 
@@ -256,8 +256,8 @@ export class StandaloneApiService implements ApiService {
       });
       return {};
     } catch (error) {
-      console.error("Erro ao editar carteira:", error);
-      return { error: "Erro ao editar carteira" };
+      console.error("Erro ao editar estrato:", error);
+      return { error: "Erro ao editar estrato" };
     }
   }
 
@@ -269,8 +269,8 @@ export class StandaloneApiService implements ApiService {
       });
       return {};
     } catch (error) {
-      console.error("Erro ao deletar carteira:", error);
-      return { error: "Erro ao deletar carteira" };
+      console.error("Erro ao deletar estrato:", error);
+      return { error: "Erro ao deletar estrato" };
     }
   }
 

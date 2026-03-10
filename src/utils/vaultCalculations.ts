@@ -42,8 +42,8 @@ export interface SerializedVault {
 // Agora usando os valores pré-calculados pelo backend
 
 /**
- * Retorna o saldo atual do cofre
- * @param vault O cofre serializado
+ * Retorna o saldo total do Duna
+ * @param vault O vault serializado
  * @returns O saldo atual
  */
 export function calculateBalance(vault: SerializedVault): number {
@@ -52,8 +52,8 @@ export function calculateBalance(vault: SerializedVault): number {
 }
 
 /**
- * Retorna o total de receitas do cofre
- * @param vault O cofre serializado
+ * Retorna o total de receitas do Duna
+ * @param vault O vault serializado
  * @returns O total de receitas
  */
 export function calculateTotalIncome(vault: SerializedVault): number {
@@ -62,8 +62,8 @@ export function calculateTotalIncome(vault: SerializedVault): number {
 }
 
 /**
- * Retorna o total de despesas do cofre
- * @param vault O cofre serializado
+ * Retorna o total de despesas do Duna
+ * @param vault O vault serializado
  * @returns O total de despesas
  */
 export function calculateTotalExpense(vault: SerializedVault): number {
