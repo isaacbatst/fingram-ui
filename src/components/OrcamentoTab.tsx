@@ -8,6 +8,14 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { MoneyInput } from "@/components/MoneyInput";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from "@/components/ui/drawer";
+import { RingChart } from "@/components/RingChart";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useBudgetStartDay } from "@/hooks/useBudgetStartDay";
@@ -15,16 +23,12 @@ import { useCategories, type Category } from "@/hooks/useCategories";
 import { useState } from "react";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { PencilIcon, CheckIcon, XIcon, SettingsIcon } from "lucide-react";
+import { PencilIcon, ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "lucide-react";
 import { useSearchParams } from "@/hooks/useSearchParams";
 import { ScrollArea } from "./ui/scroll-area";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { getCurrentBudgetPeriod } from "@/lib/utils";
+
 const months = [
   { value: 1, label: "Janeiro" },
   { value: 2, label: "Fevereiro" },
@@ -40,28 +44,16 @@ const months = [
   { value: 12, label: "Dezembro" },
 ];
 
-// Gerar anos (ano atual - 2 até ano atual + 1)
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 4 }, (_, i) => currentYear - 2 + i);
-
-
 // Generate days 1-28 for budget start day selection
 const days = Array.from({ length: 28 }, (_, i) => i + 1);
 
-// Helper function to calculate budget period dates
-function getBudgetPeriodLabel(
-  month: number,
-  year: number,
-  startDay: number
-): string {
-  const startDate = new Date(year, month - 1, startDay);
-  const endDate = new Date(year, month, startDay - 1);
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  };
-
-  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+function formatMoney(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 }
 
 export function OrcamentoTab() {
@@ -77,39 +69,29 @@ export function OrcamentoTab() {
   const defaultPeriod = getCurrentBudgetPeriod(budgetStartDay);
   const selectedYear = parseInt(
     searchParams.get("orcamento_ano") || defaultPeriod.year.toString(),
-    10
+    10,
   );
   const setSelectedYear = (year: number) => {
     setSearchParams({ orcamento_ano: year.toString() });
   };
   const selectedMonth = parseInt(
     searchParams.get("orcamento_mes") || defaultPeriod.month.toString(),
-    10
+    10,
   );
   const setSelectedMonth = (month: number) => {
     setSearchParams({ orcamento_mes: month.toString() });
   };
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingBudgets, setEditingBudgets] = useState<Record<string, number>>(
-    {}
-  );
+  // Edit drawer state
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editBudgetValue, setEditBudgetValue] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [pendingStartDay, setPendingStartDay] = useState<number | null>(null);
 
-  // Handle start day change
-  const handleStartDayChange = async (value: string) => {
-    const day = parseInt(value, 10);
-    setPendingStartDay(day);
-    const result = await setBudgetStartDay(day);
-    if (result.success) {
-      setIsSettingsOpen(false);
-      // Refresh budget data
-      mutate();
-    }
-    setPendingStartDay(null);
-  };
+  // Settings drawer state
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [pendingStartDay, setPendingStartDay] = useState<number | null>(null);
 
   const {
     data: budgetData,
@@ -130,46 +112,66 @@ export function OrcamentoTab() {
   const totalOrcamento = orcamento.reduce((sum, item) => sum + item.valor, 0);
   const totalGasto = orcamento.reduce((sum, item) => sum + item.usado, 0);
   const saldoRestante = totalOrcamento - totalGasto;
-  const percentualUso = totalOrcamento > 0 ? (totalGasto / totalOrcamento) * 100 : 0;
+  const percentualUso =
+    totalOrcamento > 0 ? (totalGasto / totalOrcamento) * 100 : 0;
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-    // Inicializar os valores dos inputs com os valores atuais
-    const initialValues: Record<string, number> = {};
-    orcamento.forEach((item) => {
-      initialValues[item.categoryId] = item.valor;
-    });
+  // Categories with budget vs without
+  const categoriesWithBudget = orcamento;
+  const categoriesWithoutBudget =
+    categories?.filter(
+      (cat: Category) => !orcamento.find((o) => o.categoryId === cat.id),
+    ) ?? [];
 
-    // Adicionar categorias que não têm orçamento definido
-    categories?.forEach((cat: Category) => {
-      if (!initialValues[cat.id]) {
-        initialValues[cat.id] = 0;
-      }
-    });
-    
-    setEditingBudgets(initialValues);
+  // Month navigation
+  const goToPrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
   };
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditingBudgets({});
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
   };
 
-  const handleSaveBudgets = async () => {
+  const monthLabel =
+    months.find((m) => m.value === selectedMonth)?.label ?? "";
+
+  // Open edit drawer for a category
+  const handleOpenEdit = (categoryId: string, categoryName: string) => {
+    const existing = orcamento.find((o) => o.categoryId === categoryId);
+    setEditCategoryId(categoryId);
+    setEditCategoryName(categoryName);
+    setEditBudgetValue(existing?.valor ?? 0);
+    setEditDrawerOpen(true);
+  };
+
+  // Save single category budget via drawer
+  const handleSaveBudget = async () => {
+    if (!editCategoryId) return;
     setIsSaving(true);
     try {
-      const budgetsToSave = Object.entries(editingBudgets)
-        .map(([categoryId, amount]) => ({
-          categoryId,
-          amount,
-        }))
-        .filter((budget) => budget.amount > 0);
-
-      const result = await setBudgets(budgetsToSave);
+      const allBudgets = orcamento.map((item) => ({
+        categoryId: item.categoryId,
+        amount: item.categoryId === editCategoryId ? editBudgetValue : item.valor,
+      }));
+      // Add if new category
+      if (!allBudgets.find((b) => b.categoryId === editCategoryId)) {
+        allBudgets.push({ categoryId: editCategoryId, amount: editBudgetValue });
+      }
+      const result = await setBudgets(
+        allBudgets.filter((b) => b.amount > 0),
+      );
       if (result.success) {
-        setIsEditing(false);
-        setEditingBudgets({});
-        // Atualizar os dados
+        setEditDrawerOpen(false);
+        setEditCategoryId(null);
         mutate();
       }
     } finally {
@@ -177,187 +179,55 @@ export function OrcamentoTab() {
     }
   };
 
-  const handleBudgetChange = (categoryId: string, value: number) => {
-    setEditingBudgets((prev) => ({
-      ...prev,
-      [categoryId]: value,
-    }));
+  // Handle start day change
+  const handleStartDayChange = async (value: string) => {
+    const day = parseInt(value, 10);
+    setPendingStartDay(day);
+    const result = await setBudgetStartDay(day);
+    if (result.success) {
+      setSettingsDrawerOpen(false);
+      mutate();
+    }
+    setPendingStartDay(null);
   };
+
+  const hasBudgets = orcamento.length > 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="mb-4">
-        <div className="mb-3 font-semibold text-foreground text-base flex justify-between items-center font-display tracking-tight">
-          <span>Orçamento por categoria</span>
-          <div className="flex gap-1">
-            {!isEditing && (
-              <>
-                <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      title="Configurações do orçamento"
-                    >
-                      <SettingsIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64" align="end">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="budget-start-day">
-                          Dia de início do período
-                        </Label>
-                        <Select
-                          value={
-                            pendingStartDay?.toString() ??
-                            budgetStartDay.toString()
-                          }
-                          onValueChange={handleStartDayChange}
-                          disabled={isLoadingStartDay || pendingStartDay !== null}
-                        >
-                          <SelectTrigger id="budget-start-day">
-                            <SelectValue placeholder="Selecione o dia" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {days.map((day) => (
-                              <SelectItem key={day} value={day.toString()}>
-                                Dia {day}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          O orçamento será calculado do dia {budgetStartDay} de
-                          cada mês até o dia {budgetStartDay - 1 || 28} do mês
-                          seguinte.
-                        </p>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleEditClick}
-                  className="h-8 w-8 p-0"
-                  title="Editar orçamentos"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {isEditing && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSaveBudgets}
-                  disabled={isSaving}
-                  className="h-8 w-8 p-0"
-                  title="Salvar orçamentos"
-                >
-                  <CheckIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancelEdit}
-                  disabled={isSaving}
-                  className="h-8 w-8 p-0"
-                  title="Cancelar edição"
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Seletores de ano e mês */}
-        <div className="flex gap-2">
-          <Select
-            value={selectedMonth.toString()}
-            onValueChange={(value) => setSelectedMonth(parseInt(value, 10))}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Mês" />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value.toString()}>
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={selectedYear.toString()}
-            onValueChange={(value) => setSelectedYear(parseInt(value, 10))}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Ano" />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Period display - only show if budgetStartDay is not 1 */}
-        {budgetStartDay !== 1 && (
-          <div className="mt-2 text-xs text-muted-foreground text-center">
-            Período:{" "}
-            {getBudgetPeriodLabel(selectedMonth, selectedYear, budgetStartDay)}
-          </div>
-        )}
+      {/* Month heading with arrow nav */}
+      <div className="flex items-center justify-center gap-2 mb-5">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={goToPrevMonth}
+          className="h-8 w-8 p-0"
+        >
+          <ChevronLeftIcon className="h-5 w-5" />
+        </Button>
+        <h2 className="font-display text-2xl text-foreground tracking-tight">
+          {monthLabel} {selectedYear}
+        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={goToNextMonth}
+          className="h-8 w-8 p-0"
+        >
+          <ChevronRightIcon className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSettingsDrawerOpen(true)}
+          className="h-8 w-8 p-0"
+          title="Configurações do orçamento"
+        >
+          <SettingsIcon className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Resumo do Orçamento */}
-      {orcamento.length > 0 && (
-        <div className="border border-border rounded-lg p-3 mb-3 duna-card duna-surface">
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Orçamento</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                R$ {totalOrcamento.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Gasto</div>
-              <div className="text-sm font-bold text-foreground font-mono">
-                R$ {totalGasto.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Disponível</div>
-              <div className={`text-sm font-bold font-mono ${saldoRestante >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                R$ {saldoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-full h-2" style={{ backgroundColor: 'var(--color-border)' }}>
-              <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  percentualUso > 90 ? 'bg-[var(--color-danger)]' :
-                  percentualUso > 70 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-success)]'
-                }`}
-                style={{ width: `${Math.min(100, percentualUso)}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground font-mono shrink-0">
-              {percentualUso.toFixed(0)}%
-            </span>
-          </div>
-        </div>
-      )}
-
+      {/* Loading */}
       {!budgetData && !error && isLoading && (
         <div className="text-center py-2">
           <LoadingSpinner />
@@ -369,77 +239,110 @@ export function OrcamentoTab() {
         <ErrorDisplay error={error.message} onRetry={mutate} className="my-4" />
       )}
 
-      {/* Conteúdo do orçamento */}
-      <ScrollArea className="space-y-4 flex flex-col flex-1 pr-3 overflow-y-auto">
-          {isEditing ? (
-            // Modo de edição - mostrar todas as categorias
+      {/* Main content */}
+      {budgetData && !error && (
+        <ScrollArea className="flex flex-col flex-1 pr-3 overflow-y-auto">
+          {hasBudgets ? (
             <>
-              {categories?.map((category: Category) => {
-                const currentBudget = orcamento.find(
-                  (o) => o.categoryId === category.id
-                );
-                const budgetValue = editingBudgets[category.id] || 0;
-
-                return (
-                  <div key={category.id} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-foreground text-sm">
-                        {category.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        Usado: R$ {currentBudget?.usado.toFixed(2) || "0.00"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">R$</span>
-                      <MoneyInput
-                        value={budgetValue}
-                        onChange={(val) =>
-                          handleBudgetChange(category.id, val)
-                        }
-                        className="flex-1"
-                        disabled={isSaving}
-                      />
-                    </div>
+              {/* Ring chart */}
+              <div className="flex flex-col items-center mb-6">
+                <RingChart
+                  value={percentualUso}
+                  size={140}
+                  strokeWidth={12}
+                  label="gasto"
+                />
+                <div className="mt-3 text-center">
+                  <div className="text-base font-mono font-bold text-foreground">
+                    {formatMoney(totalGasto)}
                   </div>
-                );
-              })}
-              {isSaving && (
-                <div className="text-center py-2">
-                  <LoadingSpinner />
+                  <div className="text-sm text-muted-foreground">
+                    de {formatMoney(totalOrcamento)}
+                  </div>
+                  <div
+                    className={`text-sm font-mono mt-1 ${
+                      saldoRestante >= 0
+                        ? "text-[var(--color-success)]"
+                        : "text-[var(--color-danger)]"
+                    }`}
+                  >
+                    {saldoRestante >= 0
+                      ? `${formatMoney(saldoRestante)} disponível`
+                      : `${formatMoney(Math.abs(saldoRestante))} acima`}
+                  </div>
                 </div>
-              )}
-            </>
-          ) : (
-            // Modo de visualização - mostrar apenas categorias com orçamento
-            <>
-              {orcamento.length > 0 ? (
-                orcamento.map((c) => {
-                  const pct = Math.min(100, (c.usado / c.valor) * 100);
-                  const filledColor = pct > 90 ? "var(--color-danger)" : pct > 70 ? "var(--color-warning)" : "var(--color-success)";
-                  const bgColor = "var(--color-border)";
+              </div>
+
+              {/* Category list */}
+              <div className="space-y-3">
+                {categoriesWithBudget.map((c) => {
+                  const pct = c.valor > 0 ? Math.min(100, (c.usado / c.valor) * 100) : 0;
+                  const filledColor =
+                    pct > 90
+                      ? "var(--color-danger)"
+                      : pct > 70
+                        ? "var(--color-warning)"
+                        : "var(--color-success)";
 
                   return (
-                    <div key={c.categoria} className="mb-2">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-foreground">
+                    <button
+                      key={c.categoryId}
+                      type="button"
+                      className="w-full text-left rounded-xl border border-border p-3 duna-card duna-surface transition-colors active:bg-muted/50"
+                      onClick={() => handleOpenEdit(c.categoryId, c.categoria)}
+                    >
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="font-display text-base text-foreground tracking-tight">
                           {c.categoria}
                         </span>
-                        <span className="text-[11px] text-muted-foreground font-mono">
-                          {c.usado.toFixed(0)} / {c.valor.toFixed(0)}
+                        <span className="text-sm text-muted-foreground font-mono">
+                          {formatMoney(c.usado)}
                         </span>
                       </div>
                       <Progress
                         value={pct}
                         filledColor={filledColor}
-                        bgColor={bgColor}
-                        className="h-1.5"
+                        bgColor="var(--color-border)"
+                        className="h-2.5"
                       />
-                    </div>
+                      <div className="mt-1 text-xs text-muted-foreground font-mono">
+                        de {formatMoney(c.valor)}
+                      </div>
+                    </button>
                   );
-                })
-              ) : !isLoading && (
-                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                })}
+              </div>
+
+              {/* Categories without budget */}
+              {categoriesWithoutBudget.length > 0 && (
+                <div className="mt-6">
+                  <div className="border-t border-border mb-3" />
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Sem orçamento definido:
+                  </p>
+                  <div className="space-y-1">
+                    {categoriesWithoutBudget.map((cat: Category) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50"
+                        onClick={() => handleOpenEdit(cat.id, cat.name)}
+                      >
+                        <span className="font-display text-sm text-muted-foreground tracking-tight">
+                          {cat.name}
+                        </span>
+                        <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            !isLoading && (
+              <>
+                {/* Empty state */}
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
                     <PencilIcon className="w-7 h-7 text-muted-foreground" />
                   </div>
@@ -447,13 +350,139 @@ export function OrcamentoTab() {
                     Nenhum orçamento definido
                   </h3>
                   <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-                    Clique no ícone de edição para definir orçamentos para este período.
+                    Toque em uma categoria para definir
                   </p>
                 </div>
-              )}
-            </>
+
+                {/* Show all categories as tappable items */}
+                {categories && categories.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {categories.map((cat: Category) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50"
+                        onClick={() => handleOpenEdit(cat.id, cat.name)}
+                      >
+                        <span className="font-display text-sm text-foreground tracking-tight">
+                          {cat.name}
+                        </span>
+                        <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
           )}
         </ScrollArea>
+      )}
+
+      {/* Edit Drawer (per-category) */}
+      <Drawer
+        open={editDrawerOpen}
+        onOpenChange={(open) => {
+          setEditDrawerOpen(open);
+          if (!open) {
+            setEditCategoryId(null);
+          }
+        }}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="font-display text-xl tracking-tight">
+              {editCategoryName}
+            </DrawerTitle>
+          </DrawerHeader>
+
+          <div className="px-4 pb-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-budget-amount">Orçamento mensal</Label>
+              <MoneyInput
+                id="edit-budget-amount"
+                value={editBudgetValue}
+                onChange={setEditBudgetValue}
+                disabled={isSaving}
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <DrawerFooter>
+            <div className="flex gap-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditDrawerOpen(false)}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveBudget}
+                disabled={isSaving}
+              >
+                {isSaving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Settings Drawer */}
+      <Drawer
+        open={settingsDrawerOpen}
+        onOpenChange={setSettingsDrawerOpen}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle className="font-display text-xl tracking-tight">
+              Configurações
+            </DrawerTitle>
+          </DrawerHeader>
+
+          <div className="px-4 pb-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="settings-start-day">
+                Dia de início do período
+              </Label>
+              <Select
+                value={
+                  pendingStartDay?.toString() ?? budgetStartDay.toString()
+                }
+                onValueChange={handleStartDayChange}
+                disabled={isLoadingStartDay || pendingStartDay !== null}
+              >
+                <SelectTrigger id="settings-start-day">
+                  <SelectValue placeholder="Selecione o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {days.map((day) => (
+                    <SelectItem key={day} value={day.toString()}>
+                      Dia {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                O orçamento será calculado do dia {budgetStartDay} de cada mês
+                até o dia {budgetStartDay - 1 || 28} do mês seguinte.
+              </p>
+            </div>
+          </div>
+
+          <DrawerFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSettingsDrawerOpen(false)}
+            >
+              Fechar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
