@@ -305,7 +305,7 @@ export function InputTab() {
           <>
             {/* From → To boxes */}
             <div className="space-y-2">
-              <Label>Origem</Label>
+              <Label className="sr-only">Origem</Label>
               <Select value={fromBoxId} onValueChange={setFromBoxId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione a origem" />
@@ -323,7 +323,7 @@ export function InputTab() {
               <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <Label>Destino</Label>
+              <Label className="sr-only">Destino</Label>
               <Select value={toBoxId} onValueChange={setToBoxId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o destino" />
@@ -340,7 +340,7 @@ export function InputTab() {
 
             {/* Date */}
             <div className="space-y-2">
-              <Label>Data</Label>
+              <Label className="sr-only">Data</Label>
               <DatePicker
                 date={date}
                 onDateChange={setDate}
