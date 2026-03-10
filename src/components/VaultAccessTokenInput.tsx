@@ -38,9 +38,9 @@ export function VaultAccessTokenInput() {
         <div className="mx-auto mb-4">
           <span className="font-display text-2xl font-semibold italic text-[var(--color-accent)] tracking-tight">duna</span>
         </div>
-        <CardTitle className="font-display tracking-tight">Acesso ao Cofre</CardTitle>
+        <CardTitle className="font-display tracking-tight">Acesso ao Duna</CardTitle>
         <CardDescription>
-          Digite seu token de acesso para acessar seu cofre
+          Digite seu token de acesso para acessar o Duna
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -75,7 +75,7 @@ export function VaultAccessTokenInput() {
                 Autenticando...
               </>
             ) : (
-              "Acessar Cofre"
+              "Acessar Duna"
             )}
           </Button>
         </form>
@@ -86,7 +86,7 @@ export function VaultAccessTokenInput() {
         
         <div className="mt-4 pt-4 border-t border-border">
           <div className="text-center text-sm text-muted-foreground mb-3">
-            Ou crie um novo cofre
+            Ou crie um novo Duna
           </div>
           <CreateVaultDialog />
         </div>

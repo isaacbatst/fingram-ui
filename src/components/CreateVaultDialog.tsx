@@ -37,7 +37,7 @@ export function CreateVaultDialog() {
       await refreshAuth();
     } catch (error) {
       console.error("Error creating vault:", error);
-      setError(error instanceof Error ? error.message : "Erro ao criar cofre");
+      setError(error instanceof Error ? error.message : "Erro ao criar o Duna");
     } finally {
       setIsLoading(false);
     }
@@ -48,17 +48,17 @@ export function CreateVaultDialog() {
       <AlertDialogTrigger asChild>
         <Button variant="outline" className="w-full">
           <Plus className="w-4 h-4 mr-2" />
-          Criar Nova Carteira
+          Criar Novo Duna
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Criar Nova Carteira</AlertDialogTitle>
+          <AlertDialogTitle>Criar Novo Duna</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja criar uma nova carteira? Você será automaticamente logada na nova carteira.
+            Tem certeza que deseja criar um novo Duna? Você será automaticamente conectado ao novo Duna.
             <br />
             <br />
-            <strong>Nota:</strong> Se você já tem uma carteira existente, você perderá o acesso a ela através desta sessão.
+            <strong>Nota:</strong> Se você já tem um Duna existente, você perderá o acesso a ele através desta sessão.
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -83,7 +83,7 @@ export function CreateVaultDialog() {
                 Criando...
               </>
             ) : (
-              "Criar Carteira"
+              "Criar Duna"
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

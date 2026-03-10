@@ -17,7 +17,7 @@ export function TempTokenConfirmation() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-info-bg)]">
             <Shield className="h-6 w-6 text-[var(--color-info)]" />
           </div>
-          <CardTitle>Confirmar Acesso ao Cofre</CardTitle>
+          <CardTitle>Confirmar Acesso ao Duna</CardTitle>
           <CardDescription>
             Você recebeu um link de acesso ao seu cofre. 
             Clique em "Confirmar" para acessar ou "Cancelar" para descartar.
@@ -27,7 +27,7 @@ export function TempTokenConfirmation() {
           <div className="text-sm text-muted-foreground">
             <p>⚠️ <strong>Importante:</strong> Este link é de uso único e expira em 1 hora.</p>
             <p className="mt-2">
-              Ao confirmar, você será autenticado no cofre e poderá gerenciar suas finanças.
+              Ao confirmar, você será autenticado no Duna e poderá gerenciar suas finanças.
             </p>
           </div>
           
