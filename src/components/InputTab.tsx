@@ -225,11 +225,11 @@ export function InputTab() {
 
     if (isTransfer) {
       if (!fromBoxId || !toBoxId) {
-        toast.error("Selecione as carteiras de origem e destino");
+        toast.error("Selecione os estratos de origem e destino");
         return;
       }
       if (fromBoxId === toBoxId) {
-        toast.error("As carteiras de origem e destino devem ser diferentes");
+        toast.error("Os estratos de origem e destino devem ser diferentes");
         return;
       }
 

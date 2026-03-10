@@ -73,7 +73,7 @@ export function AccountButton() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleShare}>
             <Share2 className="mr-2 h-4 w-4" />
-            Compartilhar carteira
+            Compartilhar acesso
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowLogoutDialog(true)}>

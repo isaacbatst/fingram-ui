@@ -145,9 +145,9 @@ export function TransacoesTab({
   const setFiltroDescricao = (description: string) => {
     setSearchParams({ transacoes_descricao: description });
   };
-  const filtroCaixinha = searchParams.get("transacoes_carteira") || "";
-  const setFiltroCaixinha = (boxId: string) => {
-    setSearchParams({ transacoes_carteira: boxId });
+  const filtroEstrato = searchParams.get("transacoes_estrato") || "";
+  const setFiltroEstrato = (boxId: string) => {
+    setSearchParams({ transacoes_estrato: boxId });
   };
 
   // Local UI state
@@ -183,7 +183,7 @@ export function TransacoesTab({
     year: filtroAno,
     categoryId: filtroCategoria,
     description: filtroDescricao,
-    boxId: filtroCaixinha || undefined,
+    boxId: filtroEstrato || undefined,
   });
 
   const transactions: Transaction[] = data?.items
@@ -221,7 +221,7 @@ export function TransacoesTab({
   const selectedCategoryName = categories.find(
     (c) => c.id === filtroCategoria,
   )?.name;
-  const selectedBoxName = boxes?.find((b) => b.id === filtroCaixinha)?.name;
+  const selectedBoxName = boxes?.find((b) => b.id === filtroEstrato)?.name;
 
   const monthLabel = (() => {
     const monthName = new Date(2000, filtroMes - 1, 1).toLocaleString(
@@ -532,21 +532,21 @@ export function TransacoesTab({
           {/* Box chip */}
           <div className="flex items-center">
             <Select
-              value={filtroCaixinha || "__all__"}
+              value={filtroEstrato || "__all__"}
               onValueChange={(val) => {
-                setFiltroCaixinha(val === "__all__" ? "" : val);
+                setFiltroEstrato(val === "__all__" ? "" : val);
                 setCurrentPage(1);
               }}
             >
               <SelectTrigger
                 className={`h-8 rounded-full text-sm px-3 w-auto ${
-                  filtroCaixinha
+                  filtroEstrato
                     ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
                     : "border-[var(--color-border)] bg-transparent"
                 }`}
               >
                 <SelectValue>
-                  {selectedBoxName || "Carteira"}
+                  {selectedBoxName || "Estrato"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -558,12 +558,12 @@ export function TransacoesTab({
                 ))}
               </SelectContent>
             </Select>
-            {filtroCaixinha && (
+            {filtroEstrato && (
               <button
                 type="button"
-                aria-label="Limpar carteira"
+                aria-label="Limpar estrato"
                 onClick={() => {
-                  setFiltroCaixinha("");
+                  setFiltroEstrato("");
                   setCurrentPage(1);
                 }}
                 className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
@@ -807,7 +807,7 @@ export function TransacoesTab({
                 ) : (
                   boxName && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Carteira</span>
+                      <span className="text-muted-foreground">Estrato</span>
                       <span className="text-foreground">{boxName}</span>
                     </div>
                   )
@@ -975,14 +975,14 @@ export function TransacoesTab({
                     {boxes && boxes.length > 0 && (
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">
-                          Carteira
+                          Estrato
                         </label>
                         <Select
                           value={editBoxId}
                           onValueChange={setEditBoxId}
                         >
                           <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Carteira" />
+                            <SelectValue placeholder="Estrato" />
                           </SelectTrigger>
                           <SelectContent>
                             {boxes.map((b) => (
