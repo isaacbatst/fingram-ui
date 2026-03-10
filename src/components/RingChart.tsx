@@ -57,9 +57,9 @@ export function RingChart({
         cy={center}
         r={radius}
         fill="none"
-        stroke="var(--color-border)"
+        stroke="var(--color-border-strong)"
         strokeWidth={strokeWidth}
-        opacity={0.15}
+        opacity={0.5}
       />
 
       {/* Fill circle */}
