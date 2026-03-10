@@ -45,7 +45,7 @@ import { useApi } from "@/hooks/useApi";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PlusIcon, ArrowRightLeftIcon, Wallet, PencilIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, ArrowRightLeftIcon, Layers, PencilIcon, Trash2Icon } from "lucide-react";
 import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
@@ -54,7 +54,7 @@ import type { BoxDTO, BoxType } from "@/services/api.interface";
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
-const boxTypeLabel = (type: BoxType) => (type === "spending" ? "Conta" : "Caixinha");
+const boxTypeLabel = (type: BoxType) => (type === "spending" ? "Corrente" : "Reserva");
 
 const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
@@ -176,7 +176,7 @@ export function EstratosTab() {
       }
     } catch (err) {
       console.error("Error editing box:", err);
-      toast.error("Erro ao atualizar carteira");
+      toast.error("Erro ao atualizar estrato");
     } finally {
       setIsSavingEdit(false);
     }
@@ -207,7 +207,7 @@ export function EstratosTab() {
       }
     } catch (err) {
       console.error("Error deleting box:", err);
-      toast.error("Erro ao remover carteira");
+      toast.error("Erro ao remover estrato");
     } finally {
       setIsDeleting(false);
     }
@@ -217,12 +217,12 @@ export function EstratosTab() {
     e.preventDefault();
 
     if (!transferFromBoxId || !transferToBoxId) {
-      toast.error("Selecione as carteiras de origem e destino");
+      toast.error("Selecione os estratos de origem e destino");
       return;
     }
 
     if (transferFromBoxId === transferToBoxId) {
-      toast.error("As carteiras de origem e destino devem ser diferentes");
+      toast.error("Os estratos de origem e destino devem ser diferentes");
       return;
     }
 
@@ -264,8 +264,8 @@ export function EstratosTab() {
   };
 
   const getDeleteDisabledReason = (box: BoxDTO): string | undefined => {
-    if (box.isDefault) return "Carteira padrão não pode ser removida";
-    if (box.balance !== 0) return "Carteira com saldo não pode ser removida";
+    if (box.isDefault) return "Estrato padrão não pode ser removido";
+    if (box.balance !== 0) return "Estrato com saldo não pode ser removido";
     return undefined;
   };
 
@@ -344,7 +344,7 @@ export function EstratosTab() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display text-2xl text-foreground tracking-tight">
-          Carteiras
+          Estratos
         </h2>
         <div className="flex gap-1.5">
           <Button
@@ -361,7 +361,7 @@ export function EstratosTab() {
             size="icon"
             className="size-9"
             onClick={() => setIsCreateOpen(true)}
-            aria-label="Nova carteira"
+            aria-label="Novo estrato"
           >
             <PlusIcon className="size-4" />
           </Button>
@@ -375,7 +375,7 @@ export function EstratosTab() {
             {spendingBoxes.length > 0 && (
               <div>
                 <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                  Contas
+                  Corrente
                 </h3>
                 <div className="space-y-2">
                   {spendingBoxes.map(renderBoxCard)}
@@ -385,7 +385,7 @@ export function EstratosTab() {
             {savingBoxes.length > 0 && (
               <div>
                 <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                  Caixinhas
+                  Reserva
                 </h3>
                 <div className="space-y-2">
                   {savingBoxes.map(renderBoxCard)}
@@ -396,13 +396,13 @@ export function EstratosTab() {
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
             <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-5">
-              <Wallet className="w-7 h-7 text-muted-foreground" />
+              <Layers className="w-7 h-7 text-muted-foreground" />
             </div>
             <h3 className="font-display text-lg font-semibold text-foreground mb-2 tracking-tight">
-              Nenhuma carteira
+              Sua duna começa aqui
             </h3>
             <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-              Crie uma nova carteira para organizar suas finanças.
+              Adicione sua primeira conta ou reserva para organizar suas finanças.
             </p>
           </div>
         )}
@@ -483,10 +483,10 @@ export function EstratosTab() {
             <>
               <DrawerHeader>
                 <DrawerTitle className="font-display text-xl tracking-tight">
-                  Editar {boxTypeLabel(editType)}
+                  Editar Estrato
                 </DrawerTitle>
                 <DrawerDescription>
-                  Altere as propriedades da {boxTypeLabel(editType).toLowerCase()}.
+                  Altere as propriedades do estrato.
                 </DrawerDescription>
               </DrawerHeader>
 
@@ -502,8 +502,8 @@ export function EstratosTab() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="spending">Conta</SelectItem>
-                        <SelectItem value="saving">Caixinha</SelectItem>
+                        <SelectItem value="spending">Corrente</SelectItem>
+                        <SelectItem value="saving">Reserva</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -555,9 +555,9 @@ export function EstratosTab() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover carteira</AlertDialogTitle>
+            <AlertDialogTitle>Remover estrato</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover a carteira &quot;{deletingBox?.name}&quot;?
+              Tem certeza que deseja remover o estrato &quot;{deletingBox?.name}&quot;?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -578,9 +578,9 @@ export function EstratosTab() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova Carteira</DialogTitle>
+            <DialogTitle>Novo Estrato</DialogTitle>
             <DialogDescription>
-              Crie uma nova carteira para organizar seus recursos.
+              Adicione um novo estrato ao seu patrimônio.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate}>
@@ -604,7 +604,7 @@ export function EstratosTab() {
                 <Label htmlFor="create-name">Nome</Label>
                 <Input
                   id="create-name"
-                  placeholder={createType === "spending" ? "Ex: Nubank" : "Ex: Reserva de emergencia"}
+                  placeholder={createType === "spending" ? "Ex: Nubank" : "Ex: Emergência"}
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
                   required
@@ -642,9 +642,9 @@ export function EstratosTab() {
       <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Transferir entre carteiras</DialogTitle>
+            <DialogTitle>Transferir entre estratos</DialogTitle>
             <DialogDescription>
-              Transfira recursos de uma carteira para outra.
+              Transfira recursos de um estrato para outro.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleTransfer}>
@@ -656,7 +656,7 @@ export function EstratosTab() {
                   onValueChange={setTransferFromBoxId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a carteira de origem" />
+                    <SelectValue placeholder="Selecione o estrato de origem" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes?.map((box) => (
@@ -674,7 +674,7 @@ export function EstratosTab() {
                   onValueChange={setTransferToBoxId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a carteira de destino" />
+                    <SelectValue placeholder="Selecione o estrato de destino" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes?.map((box) => (
