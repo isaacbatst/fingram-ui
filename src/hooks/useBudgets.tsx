@@ -36,7 +36,7 @@ export const useBudgets = () => {
         return { error: errorMessage };
       }
     },
-    [apiService]
+    [apiService, isAuthenticated]
   );
 
   return {

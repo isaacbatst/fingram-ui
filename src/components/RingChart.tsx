@@ -22,7 +22,7 @@ export function RingChart({
   className,
 }: RingChartProps) {
   const [animated, setAnimated] = useState(false);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number>(undefined);
 
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;

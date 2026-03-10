@@ -79,7 +79,7 @@ export interface EditTransferRequest {
 
 export interface CreateTransactionResponse {
   transaction?: TransactionDTO;
-  vault?: any;
+  vault?: unknown;
   error?: string;
 }
 
