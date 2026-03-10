@@ -260,3 +260,28 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATION SHOWCASE — Estratos conceptual animations
+   ═══════════════════════════════════════════════════════ */
+
+/* ISA-85: Grain particles falling */
+@keyframes grain-fall {
+  0%   { opacity: 0; transform: translateY(0); }
+  20%  { opacity: 0.9; }
+  100% { opacity: 0.3; transform: translateY(calc(100% - 60px)); }
+}
+
+/* ISA-86: Milestone glow pulse */
+@keyframes milestone-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(217, 175, 120, 0); border-color: var(--color-border); }
+  50%      { box-shadow: 0 0 40px rgba(217, 175, 120, 0.15), 0 0 80px rgba(217, 175, 120, 0.05); border-color: var(--color-accent-border); }
+}
+
+/* ISA-87: Deviation ripple wave */
+@keyframes deviation-ripple {
+  0%   { background: linear-gradient(90deg, transparent 0%, transparent 100%); }
+  30%  { background: linear-gradient(90deg, transparent 0%, rgba(212, 160, 74, 0.08) 30%, transparent 60%); }
+  60%  { background: linear-gradient(90deg, transparent 20%, rgba(212, 160, 74, 0.06) 50%, transparent 80%); }
+  100% { background: linear-gradient(90deg, transparent 0%, transparent 100%); }
+}

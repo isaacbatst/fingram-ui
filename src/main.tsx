@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { AnimationShowcase } from './components/AnimationShowcase.tsx'
+import { AccentGlow } from './components/AccentGlow.tsx'
+import { GrainOverlay } from './components/GrainOverlay.tsx'
 
 // PWA Service Worker Registration
 import { registerSW } from 'virtual:pwa-register'
@@ -17,8 +20,18 @@ registerSW({
   },
 })
 
+const isShowcase = new URLSearchParams(window.location.search).has('showcase')
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {isShowcase ? (
+      <div className="min-h-dvh bg-background text-foreground">
+        <AnimationShowcase />
+        <AccentGlow />
+        <GrainOverlay />
+      </div>
+    ) : (
+      <App />
+    )}
   </StrictMode>,
 )
