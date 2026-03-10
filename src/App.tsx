@@ -164,37 +164,31 @@ function AppContent() {
 
           {/* Tab content area */}
           <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
+            {!["ia", "plano"].includes(currentTab) && (
+              <div className="px-4">
+                <SaldoResumo
+                  saldo={vault.balance}
+                  receitas={vault.totalIncomeAmount}
+                  despesas={vault.totalSpentAmount}
+                />
+              </div>
+            )}
             <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
               <IaTab />
             </TabsContent>
             <TabsContent value="input" className="px-4">
-              <SaldoResumo
-                saldo={vault.balance}
-                receitas={vault.totalIncomeAmount}
-                despesas={vault.totalSpentAmount}
-              />
               <InputTab />
             </TabsContent>
             <TabsContent
               value="carteiras"
               className="px-4 flex flex-col flex-1 min-h-0"
             >
-              <SaldoResumo
-                saldo={vault.balance}
-                receitas={vault.totalIncomeAmount}
-                despesas={vault.totalSpentAmount}
-              />
               <CarteirasTab />
             </TabsContent>
             <TabsContent
               value="orcamento"
               className="px-4 flex flex-col flex-1 min-h-0"
             >
-              <SaldoResumo
-                saldo={vault.balance}
-                receitas={vault.totalIncomeAmount}
-                despesas={vault.totalSpentAmount}
-              />
               <OrcamentoTab />
             </TabsContent>
             <TabsContent
@@ -204,11 +198,6 @@ function AppContent() {
               <PlanoTab />
             </TabsContent>
             <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
-              <SaldoResumo
-                saldo={vault.balance}
-                receitas={vault.totalIncomeAmount}
-                despesas={vault.totalSpentAmount}
-              />
               <TransacoesTab
                 categories={categories.data || []}
                 mutateSummary={summary.mutate}
