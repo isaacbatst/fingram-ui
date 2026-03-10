@@ -291,7 +291,6 @@ export function CarteirasTab() {
 
   const spendingBoxes = boxes?.filter((b) => b.type === "spending") ?? [];
   const savingBoxes = boxes?.filter((b) => b.type === "saving") ?? [];
-  const totalBalance = boxes?.reduce((sum, b) => sum + b.balance, 0) ?? 0;
 
   const renderBoxCard = (box: BoxDTO, index: number) => (
     <button
