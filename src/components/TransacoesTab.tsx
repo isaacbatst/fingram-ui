@@ -217,9 +217,6 @@ export function TransacoesTab({
   );
 
   // Filter chip helpers
-  const hasActiveFilters =
-    filtroCategoria !== "" || filtroCaixinha !== "" || filtroDescricao !== "";
-
   const selectedCategoryName = categories.find(
     (c) => c.id === filtroCategoria,
   )?.name;
@@ -232,16 +229,6 @@ export function TransacoesTab({
     );
     return `${monthName} ${filtroAno}`;
   })();
-
-  // Clear all filters
-  const clearFilters = () => {
-    setFiltroCategoria("");
-    setFiltroCaixinha("");
-    setFiltroDescricao("");
-    setSearchInput("");
-    setShowSearch(false);
-    setCurrentPage(1);
-  };
 
   // Invalidation after edit/delete
   const invalidateAll = async () => {
@@ -449,93 +436,131 @@ export function TransacoesTab({
         </Select>
 
         {/* Category chip */}
-        <Select
-          value={filtroCategoria}
-          onValueChange={(val) => {
-            setFiltroCategoria(val);
-            setCurrentPage(1);
-          }}
-        >
-          <SelectTrigger
-            className={`h-8 rounded-full text-sm px-3 w-auto shrink-0 ${
-              filtroCategoria
-                ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
-                : "border-[var(--color-border)] bg-transparent"
-            }`}
+        <div className="flex items-center shrink-0">
+          <Select
+            value={filtroCategoria || "__all__"}
+            onValueChange={(val) => {
+              setFiltroCategoria(val === "__all__" ? "" : val);
+              setCurrentPage(1);
+            }}
           >
-            <SelectValue>
-              {selectedCategoryName || "Categoria"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className={`h-8 rounded-full text-sm px-3 w-auto ${
+                filtroCategoria
+                  ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
+                  : "border-[var(--color-border)] bg-transparent"
+              }`}
+            >
+              <SelectValue>
+                {selectedCategoryName || "Categoria"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtroCategoria && (
+            <button
+              type="button"
+              aria-label="Limpar categoria"
+              onClick={() => {
+                setFiltroCategoria("");
+                setCurrentPage(1);
+              }}
+              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
 
         {/* Box chip */}
-        <Select
-          value={filtroCaixinha}
-          onValueChange={(val) => {
-            setFiltroCaixinha(val);
-            setCurrentPage(1);
-          }}
-        >
-          <SelectTrigger
-            className={`h-8 rounded-full text-sm px-3 w-auto shrink-0 ${
-              filtroCaixinha
-                ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
-                : "border-[var(--color-border)] bg-transparent"
-            }`}
+        <div className="flex items-center shrink-0">
+          <Select
+            value={filtroCaixinha || "__all__"}
+            onValueChange={(val) => {
+              setFiltroCaixinha(val === "__all__" ? "" : val);
+              setCurrentPage(1);
+            }}
           >
-            <SelectValue>
-              {selectedBoxName || "Carteira"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {boxes?.map((box) => (
-              <SelectItem key={box.id} value={box.id}>
-                {box.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className={`h-8 rounded-full text-sm px-3 w-auto ${
+                filtroCaixinha
+                  ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
+                  : "border-[var(--color-border)] bg-transparent"
+              }`}
+            >
+              <SelectValue>
+                {selectedBoxName || "Carteira"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas</SelectItem>
+              {boxes?.map((box) => (
+                <SelectItem key={box.id} value={box.id}>
+                  {box.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtroCaixinha && (
+            <button
+              type="button"
+              aria-label="Limpar carteira"
+              onClick={() => {
+                setFiltroCaixinha("");
+                setCurrentPage(1);
+              }}
+              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
 
         {/* Search chip */}
-        <button
-          type="button"
-          aria-label="Buscar"
-          onClick={() => {
-            setShowSearch((prev) => !prev);
-            if (showSearch) {
-              setSearchInput("");
-              setFiltroDescricao("");
-              setCurrentPage(1);
-            }
-          }}
-          className={`flex items-center justify-center h-9 w-9 rounded-full border shrink-0 ${
-            showSearch || filtroDescricao
-              ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
-              : "border-[var(--color-border)] bg-transparent text-muted-foreground"
-          }`}
-        >
-          <Search className="h-4 w-4" />
-        </button>
-
-        {/* Clear chip */}
-        {hasActiveFilters && (
+        <div className="flex items-center shrink-0">
           <button
             type="button"
-            aria-label="Limpar filtros"
-            onClick={clearFilters}
-            className="flex items-center justify-center h-9 w-9 rounded-full border border-[var(--color-border)] bg-transparent text-muted-foreground shrink-0"
+            aria-label="Buscar"
+            onClick={() => {
+              setShowSearch((prev) => !prev);
+              if (showSearch && !filtroDescricao) {
+                setSearchInput("");
+              }
+            }}
+            className={`flex items-center justify-center h-8 rounded-full border ${
+              showSearch || filtroDescricao
+                ? `bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] ${filtroDescricao ? "rounded-r-none border-r-0 gap-1.5 px-3" : "w-9"}`
+                : "border-[var(--color-border)] bg-transparent text-muted-foreground w-9"
+            }`}
           >
-            <X className="h-4 w-4" />
+            <Search className="h-4 w-4" />
+            {filtroDescricao && (
+              <span className="text-sm truncate max-w-[100px]">{filtroDescricao}</span>
+            )}
           </button>
-        )}
+          {filtroDescricao && (
+            <button
+              type="button"
+              aria-label="Limpar busca"
+              onClick={() => {
+                setSearchInput("");
+                setFiltroDescricao("");
+                setShowSearch(false);
+                setCurrentPage(1);
+              }}
+              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search bar (conditional) */}
