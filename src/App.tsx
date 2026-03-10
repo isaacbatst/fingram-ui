@@ -19,13 +19,13 @@ import type { LucideIcon } from "lucide-react";
 import {
   ChartPie,
   DollarSign,
+  Layers,
   MessageCircle,
   Search,
   TrendingUp,
-  Wallet
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
-import { CarteirasTab } from "./components/CarteirasTab";
+import { EstratosTab } from "./components/EstratosTab";
 import { IaTab } from "./components/IaTab";
 import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
@@ -37,7 +37,7 @@ import { useSummary } from "./hooks/useSummary";
 const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
   { value: "ia", icon: MessageCircle, label: "IA" },
   { value: "input", icon: DollarSign, label: "Entrada" },
-  { value: "carteiras", icon: Wallet, label: "Carteiras" },
+  { value: "estratos", icon: Layers, label: "Estratos" },
   { value: "orcamento", icon: ChartPie, label: "Orçamento" },
   { value: "plano", icon: TrendingUp, label: "Plano" },
   { value: "transacoes", icon: Search, label: "Busca" },
@@ -112,13 +112,13 @@ function AppContent() {
           ) : (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-6">
-                <Wallet className="w-8 h-8 text-muted-foreground" />
+                <Layers className="w-8 h-8 text-muted-foreground" />
               </div>
               <h2 className="font-display text-xl font-semibold text-foreground mb-3 tracking-tight">
-                Nenhum cofre encontrado
+                Nenhum Duna encontrado
               </h2>
               <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-                Use /create no bot do Telegram para criar um cofre.
+                Use /create no bot do Telegram para criar o Duna.
               </p>
             </div>
           )}
@@ -182,10 +182,10 @@ function AppContent() {
               <InputTab />
             </TabsContent>
             <TabsContent
-              value="carteiras"
+              value="estratos"
               className="px-4 flex flex-col flex-1 min-h-0"
             >
-              <CarteirasTab />
+              <EstratosTab />
             </TabsContent>
             <TabsContent
               value="orcamento"

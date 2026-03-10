@@ -60,7 +60,7 @@ const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
 };
 
-export function CarteirasTab() {
+export function EstratosTab() {
   const { boxes, isLoading, error, mutate: mutateBoxes } = useBoxes();
   const { createBox } = useCreateBox();
   const { createTransfer } = useTransfer();
