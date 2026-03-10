@@ -246,7 +246,7 @@ function TransactionForm() {
             value={amount}
             onChange={setAmount}
             required
-            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none pb-1"
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none py-2"
           />
         </div>
       </div>
@@ -386,7 +386,7 @@ function TransferForm() {
             value={amount}
             onChange={setAmount}
             required
-            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none pb-1"
+            className="w-full max-w-[200px] bg-transparent text-center text-3xl font-bold font-mono text-foreground focus:outline-none border-0 border-b-2 border-[var(--color-border)] focus-visible:border-foreground focus-visible:ring-0 rounded-none shadow-none py-2"
           />
         </div>
       </div>
