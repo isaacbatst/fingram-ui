@@ -49,6 +49,7 @@ import {
   Loader2,
   Pencil,
   Search,
+  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -315,7 +316,6 @@ export function TransacoesTab({
       if (result.error) {
         throw new Error(result.error);
       }
-      toast.success("Transação editada com sucesso!");
       await invalidateAll();
       setSelectedTx(null);
     } catch (err) {
@@ -364,7 +364,6 @@ export function TransacoesTab({
         if (result.error) {
           toast.error(result.error);
         } else {
-          toast.success("Transação deletada com sucesso!");
           await invalidateAll();
           setSelectedTx(null);
         }
@@ -397,169 +396,182 @@ export function TransacoesTab({
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      {/* Page heading */}
-      <h2 className="font-display text-2xl text-foreground tracking-tight mb-3">
-        Busca
-      </h2>
+      {/* Filters */}
+      <div className="space-y-2 pb-3">
+        {/* Label */}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground uppercase tracking-widest">
+          <SlidersHorizontal className="size-3" />
+          Filtros
+        </div>
 
-      {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
-        {/* Month chip */}
-        <Select
-          value={`${filtroAno}-${filtroMes.toString().padStart(2, "0")}`}
-          onValueChange={(val) => {
-            const [year, month] = val.split("-").map(Number);
-            setFiltroAno(year);
-            setFiltroMes(month);
-            setCurrentPage(1);
-          }}
-        >
-          <SelectTrigger className="h-8 rounded-full border-[var(--color-border)] bg-transparent text-sm px-3 w-auto shrink-0">
-            <SelectValue>{monthLabel}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 12 }, (_, i) => {
-              const month = i + 1;
-              const monthName = new Date(2000, i, 1).toLocaleString("pt-BR", {
-                month: "long",
-              });
-              return (
-                <SelectItem
-                  key={month}
-                  value={`${filtroAno}-${month.toString().padStart(2, "0")}`}
-                >
-                  {monthName} {filtroAno}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-
-        {/* Category chip */}
-        <div className="flex items-center shrink-0">
+        {/* Row 1: Month + Search */}
+        <div className="flex items-center gap-2">
           <Select
-            value={filtroCategoria || "__all__"}
+            value={`${filtroAno}-${filtroMes.toString().padStart(2, "0")}`}
             onValueChange={(val) => {
-              setFiltroCategoria(val === "__all__" ? "" : val);
+              const [year, month] = val.split("-").map(Number);
+              setFiltroAno(year);
+              setFiltroMes(month);
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger
-              className={`h-8 rounded-full text-sm px-3 w-auto ${
-                filtroCategoria
-                  ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
-                  : "border-[var(--color-border)] bg-transparent"
-              }`}
-            >
-              <SelectValue>
-                {selectedCategoryName || "Categoria"}
-              </SelectValue>
+            <SelectTrigger className="h-8 rounded-full border-[var(--color-border)] bg-transparent text-sm px-3 w-auto">
+              <SelectValue>{monthLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
+              {Array.from({ length: 12 }, (_, i) => {
+                const month = i + 1;
+                const monthName = new Date(2000, i, 1).toLocaleString(
+                  "pt-BR",
+                  {
+                    month: "long",
+                  },
+                );
+                return (
+                  <SelectItem
+                    key={month}
+                    value={`${filtroAno}-${month.toString().padStart(2, "0")}`}
+                  >
+                    {monthName} {filtroAno}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
-          {filtroCategoria && (
+
+          <div className="flex-1" />
+
+          {/* Search chip */}
+          <div className="flex items-center">
             <button
               type="button"
-              aria-label="Limpar categoria"
+              aria-label="Buscar"
               onClick={() => {
-                setFiltroCategoria("");
-                setCurrentPage(1);
+                setShowSearch((prev) => !prev);
+                if (showSearch && !filtroDescricao) {
+                  setSearchInput("");
+                }
               }}
-              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Box chip */}
-        <div className="flex items-center shrink-0">
-          <Select
-            value={filtroCaixinha || "__all__"}
-            onValueChange={(val) => {
-              setFiltroCaixinha(val === "__all__" ? "" : val);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger
-              className={`h-8 rounded-full text-sm px-3 w-auto ${
-                filtroCaixinha
-                  ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
-                  : "border-[var(--color-border)] bg-transparent"
+              className={`flex items-center justify-center h-8 rounded-full border ${
+                showSearch || filtroDescricao
+                  ? `bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] ${filtroDescricao ? "rounded-r-none border-r-0 gap-1.5 px-3" : "w-9"}`
+                  : "border-[var(--color-border)] bg-transparent text-muted-foreground w-9"
               }`}
             >
-              <SelectValue>
-                {selectedBoxName || "Carteira"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
-              {boxes?.map((box) => (
-                <SelectItem key={box.id} value={box.id}>
-                  {box.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {filtroCaixinha && (
-            <button
-              type="button"
-              aria-label="Limpar carteira"
-              onClick={() => {
-                setFiltroCaixinha("");
-                setCurrentPage(1);
-              }}
-              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
-            >
-              <X className="h-3.5 w-3.5" />
+              <Search className="h-4 w-4" />
+              {filtroDescricao && (
+                <span className="text-sm truncate max-w-[100px]">
+                  {filtroDescricao}
+                </span>
+              )}
             </button>
-          )}
-        </div>
-
-        {/* Search chip */}
-        <div className="flex items-center shrink-0">
-          <button
-            type="button"
-            aria-label="Buscar"
-            onClick={() => {
-              setShowSearch((prev) => !prev);
-              if (showSearch && !filtroDescricao) {
-                setSearchInput("");
-              }
-            }}
-            className={`flex items-center justify-center h-8 rounded-full border ${
-              showSearch || filtroDescricao
-                ? `bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] ${filtroDescricao ? "rounded-r-none border-r-0 gap-1.5 px-3" : "w-9"}`
-                : "border-[var(--color-border)] bg-transparent text-muted-foreground w-9"
-            }`}
-          >
-            <Search className="h-4 w-4" />
             {filtroDescricao && (
-              <span className="text-sm truncate max-w-[100px]">{filtroDescricao}</span>
+              <button
+                type="button"
+                aria-label="Limpar busca"
+                onClick={() => {
+                  setSearchInput("");
+                  setFiltroDescricao("");
+                  setShowSearch(false);
+                  setCurrentPage(1);
+                }}
+                className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
-          </button>
-          {filtroDescricao && (
-            <button
-              type="button"
-              aria-label="Limpar busca"
-              onClick={() => {
-                setSearchInput("");
-                setFiltroDescricao("");
-                setShowSearch(false);
+          </div>
+        </div>
+
+        {/* Row 2: Category + Box */}
+        <div className="flex items-center gap-2">
+          {/* Category chip */}
+          <div className="flex items-center">
+            <Select
+              value={filtroCategoria || "__all__"}
+              onValueChange={(val) => {
+                setFiltroCategoria(val === "__all__" ? "" : val);
                 setCurrentPage(1);
               }}
-              className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+              <SelectTrigger
+                className={`h-8 rounded-full text-sm px-3 w-auto ${
+                  filtroCategoria
+                    ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
+                    : "border-[var(--color-border)] bg-transparent"
+                }`}
+              >
+                <SelectValue>
+                  {selectedCategoryName || "Categoria"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todas</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filtroCategoria && (
+              <button
+                type="button"
+                aria-label="Limpar categoria"
+                onClick={() => {
+                  setFiltroCategoria("");
+                  setCurrentPage(1);
+                }}
+                className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Box chip */}
+          <div className="flex items-center">
+            <Select
+              value={filtroCaixinha || "__all__"}
+              onValueChange={(val) => {
+                setFiltroCaixinha(val === "__all__" ? "" : val);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger
+                className={`h-8 rounded-full text-sm px-3 w-auto ${
+                  filtroCaixinha
+                    ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
+                    : "border-[var(--color-border)] bg-transparent"
+                }`}
+              >
+                <SelectValue>
+                  {selectedBoxName || "Carteira"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todas</SelectItem>
+                {boxes?.map((box) => (
+                  <SelectItem key={box.id} value={box.id}>
+                    {box.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filtroCaixinha && (
+              <button
+                type="button"
+                aria-label="Limpar carteira"
+                onClick={() => {
+                  setFiltroCaixinha("");
+                  setCurrentPage(1);
+                }}
+                className="flex items-center justify-center h-8 w-8 rounded-r-full border border-l-0 bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -628,17 +640,19 @@ export function TransacoesTab({
                       className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors active:bg-muted/50"
                     >
                       {/* Type indicator */}
-                      {txIsTransfer ? (
-                        <ArrowRightLeft className="h-4 w-4 text-[var(--color-info)] shrink-0" />
-                      ) : (
-                        <div
-                          className={`h-2.5 w-2.5 rounded-full shrink-0 ${
-                            tx.type === "income"
-                              ? "bg-[var(--color-success)]"
-                              : "bg-[var(--color-danger)]"
-                          }`}
-                        />
-                      )}
+                      <div className="flex items-center justify-center size-4 shrink-0">
+                        {txIsTransfer ? (
+                          <ArrowRightLeft className="size-4 text-[var(--color-info)]" />
+                        ) : (
+                          <div
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              tx.type === "income"
+                                ? "bg-[var(--color-success)]"
+                                : "bg-[var(--color-danger)]"
+                            }`}
+                          />
+                        )}
+                      </div>
 
                       {/* Description + metadata */}
                       <div className="flex-1 min-w-0">

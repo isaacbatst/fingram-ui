@@ -11,7 +11,6 @@ export function useCreatePlan() {
     try {
       const plan = await planService.createPlan(data);
       mutate("plans");
-      toast.success("Plano criado com sucesso");
       return plan;
     } catch (error) {
       const message =

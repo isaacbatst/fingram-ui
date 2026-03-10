@@ -32,8 +32,6 @@ export function useBudgetStartDay() {
           return { success: false, error: response.error };
         }
 
-        toast.success("Dia de início do orçamento atualizado!");
-        // Revalidate the data
         mutate();
         return { success: true };
       } catch (error) {

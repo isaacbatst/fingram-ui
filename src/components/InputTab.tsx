@@ -267,9 +267,6 @@ export function InputTab() {
         if (result.error) {
           toast.error(result.error);
         } else {
-          toast.success(
-            `${mode === "income" ? "Receita" : "Despesa"} registrada com sucesso!`,
-          );
           resetForm();
         }
       } catch (error) {

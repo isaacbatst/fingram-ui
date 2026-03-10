@@ -20,7 +20,6 @@ export function useTransfer() {
       toast.error(result.error);
       return null;
     }
-    toast.success("Transferência realizada com sucesso");
     invalidateAll();
     return result.transferId;
   };
@@ -31,7 +30,6 @@ export function useTransfer() {
       toast.error(result.error);
       return false;
     }
-    toast.success("Transferência editada com sucesso");
     invalidateAll();
     return true;
   };
@@ -42,7 +40,6 @@ export function useTransfer() {
       toast.error(result.error);
       return false;
     }
-    toast.success("Transferência removida");
     invalidateAll();
     return true;
   };

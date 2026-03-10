@@ -167,7 +167,6 @@ export function CarteirasTab() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Carteira atualizada com sucesso");
         mutate("boxes");
         mutate("summary");
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);
@@ -198,7 +197,6 @@ export function CarteirasTab() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Carteira removida com sucesso");
         mutate("boxes");
         mutate("summary");
         mutate((key: unknown) => typeof key === 'string' ? key.startsWith("budget-summary") : false);

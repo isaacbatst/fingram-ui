@@ -176,8 +176,8 @@
 }
 
 @keyframes duna-glow-pulse {
-  0%, 100% { opacity: 0.04; }
-  50%      { opacity: 0.08; }
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.25; }
 }
 
 @keyframes duna-scale-in {

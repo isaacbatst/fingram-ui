@@ -240,7 +240,7 @@ export default function App() {
           <AppContent />
         </ApiProvider>
       </StorageProvider>
-      <Toaster closeButton richColors />
+      <Toaster closeButton style={{ zIndex: 10000 }} />
       <AccentGlow />
       <GrainOverlay />
     </ErrorBoundary>

@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { toast } from "sonner";
 import { useApi } from "./useApi";
 
 interface Budget {
@@ -28,7 +27,6 @@ export const useBudgets = () => {
           return { error: response.error };
         }
 
-        toast.success("Orçamentos definidos com sucesso!");
         return { success: true };
       } catch (error) {
         console.error("Erro ao definir orçamentos:", error);

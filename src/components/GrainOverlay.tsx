@@ -1,8 +1,8 @@
-export function GrainOverlay({ opacity = 0.035 }: { opacity?: number }) {
+export function GrainOverlay({ opacity = 1 }: { opacity?: number }) {
   return (
     <div
       className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ opacity, mixBlendMode: "overlay" }}
+      style={{ opacity, mixBlendMode: "soft-light" }}
     >
       <svg width="100%" height="100%" className="block">
         <filter id="grain">

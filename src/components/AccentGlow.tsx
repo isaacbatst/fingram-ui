@@ -1,17 +1,17 @@
 export function AccentGlow() {
   return (
     <div
-      className="fixed pointer-events-none z-0"
+      className="fixed pointer-events-none z-[1]"
       style={{
-        width: 300,
-        height: 300,
+        width: 500,
+        height: 500,
         borderRadius: "50%",
         background: "var(--color-accent)",
-        opacity: 0.04,
-        filter: "blur(120px)",
-        top: "8%",
-        right: "5%",
-        animation: "duna-glow-pulse 6s ease-in-out infinite",
+        opacity: 0.25,
+        filter: "blur(150px)",
+        top: "-40%",
+        left: "50%",
+        transform: "translateX(-50%)",
       }}
     />
   );

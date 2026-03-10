@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
 import { Loader2, Plus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export function CreateVaultDialog() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +34,6 @@ export function CreateVaultDialog() {
         throw new Error(errorText || `Erro ${response.status}`);
       }
 
-      toast.success("Carteira criada com sucesso! Você será automaticamente logada na nova carteira.");
-      
       await refreshAuth();
     } catch (error) {
       console.error("Error creating vault:", error);
