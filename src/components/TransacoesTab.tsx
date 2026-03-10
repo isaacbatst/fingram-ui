@@ -11,6 +11,7 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
@@ -506,6 +507,7 @@ export function TransacoesTab({
         {/* Search chip */}
         <button
           type="button"
+          aria-label="Buscar"
           onClick={() => {
             setShowSearch((prev) => !prev);
             if (showSearch) {
@@ -514,7 +516,7 @@ export function TransacoesTab({
               setCurrentPage(1);
             }
           }}
-          className={`flex items-center justify-center h-8 w-8 rounded-full border shrink-0 ${
+          className={`flex items-center justify-center h-9 w-9 rounded-full border shrink-0 ${
             showSearch || filtroDescricao
               ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)]"
               : "border-[var(--color-border)] bg-transparent text-muted-foreground"
@@ -527,8 +529,9 @@ export function TransacoesTab({
         {hasActiveFilters && (
           <button
             type="button"
+            aria-label="Limpar filtros"
             onClick={clearFilters}
-            className="flex items-center justify-center h-8 w-8 rounded-full border border-[var(--color-border)] bg-transparent text-muted-foreground shrink-0"
+            className="flex items-center justify-center h-9 w-9 rounded-full border border-[var(--color-border)] bg-transparent text-muted-foreground shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -614,7 +617,7 @@ export function TransacoesTab({
 
                       {/* Description + metadata */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-display text-base text-foreground tracking-tight truncate">
+                        <div className="text-base text-foreground tracking-tight truncate">
                           {txIsTransfer
                             ? getTransferLabel(tx)
                             : tx.description || "(Sem descrição)"}
@@ -657,9 +660,10 @@ export function TransacoesTab({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-11 w-11"
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            aria-label="Página anterior"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -669,11 +673,12 @@ export function TransacoesTab({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-11 w-11"
             disabled={currentPage >= data.totalPages}
             onClick={() =>
               setCurrentPage(Math.min(data.totalPages, currentPage + 1))
             }
+            aria-label="Próxima página"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -699,6 +704,9 @@ export function TransacoesTab({
                     ? getTransferLabel(selectedTx)
                     : selectedTx.description || "(Sem descrição)"}
                 </DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  Detalhes da transação
+                </DrawerDescription>
                 <div
                   className={`font-mono text-2xl font-semibold mt-1 ${
                     isTransfer
@@ -784,6 +792,9 @@ export function TransacoesTab({
                 <DrawerTitle className="font-display text-xl tracking-tight">
                   {isTransfer ? "Editar transferência" : "Editar transação"}
                 </DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  Formulário de edição
+                </DrawerDescription>
               </DrawerHeader>
 
               <div className="px-4 space-y-3 pb-4">

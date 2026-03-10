@@ -11,6 +11,7 @@ import { MoneyInput } from "@/components/MoneyInput";
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
@@ -199,9 +200,10 @@ export function OrcamentoTab() {
       <div className="flex items-center justify-center gap-2 mb-5">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={goToPrevMonth}
-          className="h-8 w-8 p-0"
+          className="h-11 w-11"
+          aria-label="Mês anterior"
         >
           <ChevronLeftIcon className="h-5 w-5" />
         </Button>
@@ -210,18 +212,19 @@ export function OrcamentoTab() {
         </h2>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={goToNextMonth}
-          className="h-8 w-8 p-0"
+          className="h-11 w-11"
+          aria-label="Próximo mês"
         >
           <ChevronRightIcon className="h-5 w-5" />
         </Button>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => setSettingsDrawerOpen(true)}
-          className="h-8 w-8 p-0"
-          title="Configurações do orçamento"
+          className="h-11 w-11"
+          aria-label="Configurações do orçamento"
         >
           <SettingsIcon className="h-4 w-4" />
         </Button>
@@ -292,7 +295,7 @@ export function OrcamentoTab() {
                       onClick={() => handleOpenEdit(c.categoryId, c.categoria)}
                     >
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-display text-base text-foreground tracking-tight">
+                        <span className="text-base text-foreground tracking-tight">
                           {c.categoria}
                         </span>
                         <span className="text-sm text-muted-foreground font-mono">
@@ -393,6 +396,9 @@ export function OrcamentoTab() {
             <DrawerTitle className="font-display text-xl tracking-tight">
               {editCategoryName}
             </DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Editar orçamento da categoria
+            </DrawerDescription>
           </DrawerHeader>
 
           <div className="px-4 pb-4 space-y-4">
@@ -441,6 +447,9 @@ export function OrcamentoTab() {
             <DrawerTitle className="font-display text-xl tracking-tight">
               Configurações
             </DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Configurações do orçamento
+            </DrawerDescription>
           </DrawerHeader>
 
           <div className="px-4 pb-4 space-y-4">

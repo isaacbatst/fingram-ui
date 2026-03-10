@@ -266,8 +266,8 @@ export function CarteirasTab() {
   };
 
   const getDeleteDisabledReason = (box: BoxDTO): string | undefined => {
-    if (box.isDefault) return "Carteira padrao nao pode ser removida";
-    if (box.balance !== 0) return "Carteira com saldo nao pode ser removida";
+    if (box.isDefault) return "Carteira padrão não pode ser removida";
+    if (box.balance !== 0) return "Carteira com saldo não pode ser removida";
     return undefined;
   };
 
@@ -375,7 +375,7 @@ export function CarteirasTab() {
           <div className="space-y-6">
             {spendingBoxes.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                   Contas
                 </h3>
                 <div className="space-y-2">
@@ -385,7 +385,7 @@ export function CarteirasTab() {
             )}
             {savingBoxes.length > 0 && (
               <div>
-                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 font-display">
+                <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                   Caixinhas
                 </h3>
                 <div className="space-y-2">
