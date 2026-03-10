@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AccountButton } from "@/components/AccountButton";
 import { AccentGlow } from "@/components/AccentGlow";
@@ -245,6 +246,7 @@ export default function App() {
       <AccentGlow />
       <GrainOverlay />
       <SpeedInsights />
+      <Analytics />
     </ErrorBoundary>
   );
 }
