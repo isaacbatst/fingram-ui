@@ -279,14 +279,13 @@ export function InputTab() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div>
       {/* 3-option segmented control */}
-      <div className="shrink-0 mb-3">
+      <div className="mb-3">
         <ModeSelector value={mode} onChange={setMode} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-        <div className="flex-1 px-1 overflow-y-auto overflow-x-visible space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
           {/* Hero amount input */}
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-baseline justify-center gap-2">
@@ -396,10 +395,7 @@ export function InputTab() {
               />
             </>
           )}
-        </div>
 
-        {/* Submit — always visible, pinned at bottom */}
-        <div className="shrink-0 pt-3 pb-2 px-1">
           <Button
             type="submit"
             className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
@@ -411,7 +407,6 @@ export function InputTab() {
                 : "Registrando..."
               : MODE_CONFIG[mode].cta}
           </Button>
-        </div>
       </form>
     </div>
   );
