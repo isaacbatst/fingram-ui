@@ -255,107 +255,105 @@ export function InputTab() {
   return (
     <div>
       {/* 3-option segmented control */}
-      <div className="mb-3">
+      <div className="mb-5">
         <ModeSelector value={mode} onChange={setMode} />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Hero amount input */}
-        <div className="flex flex-col items-center gap-3">
+      <form onSubmit={handleSubmit}>
+        {/* Hero amount — generous spacing establishes visual hierarchy */}
+        <div className="flex flex-col items-center pt-2 pb-6">
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-lg font-mono text-muted-foreground">R$</span>
+            <span className="text-base font-mono text-muted-foreground">R$</span>
             <MoneyInput
               value={amount}
               onChange={setAmount}
               required
-              className="w-full max-w-[200px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
+              className="w-full max-w-[240px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
               style={{ borderColor: activeColor }}
             />
           </div>
         </div>
 
-        {isTransfer ? (
-          <>
-            {/* From → To boxes */}
-            <div className="space-y-2">
-              <Label className="sr-only">Origem</Label>
-              <EstratoSelect
-                value={fromBoxId}
-                onChange={setFromBoxId}
-                placeholder="Selecione a origem"
-                className="w-full"
-              />
-            </div>
-            <div className="flex items-center justify-center h-8 w-8 rounded-full border-accent border mx-auto">
-              <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <Label className="sr-only">Destino</Label>
-              <EstratoSelect
-                value={toBoxId}
-                onChange={setToBoxId}
-                placeholder="Selecione o destino"
-                className="w-full"
-              />
-            </div>
+        {/* Form fields — tighter spacing subordinates to hero */}
+        <div className="space-y-3">
+          {isTransfer ? (
+            <>
+              {/* From → To as unified visual group */}
+              <div className="flex flex-col gap-2">
+                <Label className="sr-only">Origem</Label>
+                <EstratoSelect
+                  value={fromBoxId}
+                  onChange={setFromBoxId}
+                  placeholder="Selecione a origem"
+                  className="w-full"
+                />
+                <div className="flex items-center justify-center h-8 w-8 rounded-full border border-[var(--color-accent-border)] mx-auto">
+                  <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </div>
+                <Label className="sr-only">Destino</Label>
+                <EstratoSelect
+                  value={toBoxId}
+                  onChange={setToBoxId}
+                  placeholder="Selecione o destino"
+                  className="w-full"
+                />
+              </div>
 
-            {/* Date */}
-            <div className="space-y-2">
-              <Label className="sr-only">Data</Label>
               <DatePicker
                 date={date}
                 onDateChange={setDate}
                 placeholder="Selecione uma data"
               />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Description */}
-            <Input
-              id="description"
-              type="text"
-              placeholder="Descrição (ex: Almoço, Salário)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={handleDescriptionBlur}
-              required
-            />
+            </>
+          ) : (
+            <>
+              <Input
+                id="description"
+                type="text"
+                placeholder="Descrição (ex: Almoço, Salário)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={handleDescriptionBlur}
+                required
+              />
 
-            <DatePicker date={date} onDateChange={setDate} placeholder="Data" />
-            <EstratoSelect
-              value={selectedBoxId}
-              onChange={setSelectedBoxId}
-              placeholder="Selecione o estrato"
-              className="w-full border-[var(--color-accent-border)]"
-            />
+              <DatePicker date={date} onDateChange={setDate} placeholder="Data" />
+              <EstratoSelect
+                value={selectedBoxId}
+                onChange={setSelectedBoxId}
+                placeholder="Selecione o estrato"
+                className="w-full border-[var(--color-accent-border)]"
+              />
 
-            {/* Category */}
-            <CategorySelect
-              categories={filteredCategories.map((cat) => ({
-                label: cat.name,
-                value: cat.id,
-                type: cat.transactionType,
-              }))}
-              value={categoryId}
-              onChange={handleCategoryChange}
-              currentTransactionType={mode as "expense" | "income"}
-              onOpenChange={handleCategorySelectOpenChange}
-            />
-          </>
-        )}
+              <CategorySelect
+                categories={filteredCategories.map((cat) => ({
+                  label: cat.name,
+                  value: cat.id,
+                  type: cat.transactionType,
+                }))}
+                value={categoryId}
+                onChange={handleCategoryChange}
+                currentTransactionType={mode as "expense" | "income"}
+                onOpenChange={handleCategorySelectOpenChange}
+              />
+            </>
+          )}
+        </div>
 
-        <Button
-          type="submit"
-          className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isTransfer
-              ? "Transferindo..."
-              : "Registrando..."
-            : MODE_CONFIG[mode].cta}
-        </Button>
+        {/* Action zone — clear separation from form fields */}
+        <div className="pt-5">
+          <Button
+            type="submit"
+            className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? isTransfer
+                ? "Transferindo..."
+                : "Registrando..."
+              : MODE_CONFIG[mode].cta}
+          </Button>
+        </div>
       </form>
     </div>
   );
