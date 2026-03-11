@@ -415,7 +415,7 @@ export function TransacoesTab({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="h-8 rounded-full border-[var(--color-border)] bg-transparent text-sm px-3 w-auto">
+            <SelectTrigger className="h-8! rounded-full border-[var(--color-border)] bg-transparent text-sm px-3 w-auto">
               <SelectValue>{monthLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -495,7 +495,7 @@ export function TransacoesTab({
               }}
             >
               <SelectTrigger
-                className={`h-8 rounded-full text-sm px-3 w-auto ${
+                className={`h-8! rounded-full text-sm px-3 w-auto ${
                   filtroCategoria
                     ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
                     : "border-[var(--color-border)] bg-transparent"
@@ -656,7 +656,7 @@ export function TransacoesTab({
 
                       {/* Description + metadata */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-base text-foreground tracking-tight truncate flex items-center gap-1">
+                        <div className="text-sm text-foreground tracking-tight truncate flex items-center gap-1">
                           {txIsTransfer ? (
                             <>
                               {getTransferLabel(tx).fromBox}
