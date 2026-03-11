@@ -26,7 +26,7 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
       </div>
 
       <div
-        className="text-3xl sm:text-4xl font-bold font-mono text-white mb-4 duna-stagger-2"
+        className="text-2xl sm:text-4xl font-bold font-mono text-white mb-4 duna-stagger-2"
         style={{ textShadow: "0 0 24px rgba(255,255,255,0.08)" }}
       >
         R$ {fmt(saldo)}

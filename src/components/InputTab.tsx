@@ -279,106 +279,36 @@ export function InputTab() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* 3-option segmented control */}
-      <ModeSelector value={mode} onChange={setMode} />
+      <div className="shrink-0 mb-3">
+        <ModeSelector value={mode} onChange={setMode} />
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Hero amount input */}
-        <div className="flex flex-col items-center gap-3 py-2">
-          <div className="flex items-baseline justify-center gap-2">
-            <span className="text-lg font-mono text-muted-foreground">R$</span>
-            <MoneyInput
-              value={amount}
-              onChange={setAmount}
-              required
-              className="w-full max-w-[200px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
-              style={{ borderColor: activeColor }}
-            />
-          </div>
-        </div>
-
-        {isTransfer ? (
-          <>
-            {/* From → To boxes */}
-            <div className="space-y-2">
-              <Label className="sr-only">Origem</Label>
-              <Select value={fromBoxId} onValueChange={setFromBoxId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a origem" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boxes?.map((box) => (
-                    <SelectItem key={box.id} value={box.id}>
-                      {box.name} ({formatCurrency(box.balance)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-center">
-              <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <Label className="sr-only">Destino</Label>
-              <Select value={toBoxId} onValueChange={setToBoxId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o destino" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boxes?.map((box) => (
-                    <SelectItem key={box.id} value={box.id}>
-                      {box.name} ({formatCurrency(box.balance)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label className="sr-only">Data</Label>
-              <DatePicker
-                date={date}
-                onDateChange={setDate}
-                placeholder="Selecione uma data"
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                type="text"
-                placeholder="Ex: Almoço, Salário, etc."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={handleDescriptionBlur}
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        <div className="flex-1 px-1 overflow-y-auto overflow-x-visible space-y-4">
+          {/* Hero amount input */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-baseline justify-center gap-2">
+              <span className="text-lg font-mono text-muted-foreground">R$</span>
+              <MoneyInput
+                value={amount}
+                onChange={setAmount}
                 required
+                className="w-full max-w-[200px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
+                style={{ borderColor: activeColor }}
               />
             </div>
+          </div>
 
-            {/* Date + Box: 2-column grid */}
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-3 self-stretch">
+          {isTransfer ? (
+            <>
+              {/* From → To boxes */}
               <div className="space-y-2">
-                <Label>Data</Label>
-                <DatePicker
-                  date={date}
-                  onDateChange={setDate}
-                  placeholder="Selecione uma data"
-                />
-              </div>
-              <div className="space-y-2 flex flex-col">
-                <Label>Caixa</Label>
-                <Select
-                  value={selectedBoxId}
-                  onValueChange={setSelectedBoxId}
-                >
-                  <SelectTrigger className="mb-0">
-                    <SelectValue placeholder="Selecione" />
+                <Label className="sr-only">Origem</Label>
+                <Select value={fromBoxId} onValueChange={setFromBoxId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione a origem" />
                   </SelectTrigger>
                   <SelectContent>
                     {boxes?.map((box) => (
@@ -389,11 +319,70 @@ export function InputTab() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+              <div className="flex items-center justify-center h-8 w-8 rounded-full border-accent border mx-auto">
+                <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <Label className="sr-only">Destino</Label>
+                <Select value={toBoxId} onValueChange={setToBoxId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o destino" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boxes?.map((box) => (
+                      <SelectItem key={box.id} value={box.id}>
+                        {box.name} ({formatCurrency(box.balance)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label>Categoria</Label>
+              {/* Date */}
+              <div className="space-y-2">
+                <Label className="sr-only">Data</Label>
+                <DatePicker
+                  date={date}
+                  onDateChange={setDate}
+                  placeholder="Selecione uma data"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Description */}
+              <Input
+                id="description"
+                type="text"
+                placeholder="Descrição (ex: Almoço, Salário)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={handleDescriptionBlur}
+                required
+              />
+
+              <DatePicker
+                date={date}
+                onDateChange={setDate}
+                placeholder="Data"
+              />
+              <Select
+                value={selectedBoxId}
+                onValueChange={setSelectedBoxId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Caixa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {boxes?.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.name} ({formatCurrency(box.balance)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category */}
               <CategorySelect
                 categories={filteredCategories.map((cat) => ({
                   label: cat.name,
@@ -405,22 +394,24 @@ export function InputTab() {
                 currentTransactionType={mode as "expense" | "income"}
                 onOpenChange={handleCategorySelectOpenChange}
               />
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
 
-        {/* Submit */}
-        <Button
-          type="submit"
-          className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isTransfer
-              ? "Transferindo..."
-              : "Registrando..."
-            : MODE_CONFIG[mode].cta}
-        </Button>
+        {/* Submit — always visible, pinned at bottom */}
+        <div className="shrink-0 pt-3 pb-2 px-1">
+          <Button
+            type="submit"
+            className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? isTransfer
+                ? "Transferindo..."
+                : "Registrando..."
+              : MODE_CONFIG[mode].cta}
+          </Button>
+        </div>
       </form>
     </div>
   );

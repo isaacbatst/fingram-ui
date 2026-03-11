@@ -178,7 +178,7 @@ function AppContent() {
             <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
               <IaTab />
             </TabsContent>
-            <TabsContent value="input" className="px-4">
+            <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0">
               <InputTab />
             </TabsContent>
             <TabsContent

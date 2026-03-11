@@ -71,7 +71,7 @@ export function MoneyInput({
   return (
     <div
       className={cn(
-        "relative flex items-center min-w-0 h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base md:text-sm shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
+        "relative flex items-center min-w-0 h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
         "has-[:focus-visible]:border-ring has-[:focus-visible]:ring-ring/50 has-[:focus-visible]:ring-[3px]",
         disabled && "pointer-events-none cursor-not-allowed opacity-50",
         className,
