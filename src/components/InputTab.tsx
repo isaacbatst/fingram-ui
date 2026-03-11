@@ -377,7 +377,7 @@ export function InputTab() {
                   value={selectedBoxId}
                   onValueChange={setSelectedBoxId}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="mb-0">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>

@@ -12,7 +12,6 @@ export function AccentGlow() {
         top: "-40%",
         left: "50%",
         transform: "translateX(-50%)",
-        animation: "duna-glow-pulse 6s ease-in-out infinite",
       }}
     />
   );

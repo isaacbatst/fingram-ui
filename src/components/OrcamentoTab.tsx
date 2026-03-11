@@ -197,7 +197,7 @@ export function OrcamentoTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Month heading with arrow nav */}
-      <div className="flex items-center justify-center gap-2 mb-5">
+      <div className="relative flex items-center justify-center gap-2 mb-5">
         <Button
           variant="ghost"
           size="icon"
@@ -223,10 +223,10 @@ export function OrcamentoTab() {
           variant="ghost"
           size="icon"
           onClick={() => setSettingsDrawerOpen(true)}
-          className="h-11 w-11"
+          className="absolute right-0 h-9 w-9"
           aria-label="Configurações do orçamento"
         >
-          <SettingsIcon className="h-4 w-4" />
+          <SettingsIcon className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
 

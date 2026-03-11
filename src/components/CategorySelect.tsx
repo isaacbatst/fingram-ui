@@ -39,7 +39,7 @@ export function CategorySelect({
 
   return (
     <Select value={value} onValueChange={onChange} onOpenChange={onOpenChange}>
-      <SelectTrigger className={`text-xs w-full ${className}`}>
+      <SelectTrigger className={`w-full ${className}`}>
         <SelectValue placeholder="Categoria" />
       </SelectTrigger>
       <SelectContent>
