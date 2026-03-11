@@ -166,7 +166,7 @@ function AppContent() {
 
           {/* Tab content area */}
           <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
-            {!["ia", "plano"].includes(currentTab) && (
+            {currentTab === "input" && (
               <div className="px-4">
                 <SaldoResumo
                   saldo={vault.balance}
