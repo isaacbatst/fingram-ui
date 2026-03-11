@@ -539,7 +539,7 @@ export function TransacoesTab({
               }}
             >
               <SelectTrigger
-                className={`h-8 rounded-full text-sm px-3 w-auto ${
+                className={`h-8! rounded-full text-sm px-3 w-auto ${
                   filtroEstrato
                     ? "bg-[var(--color-accent-bg)] border-[var(--color-accent-border)] text-[var(--color-accent)] rounded-r-none border-r-0"
                     : "border-[var(--color-border)] bg-transparent"
@@ -864,7 +864,7 @@ export function TransacoesTab({
                     </div>
                     {boxes && boxes.length > 0 && (
                       <div className="flex gap-2 items-center">
-                        <div className="flex-1">
+                        <div className="flex-1 flex flex-col">
                           <label className="text-xs text-muted-foreground mb-1 block">
                             Origem
                           </label>
@@ -885,7 +885,7 @@ export function TransacoesTab({
                           </Select>
                         </div>
                         <ArrowRight className="h-4 w-4 text-[var(--color-info)] shrink-0 mt-5" />
-                        <div className="flex-1">
+                        <div className="flex-1 flex flex-col">
                           <label className="text-xs text-muted-foreground mb-1 block">
                             Destino
                           </label>

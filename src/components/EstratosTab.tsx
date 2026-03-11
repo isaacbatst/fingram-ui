@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -700,39 +701,19 @@ export function EstratosTab() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="transfer-from">Origem</Label>
-                <Select
+                <EstratoSelect
                   value={transferFromBoxId}
-                  onValueChange={setTransferFromBoxId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o estrato de origem" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {boxes?.map((box) => (
-                      <SelectItem key={box.id} value={box.id}>
-                        {box.name} ({formatCurrency(box.balance)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setTransferFromBoxId}
+                  placeholder="Selecione o estrato de origem"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transfer-to">Destino</Label>
-                <Select
+                <EstratoSelect
                   value={transferToBoxId}
-                  onValueChange={setTransferToBoxId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o estrato de destino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {boxes?.map((box) => (
-                      <SelectItem key={box.id} value={box.id}>
-                        {box.name} ({formatCurrency(box.balance)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={setTransferToBoxId}
+                  placeholder="Selecione o estrato de destino"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transfer-amount">Valor (R$)</Label>

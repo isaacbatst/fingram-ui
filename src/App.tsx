@@ -1,10 +1,8 @@
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { AccountButton } from "@/components/AccountButton";
 import { AccentGlow } from "@/components/AccentGlow";
+import { AccountButton } from "@/components/AccountButton";
 import { DunaLogo } from "@/components/DunaLogo";
-import { GrainOverlay } from "@/components/GrainOverlay";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
+import { GrainOverlay } from "@/components/GrainOverlay";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OrcamentoTab } from "@/components/OrcamentoTab";
@@ -15,19 +13,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
 import { StorageProvider } from "@/contexts/StorageContext/provider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { LucideIcon } from "lucide-react";
 import {
   ChartPie,
   DollarSign,
   Layers,
-  MessageCircle,
-  Search,
-  TrendingUp,
+  Search
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { EstratosTab } from "./components/EstratosTab";
-import { IaTab } from "./components/IaTab";
-import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
 import { useCategories } from "./hooks/useCategories";
@@ -35,11 +31,9 @@ import { useSearchParams } from "./hooks/useSearchParams";
 import { useSummary } from "./hooks/useSummary";
 
 const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
-  { value: "ia", icon: MessageCircle, label: "IA" },
   { value: "input", icon: DollarSign, label: "Entrada" },
   { value: "estratos", icon: Layers, label: "Estratos" },
   { value: "orcamento", icon: ChartPie, label: "Orçamento" },
-  { value: "plano", icon: TrendingUp, label: "Plano" },
   { value: "transacoes", icon: Search, label: "Busca" },
 ];
 
@@ -175,9 +169,6 @@ function AppContent() {
                 />
               </div>
             )}
-            <TabsContent value="ia" className="flex-1 flex flex-col min-h-0">
-              <IaTab />
-            </TabsContent>
             <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0">
               <InputTab />
             </TabsContent>
@@ -193,12 +184,6 @@ function AppContent() {
             >
               <OrcamentoTab />
             </TabsContent>
-            <TabsContent
-              value="plano"
-              className="px-4 flex flex-col flex-1 min-h-0"
-            >
-              <PlanoTab />
-            </TabsContent>
             <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
               <TransacoesTab
                 categories={categories.data || []}
@@ -209,10 +194,11 @@ function AppContent() {
 
           {/* Mobile bottom bar */}
           <div className="lg:hidden flex">
-            <TabsList className="flex-1 w-auto">
-              {TAB_ITEMS.map(({ value, icon: Icon }) => (
-                <TabsTrigger key={value} value={value}>
+            <TabsList className="flex-1 w-auto h-14">
+              {TAB_ITEMS.map(({ value, icon: Icon, label }) => (
+                <TabsTrigger key={value} value={value} className="flex-col gap-0.5 py-1.5">
                   <Icon className="w-4 h-4" />
+                  <span className="text-[10px] leading-none tracking-wide">{label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

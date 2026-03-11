@@ -1,37 +1,24 @@
-import { useState, useRef, useEffect } from "react";
+import { CategorySelect } from "@/components/CategorySelect";
+import { DatePicker } from "@/components/DatePicker";
+import { EstratoSelect } from "@/components/EstratoSelect";
+import { MoneyInput } from "@/components/MoneyInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoneyInput } from "@/components/MoneyInput";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CategorySelect } from "@/components/CategorySelect";
-import { DatePicker } from "@/components/DatePicker";
-import { useCreateTransaction } from "@/hooks/useCreateTransaction";
-import { useCategories } from "@/hooks/useCategories";
-import { useBoxes } from "@/hooks/useBoxes";
-import { useTransfer } from "@/hooks/useTransfer";
 import { useApi } from "@/hooks/useApi";
-import { toast } from "sonner";
+import { useCategories } from "@/hooks/useCategories";
+import { useCreateTransaction } from "@/hooks/useCreateTransaction";
+import { useTransfer } from "@/hooks/useTransfer";
 import { format } from "date-fns";
 import { ArrowDown } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 // ── Helpers ──
 
 const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
 };
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
 
 // ── Types ──
 
@@ -93,10 +80,10 @@ function ModeSelector({
             onClick={() => onChange(mode)}
             className={`relative z-10 flex-1 flex justify-center items-center py-2 px-1 rounded-md text-sm font-medium transition-colors 
               truncate  duration-200 ${
-              value === mode
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+                value === mode
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             {MODE_CONFIG[mode].label}
           </button>
@@ -130,24 +117,11 @@ export function InputTab() {
   // ── Hooks ──
   const { createTransaction } = useCreateTransaction();
   const { data: categories } = useCategories();
-  const { boxes } = useBoxes();
   const { createTransfer } = useTransfer();
   const { apiService } = useApi();
 
   const activeColor = MODE_CONFIG[mode].color;
   const isTransfer = mode === "transfer";
-
-  // Pre-select default box on load
-  useEffect(() => {
-    if (boxes && boxes.length > 0 && !selectedBoxId) {
-      const defaultBox = boxes.find((box) => box.isDefault);
-      if (defaultBox) {
-        setSelectedBoxId(defaultBox.id);
-      } else {
-        setSelectedBoxId(boxes[0].id);
-      }
-    }
-  }, [boxes, selectedBoxId]);
 
   // Filter categories based on transaction type
   const filteredCategories =
@@ -286,127 +260,102 @@ export function InputTab() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Hero amount input */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-baseline justify-center gap-2">
-              <span className="text-lg font-mono text-muted-foreground">R$</span>
-              <MoneyInput
-                value={amount}
-                onChange={setAmount}
-                required
-                className="w-full max-w-[200px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
-                style={{ borderColor: activeColor }}
+        {/* Hero amount input */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-baseline justify-center gap-2">
+            <span className="text-lg font-mono text-muted-foreground">R$</span>
+            <MoneyInput
+              value={amount}
+              onChange={setAmount}
+              required
+              className="w-full max-w-[200px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
+              style={{ borderColor: activeColor }}
+            />
+          </div>
+        </div>
+
+        {isTransfer ? (
+          <>
+            {/* From → To boxes */}
+            <div className="space-y-2">
+              <Label className="sr-only">Origem</Label>
+              <EstratoSelect
+                value={fromBoxId}
+                onChange={setFromBoxId}
+                placeholder="Selecione a origem"
+                className="w-full"
               />
             </div>
-          </div>
-
-          {isTransfer ? (
-            <>
-              {/* From → To boxes */}
-              <div className="space-y-2">
-                <Label className="sr-only">Origem</Label>
-                <Select value={fromBoxId} onValueChange={setFromBoxId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a origem" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {boxes?.map((box) => (
-                      <SelectItem key={box.id} value={box.id}>
-                        {box.name} ({formatCurrency(box.balance)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-center h-8 w-8 rounded-full border-accent border mx-auto">
-                <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <Label className="sr-only">Destino</Label>
-                <Select value={toBoxId} onValueChange={setToBoxId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o destino" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {boxes?.map((box) => (
-                      <SelectItem key={box.id} value={box.id}>
-                        {box.name} ({formatCurrency(box.balance)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Date */}
-              <div className="space-y-2">
-                <Label className="sr-only">Data</Label>
-                <DatePicker
-                  date={date}
-                  onDateChange={setDate}
-                  placeholder="Selecione uma data"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Description */}
-              <Input
-                id="description"
-                type="text"
-                placeholder="Descrição (ex: Almoço, Salário)"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={handleDescriptionBlur}
-                required
+            <div className="flex items-center justify-center h-8 w-8 rounded-full border-accent border mx-auto">
+              <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <Label className="sr-only">Destino</Label>
+              <EstratoSelect
+                value={toBoxId}
+                onChange={setToBoxId}
+                placeholder="Selecione o destino"
+                className="w-full"
               />
+            </div>
 
+            {/* Date */}
+            <div className="space-y-2">
+              <Label className="sr-only">Data</Label>
               <DatePicker
                 date={date}
                 onDateChange={setDate}
-                placeholder="Data"
+                placeholder="Selecione uma data"
               />
-              <Select
-                value={selectedBoxId}
-                onValueChange={setSelectedBoxId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Caixa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boxes?.map((box) => (
-                    <SelectItem key={box.id} value={box.id}>
-                      {box.name} ({formatCurrency(box.balance)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Description */}
+            <Input
+              id="description"
+              type="text"
+              placeholder="Descrição (ex: Almoço, Salário)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onBlur={handleDescriptionBlur}
+              required
+            />
 
-              {/* Category */}
-              <CategorySelect
-                categories={filteredCategories.map((cat) => ({
-                  label: cat.name,
-                  value: cat.id,
-                  type: cat.transactionType,
-                }))}
-                value={categoryId}
-                onChange={handleCategoryChange}
-                currentTransactionType={mode as "expense" | "income"}
-                onOpenChange={handleCategorySelectOpenChange}
-              />
-            </>
-          )}
+            <DatePicker date={date} onDateChange={setDate} placeholder="Data" />
+            <EstratoSelect
+              value={selectedBoxId}
+              onChange={setSelectedBoxId}
+              placeholder="Selecione o estrato"
+              className="w-full border-[var(--color-accent-border)]"
+            />
 
-          <Button
-            type="submit"
-            className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
-            disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? isTransfer
-                ? "Transferindo..."
-                : "Registrando..."
-              : MODE_CONFIG[mode].cta}
-          </Button>
+            {/* Category */}
+            <CategorySelect
+              categories={filteredCategories.map((cat) => ({
+                label: cat.name,
+                value: cat.id,
+                type: cat.transactionType,
+              }))}
+              value={categoryId}
+              onChange={handleCategoryChange}
+              currentTransactionType={mode as "expense" | "income"}
+              onOpenChange={handleCategorySelectOpenChange}
+            />
+          </>
+        )}
+
+        <Button
+          type="submit"
+          className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? isTransfer
+              ? "Transferindo..."
+              : "Registrando..."
+            : MODE_CONFIG[mode].cta}
+        </Button>
       </form>
     </div>
   );

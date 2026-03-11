@@ -256,14 +256,8 @@ export function OrcamentoTab() {
                   label="gasto"
                 />
                 <div className="mt-3 text-center">
-                  <div className="text-base font-mono font-bold text-foreground">
-                    {formatMoney(totalGasto)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    de {formatMoney(totalOrcamento)}
-                  </div>
                   <div
-                    className={`text-sm font-mono mt-1 ${
+                    className={`text-lg font-mono font-bold ${
                       saldoRestante >= 0
                         ? "text-[var(--color-success)]"
                         : "text-[var(--color-danger)]"
@@ -272,6 +266,9 @@ export function OrcamentoTab() {
                     {saldoRestante >= 0
                       ? `${formatMoney(saldoRestante)} disponível`
                       : `${formatMoney(Math.abs(saldoRestante))} acima`}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    {formatMoney(totalGasto)} de {formatMoney(totalOrcamento)}
                   </div>
                 </div>
               </div>
@@ -295,7 +292,7 @@ export function OrcamentoTab() {
                       onClick={() => handleOpenEdit(c.categoryId, c.categoria)}
                     >
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-base text-foreground tracking-tight">
+                        <span className="text-base font-display text-foreground">
                           {c.categoria}
                         </span>
                         <span className="text-sm text-muted-foreground font-mono">
@@ -331,7 +328,7 @@ export function OrcamentoTab() {
                         className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50"
                         onClick={() => handleOpenEdit(cat.id, cat.name)}
                       >
-                        <span className="font-display text-sm text-muted-foreground tracking-tight">
+                        <span className="font-display text-sm text-muted-foreground">
                           {cat.name}
                         </span>
                         <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
