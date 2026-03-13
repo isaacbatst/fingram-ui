@@ -45,10 +45,25 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
     return row;
   });
 
-  const flowData = projection.map((m) => ({
+  const flowDataRaw = projection.map((m) => ({
     month: m.month,
     income: m.income,
     outflow: -(m.costOfLiving + Object.values(m.boxPayments).reduce((s, v) => s + v, 0)),
+  }));
+
+  // Compute a Y domain that clips outliers so normal bars are visible
+  const allFlowValues = flowDataRaw.flatMap((d) => [d.income, d.outflow]);
+  const sorted = [...allFlowValues].sort((a, b) => Math.abs(a) - Math.abs(b));
+  const p95 = Math.abs(sorted[Math.floor(sorted.length * 0.95)]);
+  const flowYMax = Math.ceil(p95 * 1.3 / 10000) * 10000; // round up with padding
+  const flowDomain: [number, number] = [-flowYMax, flowYMax];
+
+  const flowData = flowDataRaw.map((d) => ({
+    month: d.month,
+    income: d.income,
+    outflow: d.outflow,
+    incomeClipped: Math.min(d.income, flowYMax),
+    outflowClipped: Math.max(d.outflow, -flowYMax),
   }));
 
   const formatXTick = (month: number) => `M${month}`;
@@ -154,11 +169,13 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                 tickLine={false}
               />
               <YAxis
+                domain={flowDomain}
                 tickFormatter={(v: number) => formatCompactCurrency(v)}
                 tick={{ fontSize: 9, fill: "var(--color-text-muted)", fontFamily: "var(--font-mono-family)" }}
                 axisLine={false}
                 tickLine={false}
               />
+              <ReferenceLine y={0} stroke="var(--color-border-subtle)" />
               <Tooltip
                 contentStyle={{
                   background: "rgba(8,9,12,0.92)",
@@ -168,17 +185,24 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                   fontFamily: "var(--font-mono-family)",
                 }}
                 labelFormatter={(month) => `Mês ${month}`}
-                formatter={(value) => formatCurrency(Math.abs(Number(value)))}
+                formatter={(_value, name, item) => {
+                  const key = name as string;
+                  const label = key === "incomeClipped" ? "Receita" : "Despesa";
+                  const real = key === "incomeClipped"
+                    ? item.payload.income
+                    : Math.abs(item.payload.outflow);
+                  return [formatCurrency(real), label];
+                }}
               />
-              <Bar dataKey="income" fill="var(--color-success)" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="outflow" fill="var(--color-danger)" fillOpacity={0.5} radius={[0, 0, 2, 2]} />
+              <Bar dataKey="incomeClipped" name="incomeClipped" fill="var(--color-success)" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="outflowClipped" name="outflowClipped" fill="var(--color-danger)" fillOpacity={0.5} radius={[0, 0, 2, 2]} />
             </BarChart>
           )}
         </ResponsiveContainer>
       </div>
 
       {/* Legend */}
-      {view === "trajectory" && (
+      {view === "trajectory" ? (
         <div className="flex flex-wrap gap-3 pt-3">
           <span className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
             <span className="w-2 h-2 rounded-sm" style={{ background: DATA_COLORS[0] }} />
@@ -193,6 +217,17 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
               {box.label}
             </span>
           ))}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-3 pt-3">
+          <span className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
+            <span className="w-2 h-2 rounded-sm" style={{ background: "var(--color-success)" }} />
+            Receita
+          </span>
+          <span className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
+            <span className="w-2 h-2 rounded-sm" style={{ background: "var(--color-danger)" }} />
+            Despesa
+          </span>
         </div>
       )}
     </div>
