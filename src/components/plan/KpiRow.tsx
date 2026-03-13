@@ -5,23 +5,26 @@ import type { KpiSet } from "@/utils/plan-dashboard";
 interface KpiCardProps {
   label: string;
   value: number;
-  delta: number;
+  delta: number | null;
   deltaLabel?: string;
   primary?: boolean;
 }
 
 function KpiCard({ label, value, delta, deltaLabel, primary }: KpiCardProps) {
-  const deltaColor =
-    delta > 0
+  const showDelta = delta !== null;
+  const deltaColor = !showDelta
+    ? undefined
+    : delta > 0
       ? "var(--color-success)"
       : delta < 0
         ? "var(--color-danger)"
         : "var(--color-text-muted)";
-  const deltaText =
-    deltaLabel ??
-    (delta >= 0
-      ? `+${formatCompactCurrency(delta)}/mês`
-      : `${formatCompactCurrency(delta)}/mês`);
+  const deltaText = !showDelta
+    ? undefined
+    : deltaLabel ??
+      (delta >= 0
+        ? `+${formatCompactCurrency(delta)}/mês`
+        : `${formatCompactCurrency(delta)}/mês`);
 
   return (
     <div
@@ -41,9 +44,11 @@ function KpiCard({ label, value, delta, deltaLabel, primary }: KpiCardProps) {
       >
         {formatCompactCurrency(value)}
       </div>
-      <div className="font-mono text-[10px] mt-0.5" style={{ color: deltaColor }}>
-        {deltaText}
-      </div>
+      {showDelta && (
+        <div className="font-mono text-[10px] mt-0.5" style={{ color: deltaColor }}>
+          {deltaText}
+        </div>
+      )}
     </div>
   );
 }

@@ -74,6 +74,41 @@ describe("computeKpis", () => {
     const kpis = computeKpis(projection, boxes);
     expect(kpis.comprometido.percent).toBe(50);
   });
+
+  it("should return values for specified monthIndex", () => {
+    const projection: MonthDataDTO[] = [
+      buildMonth({ month: 1, totalWealth: 10000, cash: 5000, totalCommitted: 3000 }),
+      buildMonth({ month: 2, totalWealth: 20000, cash: 8000, totalCommitted: 6000 }),
+      buildMonth({ month: 3, totalWealth: 30000, cash: 12000, totalCommitted: 9000 }),
+    ];
+    const boxes: BoxDTO[] = [];
+    const kpis = computeKpis(projection, boxes, 1);
+    expect(kpis.patrimonio.value).toBe(20000);
+    expect(kpis.disponivel.value).toBe(8000);
+    expect(kpis.comprometido.value).toBe(6000);
+  });
+
+  it("should return null delta when monthIndex is 0", () => {
+    const projection: MonthDataDTO[] = [
+      buildMonth({ month: 1, totalWealth: 10000, cash: 5000, totalCommitted: 3000 }),
+      buildMonth({ month: 2, totalWealth: 20000, cash: 8000, totalCommitted: 6000 }),
+    ];
+    const kpis = computeKpis(projection, [], 0);
+    expect(kpis.patrimonio.delta).toBeNull();
+    expect(kpis.disponivel.delta).toBeNull();
+    expect(kpis.comprometido.delta).toBeNull();
+  });
+
+  it("should compute delta from previous month when monthIndex > 0", () => {
+    const projection: MonthDataDTO[] = [
+      buildMonth({ month: 1, totalWealth: 10000, cash: 5000, totalCommitted: 3000 }),
+      buildMonth({ month: 2, totalWealth: 13000, cash: 8000, totalCommitted: 6000 }),
+      buildMonth({ month: 3, totalWealth: 18000, cash: 12000, totalCommitted: 9000 }),
+    ];
+    const kpis = computeKpis(projection, [], 2);
+    expect(kpis.patrimonio.delta).toBe(5000);
+    expect(kpis.disponivel.delta).toBe(4000);
+  });
 });
 
 describe("computeMilestones", () => {

@@ -2,7 +2,7 @@ import type { MonthDataDTO, BoxDTO, ChangePointDTO } from "@/services/plan.servi
 
 export interface KpiData {
   value: number;
-  delta: number;
+  delta: number | null;
 }
 
 export interface KpiSet {
@@ -11,9 +11,14 @@ export interface KpiSet {
   comprometido: KpiData & { percent: number | null };
 }
 
-export function computeKpis(projection: MonthDataDTO[], boxes: BoxDTO[]): KpiSet {
-  const last = projection[projection.length - 1];
-  const prev = projection.length >= 2 ? projection[projection.length - 2] : null;
+export function computeKpis(
+  projection: MonthDataDTO[],
+  boxes: BoxDTO[],
+  monthIndex?: number,
+): KpiSet {
+  const idx = monthIndex ?? projection.length - 1;
+  const current = projection[idx];
+  const prev = idx > 0 ? projection[idx - 1] : null;
 
   const targetSum = boxes
     .filter((b) => !b.holdsFunds && b.target > 0)
@@ -21,17 +26,17 @@ export function computeKpis(projection: MonthDataDTO[], boxes: BoxDTO[]): KpiSet
 
   return {
     patrimonio: {
-      value: last?.totalWealth ?? 0,
-      delta: prev ? (last?.totalWealth ?? 0) - prev.totalWealth : 0,
+      value: current?.totalWealth ?? 0,
+      delta: prev ? (current?.totalWealth ?? 0) - prev.totalWealth : null,
     },
     disponivel: {
-      value: last?.cash ?? 0,
-      delta: prev ? (last?.cash ?? 0) - prev.cash : 0,
+      value: current?.cash ?? 0,
+      delta: prev ? (current?.cash ?? 0) - prev.cash : null,
     },
     comprometido: {
-      value: last?.totalCommitted ?? 0,
-      delta: prev ? (last?.totalCommitted ?? 0) - prev.totalCommitted : 0,
-      percent: targetSum > 0 ? Math.round(((last?.totalCommitted ?? 0) / targetSum) * 100) : null,
+      value: current?.totalCommitted ?? 0,
+      delta: prev ? (current?.totalCommitted ?? 0) - prev.totalCommitted : null,
+      percent: targetSum > 0 ? Math.round(((current?.totalCommitted ?? 0) / targetSum) * 100) : null,
     },
   };
 }
