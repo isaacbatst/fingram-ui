@@ -67,13 +67,17 @@ export interface CashStats {
   averageSurplus: number;
 }
 
-export function computeCashStats(projection: MonthDataDTO[]): CashStats {
+export function computeCashStats(
+  projection: MonthDataDTO[],
+  monthIndex?: number,
+): CashStats {
   if (projection.length === 0) return { currentCash: 0, averageSurplus: 0 };
-  const last = projection[projection.length - 1];
-  const totalSurplus = projection.reduce((sum, m) => sum + m.surplus, 0);
+  const idx = monthIndex ?? projection.length - 1;
+  const slice = projection.slice(0, idx + 1);
+  const totalSurplus = slice.reduce((sum, m) => sum + m.surplus, 0);
   return {
-    currentCash: last.cash,
-    averageSurplus: Math.round(totalSurplus / projection.length),
+    currentCash: projection[idx].cash,
+    averageSurplus: Math.round(totalSurplus / slice.length),
   };
 }
 

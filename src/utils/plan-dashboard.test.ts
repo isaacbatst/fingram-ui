@@ -148,6 +148,27 @@ describe("computeCashStats", () => {
     expect(stats.currentCash).toBe(6000);
     expect(stats.averageSurplus).toBe(2000);
   });
+
+  it("should compute stats up to specified monthIndex", () => {
+    const projection: MonthDataDTO[] = [
+      buildMonth({ month: 1, surplus: 1000, cash: 1000 }),
+      buildMonth({ month: 2, surplus: 2000, cash: 3000 }),
+      buildMonth({ month: 3, surplus: 3000, cash: 6000 }),
+    ];
+    const stats = computeCashStats(projection, 1);
+    expect(stats.currentCash).toBe(3000);
+    expect(stats.averageSurplus).toBe(1500);
+  });
+
+  it("should return single month stats when monthIndex is 0", () => {
+    const projection: MonthDataDTO[] = [
+      buildMonth({ month: 1, surplus: 1000, cash: 1000 }),
+      buildMonth({ month: 2, surplus: 2000, cash: 3000 }),
+    ];
+    const stats = computeCashStats(projection, 0);
+    expect(stats.currentCash).toBe(1000);
+    expect(stats.averageSurplus).toBe(1000);
+  });
 });
 
 describe("formatCompactCurrency", () => {
