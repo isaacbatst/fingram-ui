@@ -104,8 +104,8 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                   fontSize: 11,
                   fontFamily: "var(--font-mono-family)",
                 }}
-                labelFormatter={(month: number) => `Mês ${month}`}
-                formatter={(value: number) => formatCurrency(value)}
+                labelFormatter={(month) => `Mês ${month}`}
+                formatter={(value) => formatCurrency(Number(value))}
               />
               {milestones.map((m) => (
                 <ReferenceLine
@@ -167,8 +167,8 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                   fontSize: 11,
                   fontFamily: "var(--font-mono-family)",
                 }}
-                labelFormatter={(month: number) => `Mês ${month}`}
-                formatter={(value: number) => formatCurrency(Math.abs(value))}
+                labelFormatter={(month) => `Mês ${month}`}
+                formatter={(value) => formatCurrency(Math.abs(Number(value)))}
               />
               <Bar dataKey="income" fill="var(--color-success)" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
               <Bar dataKey="outflow" fill="var(--color-danger)" fillOpacity={0.5} radius={[0, 0, 2, 2]} />

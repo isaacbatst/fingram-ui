@@ -20,10 +20,12 @@ import {
   ChartPie,
   DollarSign,
   Layers,
-  Search
+  Search,
+  TrendingUp,
 } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import { EstratosTab } from "./components/EstratosTab";
+import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
 import { useCategories } from "./hooks/useCategories";
@@ -35,6 +37,7 @@ const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
   { value: "estratos", icon: Layers, label: "Estratos" },
   { value: "orcamento", icon: ChartPie, label: "Orçamento" },
   { value: "transacoes", icon: Search, label: "Busca" },
+  { value: "plano", icon: TrendingUp, label: "Plano" },
 ];
 
 function AppContent() {
@@ -189,6 +192,9 @@ function AppContent() {
                 categories={categories.data || []}
                 mutateSummary={summary.mutate}
               />
+            </TabsContent>
+            <TabsContent value="plano" className="px-4 flex flex-col flex-1 min-h-0">
+              <PlanoTab />
             </TabsContent>
           </div>
 
