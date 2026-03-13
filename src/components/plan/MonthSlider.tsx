@@ -34,6 +34,7 @@ export function MonthSlider({ projection, milestones, selectedIndex, onChange }:
           max={max}
           value={selectedIndex}
           onChange={(e) => onChange(Number(e.target.value))}
+          aria-label="Selecionar mês da projeção"
           className="month-slider w-full"
           style={{
             background: `linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-dim) ${fillPct}%, rgba(217,175,120,0.08) ${fillPct}%)`,

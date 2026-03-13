@@ -157,7 +157,7 @@ export function ProjectionChart({ projection, boxes, milestones, selectedMonthIn
               <Area
                 type="monotone"
                 dataKey="Disponível"
-
+                stackId="1"
                 stroke={DATA_COLORS[0]}
                 strokeWidth={1.5}
                 fill={DATA_COLORS[0]}
@@ -168,7 +168,7 @@ export function ProjectionChart({ projection, boxes, milestones, selectedMonthIn
                   key={box.id}
                   type="monotone"
                   dataKey={box.label}
-  
+                  stackId="1"
                   stroke={DATA_COLORS[(i + 1) % DATA_COLORS.length]}
                   strokeWidth={1}
                   fill={DATA_COLORS[(i + 1) % DATA_COLORS.length]}
