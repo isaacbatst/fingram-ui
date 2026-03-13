@@ -1,4 +1,4 @@
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, ReferenceLine, ResponsiveContainer, XAxis } from "recharts";
 import type { MonthDataDTO } from "@/services/plan.service";
 import { formatCurrency } from "@/utils/plan-dashboard";
 import type { CashStats } from "@/utils/plan-dashboard";
@@ -6,10 +6,12 @@ import type { CashStats } from "@/utils/plan-dashboard";
 interface Props {
   projection: MonthDataDTO[];
   stats: CashStats;
+  selectedMonthIndex: number;
 }
 
-export function CashSection({ projection, stats }: Props) {
+export function CashSection({ projection, stats, selectedMonthIndex }: Props) {
   const sparkData = projection.map((m) => ({ month: m.month, cash: m.cash }));
+  const selectedMonth = projection[selectedMonthIndex]?.month ?? 0;
   const isNegative = stats.currentCash < 0;
 
   return (
@@ -35,6 +37,7 @@ export function CashSection({ projection, stats }: Props) {
               <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
             </linearGradient>
           </defs>
+          <XAxis dataKey="month" hide />
           <Area
             type="monotone"
             dataKey="cash"
@@ -43,6 +46,12 @@ export function CashSection({ projection, stats }: Props) {
             strokeOpacity={0.6}
             fill="url(#sparkGrad)"
             isAnimationActive={false}
+          />
+          <ReferenceLine
+            x={selectedMonth}
+            stroke="var(--color-accent)"
+            strokeWidth={1}
+            strokeDasharray="4 4"
           />
         </AreaChart>
       </ResponsiveContainer>
