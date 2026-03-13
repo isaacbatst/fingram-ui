@@ -30,9 +30,11 @@ interface Props {
   projection: MonthDataDTO[];
   boxes: BoxDTO[];
   milestones: DerivedMilestone[];
+  selectedMonthIndex: number;
+  onMonthSelect: (index: number) => void;
 }
 
-export function ProjectionChart({ projection, boxes, milestones }: Props) {
+export function ProjectionChart({ projection, boxes, milestones, selectedMonthIndex, onMonthSelect }: Props) {
   const [view, setView] = useState<ChartView>("trajectory");
 
   const holdsFundsBoxes = boxes.filter((b) => b.holdsFunds);
@@ -66,6 +68,16 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
     outflowClipped: Math.max(d.outflow, -flowYMax),
   }));
 
+  const selectedMonth = projection[selectedMonthIndex]?.month ?? 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChartClick = (data: any) => {
+    const month = data?.activePayload?.[0]?.payload?.month;
+    if (typeof month !== "number") return;
+    const idx = projection.findIndex((m) => m.month === month);
+    if (idx >= 0) onMonthSelect(idx);
+  };
+
   const formatXTick = (month: number) => `M${month}`;
 
   return (
@@ -95,7 +107,7 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
         <ResponsiveContainer width="100%" height={180}>
           {view === "trajectory" ? (
-            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -136,10 +148,16 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                   }}
                 />
               ))}
+              <ReferenceLine
+                x={selectedMonth}
+                stroke="var(--color-accent)"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+              />
               <Area
                 type="monotone"
                 dataKey="Disponível"
-                stackId="1"
+
                 stroke={DATA_COLORS[0]}
                 strokeWidth={1.5}
                 fill={DATA_COLORS[0]}
@@ -150,7 +168,7 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                   key={box.id}
                   type="monotone"
                   dataKey={box.label}
-                  stackId="1"
+  
                   stroke={DATA_COLORS[(i + 1) % DATA_COLORS.length]}
                   strokeWidth={1}
                   fill={DATA_COLORS[(i + 1) % DATA_COLORS.length]}
@@ -159,7 +177,7 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
               ))}
             </AreaChart>
           ) : (
-            <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -176,6 +194,12 @@ export function ProjectionChart({ projection, boxes, milestones }: Props) {
                 tickLine={false}
               />
               <ReferenceLine y={0} stroke="var(--color-border-subtle)" />
+              <ReferenceLine
+                x={selectedMonth}
+                stroke="var(--color-accent)"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+              />
               <Tooltip
                 contentStyle={{
                   background: "rgba(8,9,12,0.92)",
