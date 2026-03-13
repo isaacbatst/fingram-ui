@@ -1,42 +1,95 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 
-export interface PremisesDTO {
-  salary: number;
-  monthlyCost: number;
-  monthlyInvestment?: number;
+// --- Change Point ---
+export interface ChangePointDTO {
+  month: number;
+  amount: number;
 }
 
-export interface FundRuleDTO {
-  fundId: string;
+// --- Plan ---
+export interface PremisesDTO {
+  salaryChangePoints: ChangePointDTO[];
+  costOfLivingChangePoints: ChangePointDTO[];
+}
+
+export interface BoxScheduledPaymentDTO {
+  month: number;
+  amount: number;
+  label: string;
+  additionalToMonthly?: boolean;
+  sourceBoxId?: string;
+}
+
+export interface BoxFinancingDTO {
+  principal: number;
+  annualRate: number;
+  termMonths: number;
+  system: "sac" | "price";
+  constructionMonths?: number;
+  gracePeriodMonths?: number;
+  releasePercent?: number;
+}
+
+export interface BoxDTO {
+  id: string;
   label: string;
   target: number;
-  priority: number;
+  monthlyAmount: ChangePointDTO[];
+  holdsFunds: boolean;
+  yieldRate?: number;
+  financing?: BoxFinancingDTO;
+  scheduledPayments: BoxScheduledPaymentDTO[];
 }
+
+export type PlanStatus = "draft" | "active" | "archived";
 
 export interface PlanDTO {
   id: string;
+  vaultId: string;
   name: string;
-  status: "draft" | "active" | "archived";
+  status: PlanStatus;
   startDate: string;
   premises: PremisesDTO;
-  fundAllocation: FundRuleDTO[];
+  boxes: BoxDTO[];
+  milestones: { month: number; label: string; type: string }[];
+  createdAt: string;
+}
+
+// --- Projection ---
+export type FinancingPhase = "construction" | "grace" | "amortization" | "paid_off";
+
+export interface FinancingMonthDetailDTO {
+  payment: number;
+  amortization: number;
+  interest: number;
+  outstandingBalance: number;
+  phase: FinancingPhase;
 }
 
 export interface MonthDataDTO {
   month: number;
   date: string;
   income: number;
-  expenses: number;
+  costOfLiving: number;
   surplus: number;
-  funds: Record<string, number>;
+  cash: number;
+  boxes: Record<string, number>;
+  boxPayments: Record<string, number>;
+  boxYields: Record<string, number>;
+  totalYield: number;
+  scheduledPayments: { boxId: string; amount: number; label: string }[];
+  totalWealth: number;
+  totalCommitted: number;
+  financingDetails: Record<string, FinancingMonthDetailDTO>;
 }
 
+// --- Requests ---
 export interface CreatePlanRequest {
   name: string;
   startDate?: string;
   premises: PremisesDTO;
-  fundAllocation: FundRuleDTO[];
+  boxes: Omit<BoxDTO, "id">[];
 }
 
 async function request<T>(
