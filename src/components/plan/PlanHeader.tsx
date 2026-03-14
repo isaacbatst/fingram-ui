@@ -2,7 +2,7 @@ import type { PlanDTO } from "@/services/plan.service";
 
 function formatMonthYear(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+  return date.toLocaleDateString("pt-BR", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 interface Props {

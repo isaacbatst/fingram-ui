@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { usePlans } from "@/hooks/usePlans";
 import { usePlan } from "@/hooks/usePlan";
 import { useProjection } from "@/hooks/useProjection";
@@ -10,7 +10,8 @@ import { KpiRow } from "./KpiRow";
 import { ProjectionChart } from "./ProjectionChart";
 import { AllocationList } from "./AllocationList";
 import { CashSection } from "./CashSection";
-import { MonthSlider } from "./MonthSlider";
+import { MonthBreakdown } from "./MonthBreakdown";
+import { MonthNavigator } from "./MonthNavigator";
 
 export function PlanDashboard() {
   const { plans, error: plansError, isLoading: plansLoading } = usePlans();
@@ -26,18 +27,19 @@ export function PlanDashboard() {
   const error = plansError || planError || projError;
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+  const deferredMonthIndex = useDeferredValue(selectedMonthIndex);
 
   const kpis = useMemo(
-    () => (projection && plan ? computeKpis(projection, plan.boxes, selectedMonthIndex) : null),
-    [projection, plan, selectedMonthIndex],
+    () => (projection && plan ? computeKpis(projection, plan.boxes, deferredMonthIndex) : null),
+    [projection, plan, deferredMonthIndex],
   );
   const milestones = useMemo(
     () => (projection && plan ? computeMilestones(projection, plan.boxes) : null),
     [projection, plan],
   );
   const cashStats = useMemo(
-    () => (projection ? computeCashStats(projection, selectedMonthIndex) : null),
-    [projection, selectedMonthIndex],
+    () => (projection ? computeCashStats(projection, deferredMonthIndex) : null),
+    [projection, deferredMonthIndex],
   );
 
   if (isLoading) {
@@ -72,23 +74,23 @@ export function PlanDashboard() {
     );
   }
 
-  const selectedMonth = projection[selectedMonthIndex];
+  const selectedMonth = projection[deferredMonthIndex];
 
   return (
     <div className="pb-6">
       <PlanHeader plan={plan} totalMonths={projection.length} />
-      <MonthSlider
+      <MonthNavigator
         projection={projection}
-        milestones={milestones ?? []}
         selectedIndex={selectedMonthIndex}
         onChange={setSelectedMonthIndex}
       />
       {kpis && <KpiRow kpis={kpis} />}
+      <MonthBreakdown monthData={selectedMonth} boxes={plan.boxes} />
       <ProjectionChart
         projection={projection}
         boxes={plan.boxes}
         milestones={milestones ?? []}
-        selectedMonthIndex={selectedMonthIndex}
+        selectedMonthIndex={deferredMonthIndex}
         onMonthSelect={setSelectedMonthIndex}
       />
       {plan.boxes.length > 0 && (
@@ -103,7 +105,7 @@ export function PlanDashboard() {
         <CashSection
           projection={projection}
           stats={cashStats}
-          selectedMonthIndex={selectedMonthIndex}
+          selectedMonthIndex={deferredMonthIndex}
         />
       )}
     </div>

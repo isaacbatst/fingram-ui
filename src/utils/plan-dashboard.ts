@@ -95,7 +95,7 @@ export function formatCurrency(value: number): string {
 
 export function formatMonthYear(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+  return date.toLocaleDateString("pt-BR", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 export function getActiveMonthlyAmount(changePoints: ChangePointDTO[], month: number): number {

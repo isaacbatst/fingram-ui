@@ -49,10 +49,14 @@
 
   /* Data Visualization */
   --color-data-1:          #d9af78;
-  --color-data-2:          #7bad6e;
+  --color-data-2:          #4db8a4;
   --color-data-3:          #6a9fba;
   --color-data-4:          #b088c8;
   --color-data-5:          #c45c4a;
+
+  /* Flow chart (distinct from data series to avoid confusion) */
+  --color-flow-income:     #7bad6e;
+  --color-flow-expense:    #d97456;
 
   /* Typography */
   --font-display:          'DM Serif Text', Georgia, serif;
@@ -286,44 +290,3 @@
   100% { background: linear-gradient(90deg, transparent 0%, transparent 100%); }
 }
 
-/* Month slider */
-.month-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(217, 175, 120, 0.08);
-  outline: none;
-}
-
-.month-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: var(--shadow-glow);
-  cursor: pointer;
-}
-
-.month-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: var(--shadow-glow);
-  cursor: pointer;
-  border: none;
-}
-
-.month-slider::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-}
-
-.month-slider::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(217, 175, 120, 0.08);
-}
