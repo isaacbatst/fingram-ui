@@ -18,6 +18,7 @@ type EstratoSelectProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  triggerRef?: React.RefObject<HTMLButtonElement | null>;
 };
 
 export function EstratoSelect({
@@ -25,12 +26,13 @@ export function EstratoSelect({
   onChange,
   placeholder = "Estrato",
   className,
+  triggerRef,
 }: EstratoSelectProps) {
   const { boxes } = useBoxes();
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={className}>
+      <SelectTrigger ref={triggerRef} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

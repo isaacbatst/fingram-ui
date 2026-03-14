@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -15,6 +15,7 @@ import {
 interface DatePickerProps {
   date?: Date
   onDateChange?: (date: Date | undefined) => void
+  onClose?: () => void
   placeholder?: string
   className?: string
 }
@@ -22,10 +23,12 @@ interface DatePickerProps {
 export function DatePicker({
   date,
   onDateChange,
+  onClose,
   placeholder = "Selecione uma data",
   className
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
+  const wasOpen = useRef(false)
 
   const handleSelect = (selectedDate: Date | undefined) => {
     onDateChange?.(selectedDate)
@@ -33,6 +36,13 @@ export function DatePicker({
       setOpen(false)
     }
   }
+
+  useEffect(() => {
+    if (wasOpen.current && !open) {
+      onClose?.()
+    }
+    wasOpen.current = open
+  }, [open, onClose])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

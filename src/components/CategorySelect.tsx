@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -5,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// Tipo local, não precisa importar Category
 
 type CategoryWithType = {
   label: string;
@@ -20,27 +20,34 @@ type CategorySelectProps = {
   currentTransactionType: "income" | "expense";
   className?: string;
   onOpenChange?: (open: boolean) => void;
+  isLoading?: boolean;
 };
 
 export function CategorySelect({
   categories,
   value,
   onChange,
-  // Já não precisamos usar currentTransactionType aqui
-  // pois já fizemos a filtragem em TransactionItem.tsx
-  // mantemos no tipo para compatibilidade da interface
   className = "",
   onOpenChange,
+  isLoading,
 }: CategorySelectProps) {
-  // Se não houver categorias, não renderizar o componente
-  if (categories.length === 0) {
+  if (categories.length === 0 && !isLoading) {
     return null;
   }
+
+  const placeholder = isLoading ? (
+    <span className="flex items-center gap-2 text-muted-foreground">
+      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      Sugerindo categoria...
+    </span>
+  ) : (
+    "Categoria"
+  );
 
   return (
     <Select value={value} onValueChange={onChange} onOpenChange={onOpenChange}>
       <SelectTrigger className={`w-full ${className}`}>
-        <SelectValue placeholder="Categoria" />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {categories.map((category) => (

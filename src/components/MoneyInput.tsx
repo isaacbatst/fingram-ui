@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface MoneyInputProps {
   value: number;
   onChange: (value: number) => void;
+  onNext?: () => void;
   className?: string;
   style?: React.CSSProperties;
   id?: string;
@@ -24,6 +25,7 @@ function formatCents(cents: number): string {
 export function MoneyInput({
   value,
   onChange,
+  onNext,
   className,
   style,
   id,
@@ -32,25 +34,72 @@ export function MoneyInput({
   autoFocus,
 }: MoneyInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const justFocused = useRef(false);
   const cents = Math.round(value * 100);
   const [isFocused, setIsFocused] = useState(false);
+  const [cursorPos, setCursorPos] = useState<number | null>(null);
+  const formatted = formatCents(cents);
+
+  const moveCursorToEnd = useCallback(() => {
+    const len = formatted.length;
+    inputRef.current?.setSelectionRange(len, len);
+    setCursorPos(null);
+  }, [formatted.length]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key >= "0" && e.key <= "9") {
+      if (e.key === "Enter") {
         e.preventDefault();
-        const digit = parseInt(e.key, 10);
-        const newCents = cents * 10 + digit;
-        if (newCents <= MAX_CENTS) {
+        onNext?.();
+        return;
+      }
+
+      const isDigit = e.key >= "0" && e.key <= "9";
+      const isBackspace = e.key === "Backspace";
+      if (!isDigit && !isBackspace) return;
+
+      e.preventDefault();
+
+      if (cursorPos !== null) {
+        // Positional edit: map formatted position to digit index
+        const digits = formatted.replace(/\D/g, "");
+        let digitIndex = 0;
+        for (let i = 0; i < cursorPos; i++) {
+          if (formatted[i] >= "0" && formatted[i] <= "9") digitIndex++;
+        }
+
+        if (isDigit) {
+          const newDigits =
+            digits.slice(0, digitIndex) + e.key + digits.slice(digitIndex);
+          const newCents = parseInt(newDigits, 10);
+          if (newCents <= MAX_CENTS) {
+            onChange(newCents / 100);
+          }
+        } else if (digitIndex > 0) {
+          const newDigits =
+            digits.slice(0, digitIndex - 1) + digits.slice(digitIndex);
+          const newCents = newDigits ? parseInt(newDigits, 10) : 0;
           onChange(newCents / 100);
         }
-      } else if (e.key === "Backspace") {
-        e.preventDefault();
-        const newCents = Math.floor(cents / 10);
-        onChange(newCents / 100);
+      } else {
+        // Default: append/remove from end
+        if (isDigit) {
+          const digit = parseInt(e.key, 10);
+          const newCents = cents * 10 + digit;
+          if (newCents <= MAX_CENTS) {
+            onChange(newCents / 100);
+          }
+        } else {
+          onChange(Math.floor(cents / 10) / 100);
+        }
       }
+
+      setCursorPos(null);
+      requestAnimationFrame(() => {
+        moveCursorToEnd();
+      });
     },
-    [cents, onChange],
+    [cents, formatted, cursorPos, onChange, onNext, moveCursorToEnd],
   );
 
   const handlePaste = useCallback(
@@ -64,9 +113,59 @@ export function MoneyInput({
           onChange(pastedCents / 100);
         }
       }
+      setCursorPos(null);
     },
     [onChange],
   );
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    setCursorPos(null);
+    justFocused.current = true;
+    requestAnimationFrame(() => {
+      moveCursorToEnd();
+    });
+  }, [moveCursorToEnd]);
+
+  const handleClick = useCallback(() => {
+    if (justFocused.current) {
+      justFocused.current = false;
+      return;
+    }
+    requestAnimationFrame(() => {
+      const pos = inputRef.current?.selectionStart ?? null;
+      if (pos !== null && pos < formatted.length) {
+        setCursorPos(pos);
+      } else {
+        setCursorPos(null);
+      }
+    });
+  }, [formatted.length]);
+
+  const cursorSpan = (
+    <span className="inline-block w-[2px] h-[1em] bg-current align-middle ml-px animate-caret-blink" />
+  );
+
+  const renderValue = () => {
+    if (!isFocused) return formatted;
+
+    if (cursorPos !== null && cursorPos <= formatted.length) {
+      return (
+        <>
+          {formatted.slice(0, cursorPos)}
+          {cursorSpan}
+          {formatted.slice(cursorPos)}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {formatted}
+        {cursorSpan}
+      </>
+    );
+  };
 
   return (
     <div
@@ -83,22 +182,23 @@ export function MoneyInput({
         id={id}
         type="text"
         inputMode="numeric"
-        value={cents > 0 ? formatCents(cents) : ""}
+        value={cents > 0 ? formatted : ""}
         onChange={() => {}}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={handleFocus}
+        onBlur={() => {
+          setIsFocused(false);
+          setCursorPos(null);
+        }}
+        onClick={handleClick}
         required={required}
         disabled={disabled}
         autoFocus={autoFocus}
         className="absolute inset-0 w-full h-full opacity-0 cursor-text"
       />
       <span className="block w-full truncate pointer-events-none" aria-hidden="true">
-        {formatCents(cents)}
-        {isFocused && (
-          <span className="hidden md:inline-block w-[2px] h-[1em] bg-current align-middle ml-px animate-caret-blink" />
-        )}
+        {renderValue()}
       </span>
     </div>
   );

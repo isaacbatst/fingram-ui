@@ -21,6 +21,10 @@ const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
 };
 
+const isToday = (date: Date): boolean => {
+  return date.toDateString() === new Date().toDateString();
+};
+
 // ── Types ──
 
 type InputMode = "expense" | "income" | "transfer";
@@ -79,7 +83,7 @@ function ModeSelector({
             key={mode}
             type="button"
             onClick={() => onChange(mode)}
-            className={`relative z-10 flex-1 flex justify-center items-center py-2 px-1 rounded-md text-sm font-medium transition-colors 
+            className={`relative z-10 flex-1 flex justify-center items-center py-2 px-1 rounded-md text-sm font-medium transition-colors
               truncate  duration-200 ${
                 value === mode
                   ? "text-foreground"
@@ -105,6 +109,7 @@ export function InputTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const successTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const dateManuallyChanged = useRef(false);
 
   const flashSuccess = useCallback(() => {
     setShowSuccess(true);
@@ -117,11 +122,17 @@ export function InputTab() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [selectedBoxId, setSelectedBoxId] = useState<string>("");
   const [categorySelectOpened, setCategorySelectOpened] = useState(false);
+  const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const categoryManuallySelected = useRef(false);
 
   // ── Transfer state ──
   const [fromBoxId, setFromBoxId] = useState("");
   const [toBoxId, setToBoxId] = useState("");
+
+  // ── Refs for auto-advance ──
+  const descriptionRef = useRef<HTMLInputElement>(null);
+  const estratoSelectTriggerRef = useRef<HTMLButtonElement>(null);
+  const fromBoxTriggerRef = useRef<HTMLButtonElement>(null);
 
   // ── Hooks ──
   const { createTransaction } = useCreateTransaction();
@@ -138,6 +149,14 @@ export function InputTab() {
       (cat) => cat.transactionType === mode || cat.transactionType === "both",
     ) || [];
 
+  // ── Date change with sticky tracking ──
+  const handleDateChange = useCallback((newDate: Date | undefined) => {
+    setDate(newDate);
+    if (newDate) {
+      dateManuallyChanged.current = !isToday(newDate);
+    }
+  }, []);
+
   // ── AI category suggestion ──
   const handleDescriptionBlur = async () => {
     if (
@@ -148,6 +167,7 @@ export function InputTab() {
     )
       return;
 
+    setIsSuggestingCategory(true);
     try {
       const result = await apiService.suggestCategory({
         description: description.trim(),
@@ -163,6 +183,8 @@ export function InputTab() {
       }
     } catch (error) {
       console.error("Error suggesting category:", error);
+    } finally {
+      setIsSuggestingCategory(false);
     }
   };
 
@@ -181,7 +203,9 @@ export function InputTab() {
   // ── Reset form ──
   const resetForm = () => {
     setAmount(0);
-    setDate(new Date());
+    if (!dateManuallyChanged.current) {
+      setDate(new Date());
+    }
     if (isTransfer) {
       setFromBoxId("");
       setToBoxId("");
@@ -263,6 +287,28 @@ export function InputTab() {
     }
   };
 
+  // ── Auto-advance helpers ──
+  const focusDescription = useCallback(() => {
+    descriptionRef.current?.focus();
+  }, []);
+
+  const focusFirstTransferBox = useCallback(() => {
+    fromBoxTriggerRef.current?.focus();
+  }, []);
+
+  const handleDescriptionKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      descriptionRef.current?.blur();
+    }
+  };
+
+  const focusEstratoSelect = useCallback(() => {
+    estratoSelectTriggerRef.current?.focus();
+  }, []);
+
   return (
     <div>
       {/* 3-option segmented control */}
@@ -278,6 +324,7 @@ export function InputTab() {
             <MoneyInput
               value={amount}
               onChange={setAmount}
+              onNext={isTransfer ? focusFirstTransferBox : focusDescription}
               required
               className="w-full max-w-[240px] bg-transparent! text-center text-3xl font-bold font-mono text-foreground border-0 border-b-2 has-[:focus-visible]:ring-0 rounded-none shadow-none py-2 h-auto"
               style={{ borderColor: activeColor }}
@@ -297,6 +344,7 @@ export function InputTab() {
                   onChange={setFromBoxId}
                   placeholder="Selecione a origem"
                   className="w-full"
+                  triggerRef={fromBoxTriggerRef}
                 />
                 <div className="flex items-center justify-center h-8 w-8 rounded-full border border-[var(--color-accent-border)] mx-auto">
                   <ArrowDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -312,28 +360,37 @@ export function InputTab() {
 
               <DatePicker
                 date={date}
-                onDateChange={setDate}
+                onDateChange={handleDateChange}
                 placeholder="Selecione uma data"
               />
             </>
           ) : (
             <>
               <Input
+                ref={descriptionRef}
                 id="description"
                 type="text"
+                enterKeyHint="next"
                 placeholder="Descrição (ex: Almoço, Salário)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 onBlur={handleDescriptionBlur}
+                onKeyDown={handleDescriptionKeyDown}
                 required
               />
 
-              <DatePicker date={date} onDateChange={setDate} placeholder="Data" />
+              <DatePicker
+                date={date}
+                onDateChange={handleDateChange}
+                onClose={focusEstratoSelect}
+                placeholder="Data"
+              />
               <EstratoSelect
                 value={selectedBoxId}
                 onChange={setSelectedBoxId}
                 placeholder="Selecione o estrato"
                 className="w-full border-[var(--color-accent-border)]"
+                triggerRef={estratoSelectTriggerRef}
               />
 
               <CategorySelect
@@ -346,6 +403,7 @@ export function InputTab() {
                 onChange={handleCategoryChange}
                 currentTransactionType={mode as "expense" | "income"}
                 onOpenChange={handleCategorySelectOpenChange}
+                isLoading={isSuggestingCategory}
               />
             </>
           )}
