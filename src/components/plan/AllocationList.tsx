@@ -30,6 +30,7 @@ export const AllocationList = memo(function AllocationList({ boxes, lastMonth, m
             <AllocationCard
               key={box.id}
               box={box}
+              boxes={boxes}
               lastMonth={lastMonth}
               eta={etaMonth ? { month: etaMonth.month, date: etaMonth.date } : null}
               color={getBoxColor(boxes, box.id)}

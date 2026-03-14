@@ -4,12 +4,13 @@ import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
 
 interface Props {
   box: BoxDTO;
+  boxes: BoxDTO[];
   lastMonth: MonthDataDTO;
   eta: { month: number; date: string } | null;
   color: string;
 }
 
-export function AllocationCard({ box, lastMonth, eta, color }: Props) {
+export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
   const isHoldsFunds = box.holdsFunds;
   const balance = lastMonth.boxes[box.id] ?? 0;
   const progress = box.target > 0 ? Math.min(100, (balance / box.target) * 100) : null;
@@ -94,6 +95,23 @@ export function AllocationCard({ box, lastMonth, eta, color }: Props) {
 
       {/* Financing phase */}
       {financing && <FinancingPhaseIndicator phase={financing.phase} />}
+
+      {/* Scheduled movements */}
+      {box.scheduledMovements.length > 0 && (
+        <div className="mt-[var(--space-sm)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">
+          {box.scheduledMovements.map((sm, i) => (
+            <div key={i} className="font-sans">
+              {sm.type === 'in' ? '↓' : '↑'} {sm.label} — {formatCurrency(sm.amount)}
+              {sm.type === 'out' && (
+                <span> → {sm.destinationBoxId
+                  ? boxes.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa'
+                  : 'Caixa'
+                }</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

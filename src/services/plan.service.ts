@@ -13,12 +13,13 @@ export interface PremisesDTO {
   costOfLivingChangePoints: ChangePointDTO[];
 }
 
-export interface BoxScheduledPaymentDTO {
+export interface BoxScheduledMovementDTO {
   month: number;
   amount: number;
   label: string;
+  type: 'in' | 'out';
+  destinationBoxId?: string;
   additionalToMonthly?: boolean;
-  sourceBoxId?: string;
 }
 
 export interface BoxFinancingDTO {
@@ -39,7 +40,7 @@ export interface BoxDTO {
   holdsFunds: boolean;
   yieldRate?: number;
   financing?: BoxFinancingDTO;
-  scheduledPayments: BoxScheduledPaymentDTO[];
+  scheduledMovements: BoxScheduledMovementDTO[];
 }
 
 export type PlanStatus = "draft" | "active" | "archived";
@@ -78,7 +79,7 @@ export interface MonthDataDTO {
   boxPayments: Record<string, number>;
   boxYields: Record<string, number>;
   totalYield: number;
-  scheduledPayments: { boxId: string; amount: number; label: string }[];
+  scheduledMovements: { boxId: string; amount: number; label: string; type: 'in' | 'out'; destinationBoxId?: string }[];
   totalWealth: number;
   totalCommitted: number;
   financingDetails: Record<string, FinancingMonthDetailDTO>;
