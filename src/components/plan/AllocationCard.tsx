@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import type { BoxDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
 import { formatCurrency, formatMonthYear, getActiveMonthlyAmount } from "@/utils/plan-dashboard";
 import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
@@ -98,18 +99,40 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
 
       {/* Scheduled movements */}
       {box.scheduledMovements.length > 0 && (
-        <div className="mt-[var(--space-sm)] text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">
-          {box.scheduledMovements.map((sm, i) => (
-            <div key={i} className="font-sans">
-              {sm.type === 'in' ? '↓' : '↑'} {sm.label} — {formatCurrency(sm.amount)}
-              {sm.type === 'out' && (
-                <span> → {sm.destinationBoxId
-                  ? boxes.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa'
-                  : 'Caixa'
-                }</span>
-              )}
-            </div>
-          ))}
+        <div className="mt-3 pt-2.5 border-t border-[var(--color-border-subtle)] flex flex-col gap-2">
+          {box.scheduledMovements.map((sm, i) => {
+            const isIn = sm.type === 'in';
+            const dotColor = isIn ? 'var(--color-success)' : 'var(--color-text-secondary)';
+            const destination = sm.type === 'out'
+              ? (sm.destinationBoxId ? boxes.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa' : 'Caixa')
+              : null;
+            return (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="w-1 h-1 rounded-full shrink-0"
+                    style={{ background: dotColor }}
+                  />
+                  <span className="font-mono text-[11px] text-[var(--color-text-muted)]">Mês {sm.month}</span>
+                  <span className="font-sans text-[11px] text-[var(--color-text-secondary)] truncate">
+                    {sm.label}
+                    {destination && (
+                      <span className="text-[var(--color-text-muted)]">
+                        <ArrowRight className="inline w-2.5 h-2.5 align-middle -mt-px mx-1" />
+                        {destination}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <span
+                  className="font-mono text-[11px] shrink-0"
+                  style={{ color: isIn ? 'var(--color-success)' : 'var(--color-text-secondary)' }}
+                >
+                  {isIn ? '+' : '−'}{formatCurrency(sm.amount)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -49,7 +49,7 @@ export function PlanDashboard() {
   if (error) {
     return (
       <ErrorDisplay
-        error={error.message ?? "Erro ao carregar plano"}
+        error="Erro ao carregar plano"
         onRetry={() => window.location.reload()}
         className="my-8"
       />
@@ -84,12 +84,12 @@ export function PlanDashboard() {
         selectedIndex={selectedMonthIndex}
         onChange={setSelectedMonthIndex}
       />
-      {kpis && <KpiRow kpis={kpis} />}
       <MonthBreakdown monthData={selectedMonth} boxes={plan.boxes} />
+      {kpis && <KpiRow kpis={kpis} />}
       <ProjectionChart
         projection={projection}
         boxes={plan.boxes}
-        milestones={milestones ?? []}
+        planMilestones={plan.milestones}
         selectedMonthIndex={deferredMonthIndex}
         onMonthSelect={setSelectedMonthIndex}
       />

@@ -12,8 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import type { BoxDTO, MonthDataDTO } from "@/services/plan.service";
-import type { DerivedMilestone } from "@/utils/plan-dashboard";
+import type { BoxDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
 import { formatCompactCurrency, formatCurrency } from "@/utils/plan-dashboard";
 
 import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
@@ -23,12 +22,12 @@ type ChartView = "trajectory" | "flow";
 interface Props {
   projection: MonthDataDTO[];
   boxes: BoxDTO[];
-  milestones: DerivedMilestone[];
+  planMilestones: PlanDTO["milestones"];
   selectedMonthIndex: number;
   onMonthSelect: (index: number) => void;
 }
 
-export const ProjectionChart = memo(function ProjectionChart({ projection, boxes, milestones, selectedMonthIndex, onMonthSelect }: Props) {
+export const ProjectionChart = memo(function ProjectionChart({ projection, boxes, planMilestones, selectedMonthIndex, onMonthSelect }: Props) {
   const [view, setView] = useState<ChartView>("trajectory");
 
   const RANGE_PRESETS = [
@@ -79,6 +78,8 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
     return { flowData, flowDomain: [-flowYMax, flowYMax] as [number, number] };
   }, [visibleProjection]);
 
+  const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
+
   const selectedMonth = projection[selectedMonthIndex]?.month ?? 0;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,6 +90,18 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
     const idx = projection.findIndex((m) => m.month === month);
     if (idx >= 0) onMonthSelect(idx);
   }, [projection, onMonthSelect]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChartMouseMove = useCallback((data: any) => {
+    const month = data?.activePayload?.[0]?.payload?.month
+      ?? (typeof data?.activeLabel === "number" ? data.activeLabel : undefined);
+    setHoveredMonth(typeof month === "number" ? month : null);
+  }, []);
+
+  const handleChartMouseLeave = useCallback(() => setHoveredMonth(null), []);
+
+  const activeMonth = hoveredMonth ?? selectedMonth;
+  const activeMilestone = planMilestones.find((m) => m.month === activeMonth);
 
   const formatXTick = (month: number) => `M${month}`;
 
@@ -137,7 +150,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
         <ResponsiveContainer width="100%" height={180}>
           {view === "trajectory" ? (
-            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
+            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -161,21 +174,18 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
                   fontSize: 11,
                   fontFamily: "var(--font-mono-family)",
                 }}
-                labelFormatter={(month) => `Mês ${month}`}
+                labelFormatter={(month) => {
+                  const milestone = planMilestones.find((m) => m.month === month);
+                  return milestone ? `Mês ${month} — ${milestone.label}` : `Mês ${month}`;
+                }}
                 formatter={(value) => formatCurrency(Number(value))}
               />
-              {milestones.map((m) => (
+              {planMilestones.map((m, i) => (
                 <ReferenceLine
-                  key={m.boxId}
+                  key={`plan-${i}`}
                   x={m.month}
                   stroke="var(--color-accent-border)"
-                  strokeDasharray="3 3"
-                  label={{
-                    value: m.label,
-                    position: "top",
-                    fontSize: 9,
-                    fill: "var(--color-accent)",
-                  }}
+                  strokeDasharray="2 4"
                 />
               ))}
               <ReferenceLine
@@ -285,6 +295,16 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
           </span>
         </div>
       )}
+
+      {/* Milestone label on hover/select */}
+      <div className="h-5 mt-1">
+        {activeMilestone && (
+          <div className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-accent)]">
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)]">Mês {activeMilestone.month}</span>
+            <span>{activeMilestone.label}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
