@@ -5,13 +5,14 @@ import { MoneyInput } from "@/components/MoneyInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { useTransfer } from "@/hooks/useTransfer";
 import { format } from "date-fns";
-import { ArrowDown } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowDown, Check } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ── Helpers ──
@@ -102,6 +103,14 @@ export function InputTab() {
   const [amount, setAmount] = useState(0);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const flashSuccess = useCallback(() => {
+    setShowSuccess(true);
+    clearTimeout(successTimeoutRef.current);
+    successTimeoutRef.current = setTimeout(() => setShowSuccess(false), 600);
+  }, []);
 
   // ── Transaction state (expense / income) ──
   const [description, setDescription] = useState("");
@@ -216,6 +225,7 @@ export function InputTab() {
           date: getISODateString(date),
         });
         if (result) {
+          flashSuccess();
           resetForm();
         }
       } finally {
@@ -241,6 +251,7 @@ export function InputTab() {
         if (result.error) {
           toast.error(result.error);
         } else {
+          flashSuccess();
           resetForm();
         }
       } catch (error) {
@@ -344,14 +355,21 @@ export function InputTab() {
         <div className="pt-5">
           <Button
             type="submit"
-            className="w-full bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+            className={cn(
+              "w-full border transition-colors duration-200",
+              showSuccess
+                ? "bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-success-border)]"
+                : "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80",
+            )}
             disabled={isSubmitting}
           >
-            {isSubmitting
-              ? isTransfer
-                ? "Transferindo..."
-                : "Registrando..."
-              : MODE_CONFIG[mode].cta}
+            {showSuccess ? (
+              <Check className="h-5 w-5" />
+            ) : isSubmitting ? (
+              isTransfer ? "Transferindo..." : "Registrando..."
+            ) : (
+              MODE_CONFIG[mode].cta
+            )}
           </Button>
         </div>
       </form>
