@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Area, AreaChart, ReferenceLine, ResponsiveContainer, XAxis } from "recharts";
 import type { MonthDataDTO } from "@/services/plan.service";
 import { formatCurrency } from "@/utils/plan-dashboard";
@@ -9,8 +10,8 @@ interface Props {
   selectedMonthIndex: number;
 }
 
-export function CashSection({ projection, stats, selectedMonthIndex }: Props) {
-  const sparkData = projection.map((m) => ({ month: m.month, cash: m.cash }));
+export const CashSection = memo(function CashSection({ projection, stats, selectedMonthIndex }: Props) {
+  const sparkData = useMemo(() => projection.map((m) => ({ month: m.month, cash: m.cash })), [projection]);
   const selectedMonth = projection[selectedMonthIndex]?.month ?? 0;
   const isNegative = stats.currentCash < 0;
 
@@ -66,4 +67,4 @@ export function CashSection({ projection, stats, selectedMonthIndex }: Props) {
       </div>
     </div>
   );
-}
+});
