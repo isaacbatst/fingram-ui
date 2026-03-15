@@ -7,6 +7,7 @@ import type { TransactionsParams } from "@/hooks/useTransactions";
 import type {
   ApiService,
   Budget,
+  BudgetCeilingData,
   SetBudgetsResponse,
   EditTransactionRequest,
   EditTransactionResponse,
@@ -203,6 +204,11 @@ export class StandaloneApiService implements ApiService {
       console.error("Erro ao definir dia de início do orçamento:", error);
       return { error: "Erro ao definir dia de início do orçamento" };
     }
+  }
+
+  async getBudgetCeiling(): Promise<BudgetCeilingData> {
+    const response = await this.makeRequest('/budget-ceiling');
+    return response.json();
   }
 
   async getBudgetStartDay(): Promise<GetBudgetStartDayResponse> {

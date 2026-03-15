@@ -104,6 +104,13 @@ export interface SuggestCategoryResponse {
   error?: string;
 }
 
+export interface BudgetCeilingData {
+  ceiling: number | null;
+  allocated: number;
+  buffer: number | null;
+  overBudget: boolean;
+}
+
 export interface ApiService {
   // Auth
   isAuthenticated(): boolean;
@@ -112,6 +119,7 @@ export interface ApiService {
   // Summary
   getSummary(): Promise<SummaryData>;
   getBudgetSummary(year?: number, month?: number): Promise<BudgetSummaryData>;
+  getBudgetCeiling(): Promise<BudgetCeilingData>;
 
   // Categories
   getCategories(): Promise<Category[]>;
