@@ -1,5 +1,6 @@
 import { memo } from "react";
 import type { AllocationDTO, MonthDataDTO } from "@/services/plan.service";
+import type { BoxDTO } from "@/services/api.interface";
 import type { DerivedMilestone } from "@/utils/plan-dashboard";
 import { getBoxColor } from "@/utils/box-colors";
 import { AllocationCard } from "./AllocationCard";
@@ -9,9 +10,11 @@ interface Props {
   lastMonth: MonthDataDTO;
   milestones: DerivedMilestone[];
   projection: MonthDataDTO[];
+  planId: string;
+  savingBoxes: BoxDTO[];
 }
 
-export const AllocationList = memo(function AllocationList({ allocations, lastMonth, milestones, projection }: Props) {
+export const AllocationList = memo(function AllocationList({ allocations, lastMonth, milestones, projection, planId, savingBoxes }: Props) {
   return (
     <div>
       <div className="flex justify-between items-baseline mb-3">
@@ -34,6 +37,8 @@ export const AllocationList = memo(function AllocationList({ allocations, lastMo
               lastMonth={lastMonth}
               eta={etaMonth ? { month: etaMonth.month, date: etaMonth.date } : null}
               color={getBoxColor(allocations, allocation.id)}
+              planId={planId}
+              savingBoxes={savingBoxes}
             />
           );
         })}

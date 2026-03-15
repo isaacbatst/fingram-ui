@@ -2,6 +2,7 @@ import { useState, useMemo, useDeferredValue } from "react";
 import { usePlans } from "@/hooks/usePlans";
 import { usePlan } from "@/hooks/usePlan";
 import { useProjection } from "@/hooks/useProjection";
+import { useBoxes } from "@/hooks/useBoxes";
 import { computeKpis, computeMilestones, computeCashStats } from "@/utils/plan-dashboard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
@@ -22,6 +23,8 @@ export function PlanDashboard() {
 
   const { plan, error: planError, isLoading: planLoading } = usePlan(planId);
   const { projection, error: projError, isLoading: projLoading } = useProjection(planId);
+  const { boxes } = useBoxes();
+  const savingBoxes = useMemo(() => (boxes ?? []).filter((b) => b.type === 'saving'), [boxes]);
 
   const isLoading = plansLoading || planLoading || projLoading;
   const error = plansError || planError || projError;
@@ -99,6 +102,8 @@ export function PlanDashboard() {
           lastMonth={selectedMonth}
           milestones={milestones ?? []}
           projection={projection}
+          planId={plan.id}
+          savingBoxes={savingBoxes}
         />
       )}
       {cashStats && (

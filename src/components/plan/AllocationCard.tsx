@@ -1,7 +1,16 @@
 import { ArrowRight } from "lucide-react";
 import type { AllocationDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
+import type { BoxDTO } from "@/services/api.interface";
 import { formatCurrency, formatMonthYear, getActiveMonthlyAmount } from "@/utils/plan-dashboard";
 import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
+import { useBindAllocation } from "@/hooks/useBindAllocation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   allocation: AllocationDTO;
@@ -9,15 +18,28 @@ interface Props {
   lastMonth: MonthDataDTO;
   eta: { month: number; date: string } | null;
   color: string;
+  planId: string;
+  savingBoxes: BoxDTO[];
 }
 
-export function AllocationCard({ allocation, allocations, lastMonth, eta, color }: Props) {
+export function AllocationCard({ allocation, allocations, lastMonth, eta, color, planId, savingBoxes }: Props) {
   const isHoldsFunds = allocation.holdsFunds;
   const balance = lastMonth.allocations[allocation.id] ?? 0;
   const progress = allocation.target > 0 ? Math.min(100, (balance / allocation.target) * 100) : null;
   const financing: FinancingMonthDetailDTO | undefined = lastMonth.financingDetails[allocation.id];
   const currentMonthly = getActiveMonthlyAmount(allocation.monthlyAmount, lastMonth.month);
   const isComplete = allocation.target > 0 && balance >= allocation.target;
+
+  const { bind, isLoading: bindLoading } = useBindAllocation(planId);
+
+  const linkedBox = isHoldsFunds && allocation.estratoId
+    ? savingBoxes.find((b) => b.id === allocation.estratoId)
+    : null;
+
+  function handleSelectChange(value: string) {
+    const estratoId = value === '__none__' ? null : value;
+    bind(allocation.id, estratoId);
+  }
 
   return (
     <div
@@ -92,12 +114,38 @@ export function AllocationCard({ allocation, allocations, lastMonth, eta, color 
       {/* Financing phase */}
       {financing && <FinancingPhaseIndicator phase={financing.phase} />}
 
-      {/* Reserva binding badge */}
-      {isHoldsFunds && allocation.estratoId && (
-        <div className="mt-2">
-          <span className="font-sans text-[9px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)]">
-            Vinculado
+      {/* Reserva binding selector */}
+      {isHoldsFunds && (
+        <div className="mt-2.5 pt-2.5 border-t border-[var(--color-border-subtle)]">
+          <span className="font-sans text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 block">
+            Estrato vinculado
           </span>
+          <Select
+            value={allocation.estratoId ?? '__none__'}
+            onValueChange={handleSelectChange}
+            disabled={bindLoading}
+          >
+            <SelectTrigger
+              size="sm"
+              className="w-full font-sans text-xs min-h-[44px] border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)]"
+            >
+              <SelectValue placeholder="Vincular estrato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">
+                <span className="text-[var(--color-text-muted)] italic">Sem vínculo</span>
+              </SelectItem>
+              {savingBoxes.map((box) => (
+                <SelectItem key={box.id} value={box.id}>
+                  {linkedBox?.id === box.id ? (
+                    <span className="font-medium">{box.name}</span>
+                  ) : (
+                    box.name
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 

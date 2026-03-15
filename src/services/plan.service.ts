@@ -145,4 +145,12 @@ export const planService = {
   deletePlan(id: string): Promise<{ success: boolean }> {
     return request(`/${id}`, { method: "DELETE" }, "Erro ao excluir plano");
   },
+
+  bindAllocation(planId: string, allocationId: string, estratoId: string | null): Promise<AllocationDTO> {
+    return request(
+      `/${planId}/allocations/${allocationId}`,
+      { method: "PATCH", body: JSON.stringify({ estratoId }) },
+      "Erro ao vincular estrato",
+    );
+  },
 };
