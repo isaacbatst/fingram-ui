@@ -46,17 +46,42 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
     [projection, rangeMonths],
   );
 
+  // Find the boundary month between real (past) and projected (future) data
+  const todayBoundaryMonth = useMemo(() => {
+    const lastRealIndex = visibleProjection.reduce<number>(
+      (acc, m, i) => (m.isReal ? i : acc),
+      -1,
+    );
+    if (lastRealIndex < 0) return null;
+    return visibleProjection[lastRealIndex].month;
+  }, [visibleProjection]);
+
   const trajectoryData = useMemo(() => visibleProjection.map((m) => {
-    const row: Record<string, number> = { month: m.month, Disponível: m.cash };
+    // For the past segment: only include values for real months, null for future
+    // For the future segment: only include values for projected months, but include the
+    // boundary real month so the two segments connect visually
+    const isPast = m.isReal;
+    const isBoundary = m.month === todayBoundaryMonth;
+    const row: Record<string, number | null> = {
+      month: m.month,
+      isReal: m.isReal ? 1 : 0,
+      // Past data key: solid line (real months + boundary)
+      'Disponível': isPast ? m.cash : null,
+      // Future data key: dashed line (projected months + boundary for connection)
+      'Disponível (projeção)': (!isPast || isBoundary) ? m.cash : null,
+    };
     holdsFundsAllocations.forEach((allocation) => {
-      row[allocation.label] = m.allocations[allocation.id] ?? 0;
+      const val = m.allocations[allocation.id] ?? 0;
+      row[allocation.label] = isPast ? val : null;
+      row[`${allocation.label} (projeção)`] = (!isPast || isBoundary) ? val : null;
     });
     return row;
-  }), [visibleProjection, holdsFundsAllocations]);
+  }), [visibleProjection, holdsFundsAllocations, todayBoundaryMonth]);
 
   const { flowData, flowDomain } = useMemo(() => {
     const flowDataRaw = visibleProjection.map((m) => ({
       month: m.month,
+      isReal: m.isReal ? 1 : 0,
       income: m.income,
       outflow: -(m.costOfLiving + Object.values(m.allocationPayments).reduce((s, v) => s + v, 0)),
     }));
@@ -69,6 +94,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
     const flowData = flowDataRaw.map((d) => ({
       month: d.month,
+      isReal: d.isReal,
       income: d.income,
       outflow: d.outflow,
       incomeClipped: Math.min(d.income, flowYMax),
@@ -174,11 +200,18 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   fontSize: 11,
                   fontFamily: "var(--font-mono-family)",
                 }}
-                labelFormatter={(month) => {
+                labelFormatter={(month, payload) => {
                   const milestone = planMilestones.find((m) => m.month === month);
-                  return milestone ? `Mês ${month} — ${milestone.label}` : `Mês ${month}`;
+                  const isRealMonth = payload?.[0]?.payload?.isReal === 1;
+                  const dataLabel = isRealMonth ? "Dados reais" : "Projeção";
+                  const base = milestone ? `Mês ${month} — ${milestone.label}` : `Mês ${month}`;
+                  return `${base} · ${dataLabel}`;
                 }}
-                formatter={(value) => formatCurrency(Number(value))}
+                formatter={(value, name) => {
+                  // Hide projected duplicate keys from tooltip — only show real or projected, not both
+                  if (String(name).endsWith(' (projeção)')) return [null, null];
+                  return [formatCurrency(Number(value)), name];
+                }}
               />
               {planMilestones.map((m, i) => (
                 <ReferenceLine
@@ -188,12 +221,29 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   strokeDasharray="2 4"
                 />
               ))}
+              {/* Hoje marker at the real/projected boundary */}
+              {todayBoundaryMonth !== null && (
+                <ReferenceLine
+                  x={todayBoundaryMonth}
+                  stroke="var(--color-text-muted)"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  label={{
+                    value: "Hoje",
+                    position: "insideTopRight",
+                    fontSize: 9,
+                    fill: "var(--color-text-muted)",
+                    fontFamily: "var(--font-mono-family)",
+                  }}
+                />
+              )}
               <ReferenceLine
                 x={selectedMonth}
                 stroke="var(--color-accent)"
                 strokeWidth={1}
                 strokeDasharray="4 4"
               />
+              {/* Past (real) — solid, full opacity */}
               <Area
                 type="monotone"
                 dataKey="Disponível"
@@ -201,10 +251,24 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 strokeWidth={1.5}
                 fill={DATA_COLORS[0]}
                 fillOpacity={0.15}
+                connectNulls={false}
               />
-              {holdsFundsAllocations.map((allocation) => {
+              {/* Future (projected) — dashed, reduced opacity */}
+              <Area
+                type="monotone"
+                dataKey="Disponível (projeção)"
+                stroke={DATA_COLORS[0]}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                strokeOpacity={0.5}
+                fill={DATA_COLORS[0]}
+                fillOpacity={0.05}
+                connectNulls={false}
+                legendType="none"
+              />
+              {holdsFundsAllocations.flatMap((allocation) => {
                 const color = getBoxColor(allocations, allocation.id);
-                return (
+                return [
                   <Area
                     key={allocation.id}
                     type="monotone"
@@ -213,8 +277,22 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                     strokeWidth={1}
                     fill={color}
                     fillOpacity={0.15}
-                  />
-                );
+                    connectNulls={false}
+                  />,
+                  <Area
+                    key={`${allocation.id}-proj`}
+                    type="monotone"
+                    dataKey={`${allocation.label} (projeção)`}
+                    stroke={color}
+                    strokeWidth={1}
+                    strokeDasharray="4 3"
+                    strokeOpacity={0.4}
+                    fill={color}
+                    fillOpacity={0.04}
+                    connectNulls={false}
+                    legendType="none"
+                  />,
+                ];
               })}
             </AreaChart>
           ) : (
@@ -235,6 +313,22 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 tickLine={false}
               />
               <ReferenceLine y={0} stroke="var(--color-border-subtle)" />
+              {/* Hoje marker at the real/projected boundary */}
+              {todayBoundaryMonth !== null && (
+                <ReferenceLine
+                  x={todayBoundaryMonth}
+                  stroke="var(--color-text-muted)"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                  label={{
+                    value: "Hoje",
+                    position: "insideTopRight",
+                    fontSize: 9,
+                    fill: "var(--color-text-muted)",
+                    fontFamily: "var(--font-mono-family)",
+                  }}
+                />
+              )}
               <ReferenceLine
                 x={selectedMonth}
                 stroke="var(--color-accent)"
@@ -249,7 +343,11 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   fontSize: 11,
                   fontFamily: "var(--font-mono-family)",
                 }}
-                labelFormatter={(month) => `Mês ${month}`}
+                labelFormatter={(month, payload) => {
+                  const isRealMonth = payload?.[0]?.payload?.isReal === 1;
+                  const dataLabel = isRealMonth ? "Dados reais" : "Projeção";
+                  return `Mês ${month} · ${dataLabel}`;
+                }}
                 formatter={(_value, name, item) => {
                   const key = name as string;
                   const label = key === "incomeClipped" ? "Receita" : "Despesa";

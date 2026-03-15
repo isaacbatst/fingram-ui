@@ -11,6 +11,7 @@ import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/pla
 function buildMonth(overrides: Partial<MonthDataDTO> & { month: number }): MonthDataDTO {
   return {
     date: "2026-01-01T00:00:00.000Z",
+    isReal: false,
     income: 0,
     costOfLiving: 0,
     surplus: 0,

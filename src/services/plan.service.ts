@@ -72,6 +72,7 @@ export interface FinancingMonthDetailDTO {
 export interface MonthDataDTO {
   month: number;
   date: string;
+  isReal: boolean;
   income: number;
   costOfLiving: number;
   surplus: number;
