@@ -30,8 +30,7 @@ export const useBudgets = () => {
         return { success: true };
       } catch (error) {
         console.error("Erro ao definir orçamentos:", error);
-        const errorMessage = error instanceof Error ? error.message : "Erro interno";
-        return { error: errorMessage };
+        return { error: "Erro ao definir orçamentos" };
       }
     },
     [apiService, isAuthenticated]

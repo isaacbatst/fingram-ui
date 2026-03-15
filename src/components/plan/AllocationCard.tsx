@@ -33,12 +33,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
             className="w-[3px] h-7 rounded-sm shrink-0"
             style={{ background: color }}
           />
-          <div>
-            <div className="font-display text-sm text-foreground leading-tight">{box.label}</div>
-            <div className="font-sans text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mt-px">
-              {isHoldsFunds ? "Reservado para você" : "Pago a terceiros"}
-            </div>
-          </div>
+          <div className="font-display text-sm text-foreground leading-tight">{box.label}</div>
         </div>
         <span
           className="font-sans text-[9px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded-full border"
@@ -48,7 +43,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
             borderColor: `color-mix(in srgb, ${color} 20%, transparent)`,
           }}
         >
-          {isHoldsFunds ? "Acúmulo" : "Pagamento"}
+          {isHoldsFunds ? "Reservado" : "Pago"}
         </span>
       </div>
 
@@ -102,7 +97,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
         <div className="mt-3 pt-2.5 border-t border-[var(--color-border-subtle)] flex flex-col gap-2">
           {box.scheduledMovements.map((sm, i) => {
             const isIn = sm.type === 'in';
-            const dotColor = isIn ? 'var(--color-success)' : 'var(--color-text-secondary)';
+            const dotColor = isIn ? 'var(--color-success)' : 'var(--color-danger)';
             const destination = sm.type === 'out'
               ? (sm.destinationBoxId ? boxes.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa' : 'Caixa')
               : null;

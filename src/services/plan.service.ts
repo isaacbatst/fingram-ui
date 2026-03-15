@@ -96,6 +96,7 @@ export interface CreatePlanRequest {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
+  errorMessage = "Erro ao processar requisição",
 ): Promise<T> {
   const url = `${API_BASE_URL}/plans${endpoint}`;
 
@@ -109,12 +110,11 @@ async function request<T>(
   });
 
   if (response.status === 401) {
-    throw new Error("Token de acesso invalido ou expirado.");
+    throw new Error("Sessão expirada. Faça login novamente.");
   }
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || `Erro ${response.status}`);
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -122,25 +122,26 @@ async function request<T>(
 
 export const planService = {
   getPlans(): Promise<PlanDTO[]> {
-    return request("");
+    return request("", {}, "Erro ao carregar planos");
   },
 
   getPlan(id: string): Promise<PlanDTO> {
-    return request(`/${id}`);
+    return request(`/${id}`, {}, "Erro ao carregar plano");
   },
 
   createPlan(data: CreatePlanRequest): Promise<PlanDTO> {
-    return request("", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    return request(
+      "",
+      { method: "POST", body: JSON.stringify(data) },
+      "Erro ao criar plano",
+    );
   },
 
   getProjection(planId: string): Promise<MonthDataDTO[]> {
-    return request(`/${planId}/projection`);
+    return request(`/${planId}/projection`, {}, "Erro ao calcular projeção");
   },
 
   deletePlan(id: string): Promise<{ success: boolean }> {
-    return request(`/${id}`, { method: "DELETE" });
+    return request(`/${id}`, { method: "DELETE" }, "Erro ao excluir plano");
   },
 };

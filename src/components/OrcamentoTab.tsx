@@ -239,7 +239,7 @@ export function OrcamentoTab() {
 
       {/* Error */}
       {error && (
-        <ErrorDisplay error={error.message} onRetry={mutate} className="my-4" />
+        <ErrorDisplay error="Erro ao carregar orçamentos" onRetry={mutate} className="my-4" />
       )}
 
       {/* Main content */}

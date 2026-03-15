@@ -309,7 +309,7 @@ export function EstratosTab() {
   if (error) {
     return (
       <ErrorDisplay
-        error={error.message}
+        error="Erro ao carregar estratos"
         onRetry={mutateBoxes}
         className="my-4"
       />

@@ -24,9 +24,7 @@ export function useCreateTransaction() {
         return result;
       } catch (error) {
         console.error("Erro ao criar transação:", error);
-        return { 
-          error: error instanceof Error ? error.message : "Erro ao criar transação" 
-        };
+        return { error: "Erro ao criar transação" };
       }
     },
     [apiService, isAuthenticated]

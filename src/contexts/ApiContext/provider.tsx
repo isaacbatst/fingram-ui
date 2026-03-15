@@ -54,8 +54,7 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || `Erro ${response.status}`);
+          throw new Error("Token de acesso inválido. Verifique o token e tente novamente.");
         }
 
         // Authentication successful - cookie is set by server
@@ -63,11 +62,12 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
         setIsLoading(false);
       } catch (error) {
         console.error("Error during vault authentication:", error);
-        setError(
-          "Token de acesso inválido. Verifique o token e tente novamente."
-        );
+        const message = error instanceof Error
+          ? error.message
+          : "Token de acesso inválido. Verifique o token e tente novamente.";
+        setError(message);
         setIsLoading(false);
-        throw error;
+        throw new Error(message);
       }
     },
     []
@@ -91,8 +91,7 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Erro ${response.status}`);
+        throw new Error("Token temporário inválido ou expirado. Gere um novo link no bot.");
       }
 
       // Authentication successful - cookie is set by server
@@ -101,12 +100,13 @@ export const ApiProvider = ({ children }: PropsWithChildren) => {
       setPendingTempToken(null); // Clear pending token after successful authentication
     } catch (error) {
       console.error("Error during temp token authentication:", error);
-      setError(
-        "Token temporário inválido ou expirado. Gere um novo link no bot."
-      );
+      const message = error instanceof Error
+        ? error.message
+        : "Token temporário inválido ou expirado. Gere um novo link no bot.";
+      setError(message);
       setIsLoading(false);
       setPendingTempToken(null); // Clear pending token on error
-      throw error;
+      throw new Error(message);
     }
   }, []);
 

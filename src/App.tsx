@@ -100,7 +100,7 @@ function AppContent() {
         <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
           {summary.error ? (
             <ErrorDisplay
-              error={summary.error.message}
+              error="Erro ao carregar dados"
               onRetry={summary.mutate}
               className="my-4"
             />
@@ -218,16 +218,19 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorDisplay
-          error={`${error.message} ${error.stack}`}
-          onRetry={() => {
-            resetErrorBoundary();
-            window.location.reload();
-          }}
-          className="max-w-md mx-auto mt-10"
-        />
-      )}
+      fallbackRender={({ error, resetErrorBoundary }) => {
+        console.error("Unhandled error:", error);
+        return (
+          <ErrorDisplay
+            error="Algo deu errado. Tente recarregar a página."
+            onRetry={() => {
+              resetErrorBoundary();
+              window.location.reload();
+            }}
+            className="max-w-md mx-auto mt-10"
+          />
+        );
+      }}
     >
       <StorageProvider>
         <ApiProvider>

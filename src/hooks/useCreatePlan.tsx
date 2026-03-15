@@ -12,10 +12,8 @@ export function useCreatePlan() {
       const plan = await planService.createPlan(data);
       mutate("plans");
       return plan;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro ao criar plano";
-      toast.error(message);
+    } catch {
+      toast.error("Erro ao criar plano");
       return null;
     } finally {
       setIsLoading(false);

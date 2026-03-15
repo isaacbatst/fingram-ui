@@ -25,8 +25,8 @@ export function VaultAccessTokenInput() {
 
     try {
       await authenticateWithVaultToken(accessToken.trim());
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Erro ao autenticar");
+    } catch {
+      setError("Token de acesso inválido. Verifique o token e tente novamente.");
     } finally {
       setIsLoading(false);
     }

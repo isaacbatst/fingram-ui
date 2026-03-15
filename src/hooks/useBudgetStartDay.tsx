@@ -36,8 +36,7 @@ export function useBudgetStartDay() {
         return { success: true };
       } catch (error) {
         console.error("Erro ao definir dia de início do orçamento:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Erro interno";
+        const errorMessage = "Erro ao definir dia de início do orçamento";
         toast.error(errorMessage);
         return { success: false, error: errorMessage };
       }

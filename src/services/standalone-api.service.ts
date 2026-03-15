@@ -68,8 +68,7 @@ export class StandaloneApiService implements ApiService {
     }
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `Erro ${response.status}`);
+      throw new Error("Erro ao conectar com o servidor");
     }
 
     return response;

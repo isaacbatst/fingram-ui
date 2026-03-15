@@ -30,14 +30,12 @@ export function CreateVaultDialog() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Erro ${response.status}`);
+        throw new Error("Erro ao criar o Duna");
       }
 
       await refreshAuth();
-    } catch (error) {
-      console.error("Error creating vault:", error);
-      setError(error instanceof Error ? error.message : "Erro ao criar o Duna");
+    } catch {
+      setError("Erro ao criar o Duna. Tente novamente.");
     } finally {
       setIsLoading(false);
     }

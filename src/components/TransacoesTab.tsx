@@ -318,10 +318,8 @@ export function TransacoesTab({
       }
       await invalidateAll();
       setSelectedTx(null);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao editar transação",
-      );
+    } catch {
+      toast.error("Erro ao editar transação");
     } finally {
       setIsSaving(false);
     }
@@ -606,7 +604,7 @@ export function TransacoesTab({
           <LoadingSpinner />
         ) : error ? (
           <ErrorDisplay
-            error={error.message}
+            error="Erro ao carregar transações"
             onRetry={mutateTransactions}
             className="my-4"
           />

@@ -24,7 +24,7 @@
   /* Text */
   --color-text:            #f0e8dc;
   --color-text-secondary:  rgba(240, 232, 220, 0.55);
-  --color-text-muted:      rgba(240, 232, 220, 0.22);
+  --color-text-muted:      rgba(240, 232, 220, 0.50);
 
   /* Accent (Ouro Terroso) */
   --color-accent:          #d9af78;
@@ -50,9 +50,9 @@
   /* Data Visualization */
   --color-data-1:          #d9af78;
   --color-data-2:          #4db8a4;
-  --color-data-3:          #6a9fba;
+  --color-data-3:          #e09572;
   --color-data-4:          #b088c8;
-  --color-data-5:          #c45c4a;
+  --color-data-5:          #7b88b0;
 
   /* Flow chart (distinct from data series to avoid confusion) */
   --color-flow-income:     #7bad6e;
