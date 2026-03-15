@@ -1,23 +1,23 @@
 import { ArrowRight } from "lucide-react";
-import type { BoxDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
+import type { AllocationDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
 import { formatCurrency, formatMonthYear, getActiveMonthlyAmount } from "@/utils/plan-dashboard";
 import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
 
 interface Props {
-  box: BoxDTO;
-  boxes: BoxDTO[];
+  allocation: AllocationDTO;
+  allocations: AllocationDTO[];
   lastMonth: MonthDataDTO;
   eta: { month: number; date: string } | null;
   color: string;
 }
 
-export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
-  const isHoldsFunds = box.holdsFunds;
-  const balance = lastMonth.boxes[box.id] ?? 0;
-  const progress = box.target > 0 ? Math.min(100, (balance / box.target) * 100) : null;
-  const financing: FinancingMonthDetailDTO | undefined = lastMonth.financingDetails[box.id];
-  const currentMonthly = getActiveMonthlyAmount(box.monthlyAmount, lastMonth.month);
-  const isComplete = box.target > 0 && balance >= box.target;
+export function AllocationCard({ allocation, allocations, lastMonth, eta, color }: Props) {
+  const isHoldsFunds = allocation.holdsFunds;
+  const balance = lastMonth.allocations[allocation.id] ?? 0;
+  const progress = allocation.target > 0 ? Math.min(100, (balance / allocation.target) * 100) : null;
+  const financing: FinancingMonthDetailDTO | undefined = lastMonth.financingDetails[allocation.id];
+  const currentMonthly = getActiveMonthlyAmount(allocation.monthlyAmount, lastMonth.month);
+  const isComplete = allocation.target > 0 && balance >= allocation.target;
 
   return (
     <div
@@ -33,7 +33,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
             className="w-[3px] h-7 rounded-sm shrink-0"
             style={{ background: color }}
           />
-          <div className="font-display text-sm text-foreground leading-tight">{box.label}</div>
+          <div className="font-display text-sm text-foreground leading-tight">{allocation.label}</div>
         </div>
         <span
           className="font-sans text-[9px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded-full border"
@@ -53,7 +53,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
           {formatCurrency(balance)}
         </span>
         <span className="font-mono text-[11px] text-[var(--color-text-muted)]">
-          {box.target > 0 ? `de ${formatCurrency(box.target)}` : "sem limite"}
+          {allocation.target > 0 ? `de ${formatCurrency(allocation.target)}` : "sem limite"}
         </span>
       </div>
 
@@ -82,7 +82,7 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
           <span className="font-sans text-[11px] text-[var(--color-text-muted)]">
             {formatMonthYear(eta.date)}
           </span>
-        ) : box.target > 0 ? (
+        ) : allocation.target > 0 ? (
           <span className="font-sans text-[11px] text-[var(--color-text-muted)]">
             ~Mês {lastMonth.month}+
           </span>
@@ -92,14 +92,23 @@ export function AllocationCard({ box, boxes, lastMonth, eta, color }: Props) {
       {/* Financing phase */}
       {financing && <FinancingPhaseIndicator phase={financing.phase} />}
 
+      {/* Reserva binding badge */}
+      {isHoldsFunds && allocation.estratoId && (
+        <div className="mt-2">
+          <span className="font-sans text-[9px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)]">
+            Vinculado
+          </span>
+        </div>
+      )}
+
       {/* Scheduled movements */}
-      {box.scheduledMovements.length > 0 && (
+      {allocation.scheduledMovements.length > 0 && (
         <div className="mt-3 pt-2.5 border-t border-[var(--color-border-subtle)] flex flex-col gap-2">
-          {box.scheduledMovements.map((sm, i) => {
+          {allocation.scheduledMovements.map((sm, i) => {
             const isIn = sm.type === 'in';
             const dotColor = isIn ? 'var(--color-success)' : 'var(--color-danger)';
             const destination = sm.type === 'out'
-              ? (sm.destinationBoxId ? boxes.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa' : 'Caixa')
+              ? (sm.destinationBoxId ? allocations.find(b => b.id === sm.destinationBoxId)?.label ?? 'Caixa' : 'Caixa')
               : null;
             return (
               <div key={i} className="flex items-center justify-between gap-2">

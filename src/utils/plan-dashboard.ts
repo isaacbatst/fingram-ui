@@ -1,4 +1,4 @@
-import type { MonthDataDTO, BoxDTO, ChangePointDTO } from "@/services/plan.service";
+import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/plan.service";
 
 export interface KpiData {
   value: number;
@@ -13,14 +13,14 @@ export interface KpiSet {
 
 export function computeKpis(
   projection: MonthDataDTO[],
-  boxes: BoxDTO[],
+  allocations: AllocationDTO[],
   monthIndex?: number,
 ): KpiSet {
   const idx = monthIndex ?? projection.length - 1;
   const current = projection[idx];
   const prev = idx > 0 ? projection[idx - 1] : null;
 
-  const targetSum = boxes
+  const targetSum = allocations
     .filter((b) => !b.holdsFunds && b.target > 0)
     .reduce((sum, b) => sum + b.target, 0);
 
@@ -47,14 +47,14 @@ export interface DerivedMilestone {
   boxId: string;
 }
 
-export function computeMilestones(projection: MonthDataDTO[], boxes: BoxDTO[]): DerivedMilestone[] {
+export function computeMilestones(projection: MonthDataDTO[], allocations: AllocationDTO[]): DerivedMilestone[] {
   const milestones: DerivedMilestone[] = [];
-  for (const box of boxes) {
-    if (box.target <= 0) continue;
+  for (const allocation of allocations) {
+    if (allocation.target <= 0) continue;
     for (const monthData of projection) {
-      const balance = monthData.boxes[box.id] ?? 0;
-      if (balance >= box.target) {
-        milestones.push({ month: monthData.month, label: box.label, boxId: box.id });
+      const balance = monthData.allocations[allocation.id] ?? 0;
+      if (balance >= allocation.target) {
+        milestones.push({ month: monthData.month, label: allocation.label, boxId: allocation.id });
         break;
       }
     }

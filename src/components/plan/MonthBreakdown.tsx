@@ -1,29 +1,29 @@
 import { memo, useMemo } from "react";
-import type { BoxDTO, MonthDataDTO } from "@/services/plan.service";
+import type { AllocationDTO, MonthDataDTO } from "@/services/plan.service";
 import { getBoxColor } from "@/utils/box-colors";
 import { formatCurrency } from "@/utils/plan-dashboard";
 
 interface Props {
   monthData: MonthDataDTO;
-  boxes: BoxDTO[];
+  allocations: AllocationDTO[];
 }
 
-export const MonthBreakdown = memo(function MonthBreakdown({ monthData, boxes }: Props) {
+export const MonthBreakdown = memo(function MonthBreakdown({ monthData, allocations }: Props) {
   const { income, costOfLiving, surplus } = monthData;
 
   const activePayments = useMemo(() => {
-    return Object.entries(monthData.boxPayments)
+    return Object.entries(monthData.allocationPayments)
       .filter(([, amount]) => amount > 0)
-      .map(([boxId, amount]) => {
-        const box = boxes.find((b) => b.id === boxId);
+      .map(([allocationId, amount]) => {
+        const allocation = allocations.find((b) => b.id === allocationId);
         return {
-          boxId,
-          label: box?.label ?? boxId,
+          allocationId,
+          label: allocation?.label ?? allocationId,
           amount,
-          color: getBoxColor(boxes, boxId),
+          color: getBoxColor(allocations, allocationId),
         };
       });
-  }, [monthData.boxPayments, boxes]);
+  }, [monthData.allocationPayments, allocations]);
 
   const showBar = income > 0;
   const isNegativeSurplus = surplus < 0;
@@ -46,7 +46,7 @@ export const MonthBreakdown = memo(function MonthBreakdown({ monthData, boxes }:
             )}
             {activePayments.map((p) => (
               <div
-                key={p.boxId}
+                key={p.allocationId}
                 style={{
                   width: `${(p.amount / income) * 100}%`,
                   background: `color-mix(in srgb, ${p.color} 40%, transparent)`,
@@ -86,9 +86,9 @@ export const MonthBreakdown = memo(function MonthBreakdown({ monthData, boxes }:
             <span className="font-mono text-[var(--color-text-secondary)]">-{formatCurrency(costOfLiving)}</span>
           </div>
 
-          {/* Box payments */}
+          {/* Allocation payments */}
           {activePayments.map((p) => (
-            <div key={p.boxId} className="flex justify-between items-center">
+            <div key={p.allocationId} className="flex justify-between items-center">
               <div className="flex items-center gap-1.5">
                 <span className="w-[3px] h-4 rounded-sm" style={{ background: p.color }} />
                 <span className="font-sans text-[var(--color-text-secondary)]">{p.label}</span>

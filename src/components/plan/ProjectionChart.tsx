@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import type { BoxDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
+import type { AllocationDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
 import { formatCompactCurrency, formatCurrency } from "@/utils/plan-dashboard";
 
 import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
@@ -21,13 +21,13 @@ type ChartView = "trajectory" | "flow";
 
 interface Props {
   projection: MonthDataDTO[];
-  boxes: BoxDTO[];
+  allocations: AllocationDTO[];
   planMilestones: PlanDTO["milestones"];
   selectedMonthIndex: number;
   onMonthSelect: (index: number) => void;
 }
 
-export const ProjectionChart = memo(function ProjectionChart({ projection, boxes, planMilestones, selectedMonthIndex, onMonthSelect }: Props) {
+export const ProjectionChart = memo(function ProjectionChart({ projection, allocations, planMilestones, selectedMonthIndex, onMonthSelect }: Props) {
   const [view, setView] = useState<ChartView>("trajectory");
 
   const RANGE_PRESETS = [
@@ -39,7 +39,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
 
   const [rangeMonths, setRangeMonths] = useState<number>(Infinity);
 
-  const holdsFundsBoxes = useMemo(() => boxes.filter((b) => b.holdsFunds), [boxes]);
+  const holdsFundsAllocations = useMemo(() => allocations.filter((b) => b.holdsFunds), [allocations]);
 
   const visibleProjection = useMemo(
     () => rangeMonths === Infinity ? projection : projection.slice(0, rangeMonths),
@@ -48,17 +48,17 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
 
   const trajectoryData = useMemo(() => visibleProjection.map((m) => {
     const row: Record<string, number> = { month: m.month, Disponível: m.cash };
-    holdsFundsBoxes.forEach((box) => {
-      row[box.label] = m.boxes[box.id] ?? 0;
+    holdsFundsAllocations.forEach((allocation) => {
+      row[allocation.label] = m.allocations[allocation.id] ?? 0;
     });
     return row;
-  }), [visibleProjection, holdsFundsBoxes]);
+  }), [visibleProjection, holdsFundsAllocations]);
 
   const { flowData, flowDomain } = useMemo(() => {
     const flowDataRaw = visibleProjection.map((m) => ({
       month: m.month,
       income: m.income,
-      outflow: -(m.costOfLiving + Object.values(m.boxPayments).reduce((s, v) => s + v, 0)),
+      outflow: -(m.costOfLiving + Object.values(m.allocationPayments).reduce((s, v) => s + v, 0)),
     }));
 
     // Compute a Y domain that clips outliers so normal bars are visible
@@ -202,13 +202,13 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
                 fill={DATA_COLORS[0]}
                 fillOpacity={0.15}
               />
-              {holdsFundsBoxes.map((box) => {
-                const color = getBoxColor(boxes, box.id);
+              {holdsFundsAllocations.map((allocation) => {
+                const color = getBoxColor(allocations, allocation.id);
                 return (
                   <Area
-                    key={box.id}
+                    key={allocation.id}
                     type="monotone"
-                    dataKey={box.label}
+                    dataKey={allocation.label}
                     stroke={color}
                     strokeWidth={1}
                     fill={color}
@@ -273,13 +273,13 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, boxes
             <span className="w-2 h-2 rounded-sm" style={{ background: DATA_COLORS[0] }} />
             Disponível
           </span>
-          {holdsFundsBoxes.map((box) => (
-            <span key={box.id} className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
+          {holdsFundsAllocations.map((allocation) => (
+            <span key={allocation.id} className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
               <span
                 className="w-2 h-2 rounded-sm"
-                style={{ background: getBoxColor(boxes, box.id) }}
+                style={{ background: getBoxColor(allocations, allocation.id) }}
               />
-              {box.label}
+              {allocation.label}
             </span>
           ))}
         </div>

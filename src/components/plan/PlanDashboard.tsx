@@ -30,11 +30,11 @@ export function PlanDashboard() {
   const deferredMonthIndex = useDeferredValue(selectedMonthIndex);
 
   const kpis = useMemo(
-    () => (projection && plan ? computeKpis(projection, plan.boxes, deferredMonthIndex) : null),
+    () => (projection && plan ? computeKpis(projection, plan.allocations, deferredMonthIndex) : null),
     [projection, plan, deferredMonthIndex],
   );
   const milestones = useMemo(
-    () => (projection && plan ? computeMilestones(projection, plan.boxes) : null),
+    () => (projection && plan ? computeMilestones(projection, plan.allocations) : null),
     [projection, plan],
   );
   const cashStats = useMemo(
@@ -84,18 +84,18 @@ export function PlanDashboard() {
         selectedIndex={selectedMonthIndex}
         onChange={setSelectedMonthIndex}
       />
-      <MonthBreakdown monthData={selectedMonth} boxes={plan.boxes} />
+      <MonthBreakdown monthData={selectedMonth} allocations={plan.allocations} />
       {kpis && <KpiRow kpis={kpis} />}
       <ProjectionChart
         projection={projection}
-        boxes={plan.boxes}
+        allocations={plan.allocations}
         planMilestones={plan.milestones}
         selectedMonthIndex={deferredMonthIndex}
         onMonthSelect={setSelectedMonthIndex}
       />
-      {plan.boxes.length > 0 && (
+      {plan.allocations.length > 0 && (
         <AllocationList
-          boxes={plan.boxes}
+          allocations={plan.allocations}
           lastMonth={selectedMonth}
           milestones={milestones ?? []}
           projection={projection}

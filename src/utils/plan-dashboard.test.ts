@@ -6,7 +6,7 @@ import {
   formatCompactCurrency,
   getActiveMonthlyAmount,
 } from "./plan-dashboard";
-import type { MonthDataDTO, BoxDTO, ChangePointDTO } from "@/services/plan.service";
+import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/plan.service";
 
 function buildMonth(overrides: Partial<MonthDataDTO> & { month: number }): MonthDataDTO {
   return {
@@ -15,9 +15,9 @@ function buildMonth(overrides: Partial<MonthDataDTO> & { month: number }): Month
     costOfLiving: 0,
     surplus: 0,
     cash: 0,
-    boxes: {},
-    boxPayments: {},
-    boxYields: {},
+    allocations: {},
+    allocationPayments: {},
+    allocationYields: {},
     totalYield: 0,
     scheduledMovements: [],
     totalWealth: 0,
@@ -33,8 +33,8 @@ describe("computeKpis", () => {
       buildMonth({ month: 1, totalWealth: 10000, cash: 5000, totalCommitted: 3000 }),
       buildMonth({ month: 2, totalWealth: 20000, cash: 8000, totalCommitted: 6000 }),
     ];
-    const boxes: BoxDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, scheduledMovements: [] },
+    const boxes: AllocationDTO[] = [
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.patrimonio.value).toBe(20000);
@@ -56,8 +56,8 @@ describe("computeKpis", () => {
     const projection: MonthDataDTO[] = [
       buildMonth({ month: 1, totalCommitted: 50000 }),
     ];
-    const boxes: BoxDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, scheduledMovements: [] },
+    const boxes: AllocationDTO[] = [
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.comprometido.percent).toBe(50);
@@ -67,9 +67,9 @@ describe("computeKpis", () => {
     const projection: MonthDataDTO[] = [
       buildMonth({ month: 1, totalCommitted: 50000 }),
     ];
-    const boxes: BoxDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, scheduledMovements: [] },
-      { id: "b2", label: "Outro", target: 0, monthlyAmount: [], holdsFunds: false, scheduledMovements: [] },
+    const boxes: AllocationDTO[] = [
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
+      { id: "b2", label: "Outro", target: 0, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.comprometido.percent).toBe(50);
@@ -81,7 +81,7 @@ describe("computeKpis", () => {
       buildMonth({ month: 2, totalWealth: 20000, cash: 8000, totalCommitted: 6000 }),
       buildMonth({ month: 3, totalWealth: 30000, cash: 12000, totalCommitted: 9000 }),
     ];
-    const boxes: BoxDTO[] = [];
+    const boxes: AllocationDTO[] = [];
     const kpis = computeKpis(projection, boxes, 1);
     expect(kpis.patrimonio.value).toBe(20000);
     expect(kpis.disponivel.value).toBe(8000);
@@ -114,12 +114,12 @@ describe("computeKpis", () => {
 describe("computeMilestones", () => {
   it("should find month where box reaches target", () => {
     const projection: MonthDataDTO[] = [
-      buildMonth({ month: 1, boxes: { b1: 5000 } }),
-      buildMonth({ month: 2, boxes: { b1: 10000 } }),
-      buildMonth({ month: 3, boxes: { b1: 15000 } }),
+      buildMonth({ month: 1, allocations: { b1: 5000 } }),
+      buildMonth({ month: 2, allocations: { b1: 10000 } }),
+      buildMonth({ month: 3, allocations: { b1: 15000 } }),
     ];
-    const boxes: BoxDTO[] = [
-      { id: "b1", label: "Casamento", target: 10000, monthlyAmount: [], holdsFunds: true, scheduledMovements: [] },
+    const boxes: AllocationDTO[] = [
+      { id: "b1", label: "Casamento", target: 10000, monthlyAmount: [], holdsFunds: true, estratoId: null, scheduledMovements: [] },
     ];
     const milestones = computeMilestones(projection, boxes);
     expect(milestones).toEqual([{ month: 2, label: "Casamento", boxId: "b1" }]);
@@ -127,10 +127,10 @@ describe("computeMilestones", () => {
 
   it("should skip boxes with target 0", () => {
     const projection: MonthDataDTO[] = [
-      buildMonth({ month: 1, boxes: { b1: 5000 } }),
+      buildMonth({ month: 1, allocations: { b1: 5000 } }),
     ];
-    const boxes: BoxDTO[] = [
-      { id: "b1", label: "Ações", target: 0, monthlyAmount: [], holdsFunds: true, scheduledMovements: [] },
+    const boxes: AllocationDTO[] = [
+      { id: "b1", label: "Ações", target: 0, monthlyAmount: [], holdsFunds: true, estratoId: null, scheduledMovements: [] },
     ];
     const milestones = computeMilestones(projection, boxes);
     expect(milestones).toEqual([]);

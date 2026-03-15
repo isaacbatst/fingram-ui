@@ -13,7 +13,7 @@ export interface PremisesDTO {
   costOfLivingChangePoints: ChangePointDTO[];
 }
 
-export interface BoxScheduledMovementDTO {
+export interface AllocationScheduledMovementDTO {
   month: number;
   amount: number;
   label: string;
@@ -22,7 +22,7 @@ export interface BoxScheduledMovementDTO {
   additionalToMonthly?: boolean;
 }
 
-export interface BoxFinancingDTO {
+export interface AllocationFinancingDTO {
   principal: number;
   annualRate: number;
   termMonths: number;
@@ -32,15 +32,16 @@ export interface BoxFinancingDTO {
   releasePercent?: number;
 }
 
-export interface BoxDTO {
+export interface AllocationDTO {
   id: string;
   label: string;
   target: number;
   monthlyAmount: ChangePointDTO[];
   holdsFunds: boolean;
+  estratoId: string | null;
   yieldRate?: number;
-  financing?: BoxFinancingDTO;
-  scheduledMovements: BoxScheduledMovementDTO[];
+  financing?: AllocationFinancingDTO;
+  scheduledMovements: AllocationScheduledMovementDTO[];
 }
 
 export type PlanStatus = "draft" | "active" | "archived";
@@ -52,7 +53,7 @@ export interface PlanDTO {
   status: PlanStatus;
   startDate: string;
   premises: PremisesDTO;
-  boxes: BoxDTO[];
+  allocations: AllocationDTO[];
   milestones: { month: number; label: string; type: string }[];
   createdAt: string;
 }
@@ -75,11 +76,11 @@ export interface MonthDataDTO {
   costOfLiving: number;
   surplus: number;
   cash: number;
-  boxes: Record<string, number>;
-  boxPayments: Record<string, number>;
-  boxYields: Record<string, number>;
+  allocations: Record<string, number>;
+  allocationPayments: Record<string, number>;
+  allocationYields: Record<string, number>;
   totalYield: number;
-  scheduledMovements: { boxId: string; amount: number; label: string; type: 'in' | 'out'; destinationBoxId?: string }[];
+  scheduledMovements: { allocationId: string; amount: number; label: string; type: 'in' | 'out'; destinationBoxId?: string }[];
   totalWealth: number;
   totalCommitted: number;
   financingDetails: Record<string, FinancingMonthDetailDTO>;
@@ -90,7 +91,7 @@ export interface CreatePlanRequest {
   name: string;
   startDate?: string;
   premises: PremisesDTO;
-  boxes: Omit<BoxDTO, "id">[];
+  allocations: Omit<AllocationDTO, "id">[];
 }
 
 async function request<T>(
