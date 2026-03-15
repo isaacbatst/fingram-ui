@@ -22,6 +22,7 @@ export interface EditTransactionRequest {
   newDescription?: string;
   newType?: 'income' | 'expense';
   newBoxId?: string;
+  newAllocationId?: string;
 }
 
 export interface EditTransactionResponse {
@@ -78,9 +79,27 @@ export interface EditTransferRequest {
   toBoxId?: string;
 }
 
+export interface AllocationSuggestion {
+  allocationId: string;
+  allocationLabel: string;
+  scheduledMovement: {
+    month: number;
+    amount: number;
+    label: string;
+  };
+  divergencePercent: number;
+  divergenceAmount: number;
+}
+
 export interface CreateTransactionResponse {
   transaction?: TransactionDTO;
   vault?: unknown;
+  error?: string;
+  suggestion?: AllocationSuggestion | null;
+}
+
+export interface SuggestAllocationResponse {
+  suggestion?: AllocationSuggestion | null;
   error?: string;
 }
 
@@ -141,6 +160,9 @@ export interface ApiService {
 
   // Category Suggestion
   suggestCategory(request: SuggestCategoryRequest): Promise<SuggestCategoryResponse>;
+
+  // Allocation Suggestion
+  suggestAllocation(amount: number): Promise<SuggestAllocationResponse>;
 
   // Boxes
   getBoxes(): Promise<BoxDTO[]>;

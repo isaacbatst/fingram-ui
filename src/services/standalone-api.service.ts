@@ -17,6 +17,7 @@ import type {
   GetBudgetStartDayResponse,
   SuggestCategoryRequest,
   SuggestCategoryResponse,
+  SuggestAllocationResponse,
   BoxDTO,
   CreateBoxRequest,
   EditBoxRequest,
@@ -231,6 +232,16 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao sugerir categoria:", error);
       return { error: "Erro ao sugerir categoria" };
+    }
+  }
+
+  async suggestAllocation(amount: number): Promise<SuggestAllocationResponse> {
+    try {
+      const response = await this.makeRequest(`/suggest-allocation?amount=${amount}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao sugerir alocação:", error);
+      return { error: "Erro ao sugerir alocação" };
     }
   }
 

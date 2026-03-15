@@ -2,6 +2,16 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker } from "@/components/DatePicker";
 import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +28,18 @@ import { useCategories } from "@/hooks/useCategories";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useTransfer } from "@/hooks/useTransfer";
+import type { AllocationSuggestion } from "@/services/api.interface";
 import { format } from "date-fns";
 import { ArrowDown, Check } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+
+// ── Formatters ──
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    value,
+  );
 
 // ── Helpers ──
 
@@ -135,6 +153,11 @@ export function InputTab() {
 
   // ── Allocation state (expense tagging) ──
   const [allocationId, setAllocationId] = useState<string>("");
+
+  // ── Suggestion state ──
+  const [suggestion, setSuggestion] = useState<AllocationSuggestion | null>(null);
+  const [pendingTransactionCode, setPendingTransactionCode] = useState<string | null>(null);
+  const [isLinking, setIsLinking] = useState(false);
 
   // ── Transfer state ──
   const [fromBoxId, setFromBoxId] = useState("");
@@ -291,6 +314,11 @@ export function InputTab() {
         } else {
           flashSuccess();
           resetForm();
+
+          if (result.suggestion && result.transaction?.code) {
+            setSuggestion(result.suggestion);
+            setPendingTransactionCode(result.transaction.code);
+          }
         }
       } catch (error) {
         console.error("Error creating transaction:", error);
@@ -300,6 +328,36 @@ export function InputTab() {
       }
     }
   };
+
+  // ── Suggestion handlers ──
+  const handleLinkSuggestion = useCallback(async () => {
+    if (!suggestion || !pendingTransactionCode) return;
+
+    setIsLinking(true);
+    try {
+      const result = await apiService.editTransaction({
+        transactionCode: pendingTransactionCode,
+        newAllocationId: suggestion.allocationId,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Transação vinculada ao compromisso do plano");
+      }
+    } catch {
+      toast.error("Erro ao vincular transação");
+    } finally {
+      setIsLinking(false);
+      setSuggestion(null);
+      setPendingTransactionCode(null);
+    }
+  }, [suggestion, pendingTransactionCode, apiService]);
+
+  const handleDismissSuggestion = useCallback(() => {
+    setSuggestion(null);
+    setPendingTransactionCode(null);
+  }, []);
 
   // ── Auto-advance helpers ──
   const focusDescription = useCallback(() => {
@@ -325,6 +383,66 @@ export function InputTab() {
 
   return (
     <div>
+      {/* Allocation suggestion dialog */}
+      <AlertDialog
+        open={!!suggestion}
+        onOpenChange={(open) => {
+          if (!open) handleDismissSuggestion();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Vincular ao plano?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Essa despesa parece ser{" "}
+                  <span className="font-medium text-foreground">
+                    {suggestion?.scheduledMovement.label}
+                  </span>{" "}
+                  de{" "}
+                  <span className="font-medium text-foreground">
+                    {suggestion?.allocationLabel}
+                  </span>{" "}
+                  (
+                  <span className="font-mono">
+                    {suggestion
+                      ? formatCurrency(suggestion.scheduledMovement.amount)
+                      : ""}
+                  </span>
+                  ). Vincular ao compromisso do plano?
+                </p>
+                {suggestion && suggestion.divergencePercent > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Valor esperado:{" "}
+                    <span className="font-mono">
+                      {formatCurrency(suggestion.scheduledMovement.amount)}
+                    </span>{" "}
+                    · Diferença:{" "}
+                    <span className="font-mono">
+                      {formatCurrency(Math.abs(suggestion.divergenceAmount))}
+                    </span>{" "}
+                    ({suggestion.divergencePercent.toFixed(1)}%)
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDismissSuggestion}>
+              Não vincular
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLinkSuggestion}
+              disabled={isLinking}
+              className="bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+            >
+              {isLinking ? "Vinculando..." : "Vincular"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* 3-option segmented control */}
       <div className="mb-5">
         <ModeSelector value={mode} onChange={setMode} />
