@@ -153,4 +153,9 @@ export const planService = {
       "Erro ao vincular estrato",
     );
   },
+
+  getAllocations(type?: string): Promise<AllocationDTO[]> {
+    const params = type ? `?type=${encodeURIComponent(type)}` : "";
+    return request(`/allocations${params}`, {}, "Erro ao carregar alocações");
+  },
 };

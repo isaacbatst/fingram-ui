@@ -75,6 +75,7 @@ export type Transaction = {
   boxId?: string;
   transferId?: string | null;
   transferToBoxId?: string;
+  allocationId?: string | null;
 };
 
 type TransacoesTabProps = {
@@ -200,6 +201,7 @@ export function TransacoesTab({
         boxId: tx.boxId,
         transferId: tx.transferId,
         transferToBoxId: tx.transferToBoxId ?? undefined,
+        allocationId: tx.allocationId ?? null,
       }))
     : [];
 
@@ -665,12 +667,17 @@ export function TransacoesTab({
                             tx.description || "(Sem descrição)"
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                           {txIsTransfer
                             ? "Transferência"
                             : [getCategoryLabel(tx), getBoxName(tx)]
                                 .filter(Boolean)
                                 .join(" \u00B7 ")}
+                          {tx.allocationId && (
+                            <span className="inline-flex items-center text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              Compromisso
+                            </span>
+                          )}
                         </div>
                       </div>
 

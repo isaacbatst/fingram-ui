@@ -5,10 +5,18 @@ import { MoneyInput } from "@/components/MoneyInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
+import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useTransfer } from "@/hooks/useTransfer";
 import { format } from "date-fns";
 import { ArrowDown, Check } from "lucide-react";
@@ -125,6 +133,9 @@ export function InputTab() {
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const categoryManuallySelected = useRef(false);
 
+  // ── Allocation state (expense tagging) ──
+  const [allocationId, setAllocationId] = useState<string>("");
+
   // ── Transfer state ──
   const [fromBoxId, setFromBoxId] = useState("");
   const [toBoxId, setToBoxId] = useState("");
@@ -139,6 +150,7 @@ export function InputTab() {
   const { data: categories } = useCategories();
   const { createTransfer } = useTransfer();
   const { apiService } = useApi();
+  const { allocations: paymentAllocations } = usePaymentAllocations();
 
   const activeColor = MODE_CONFIG[mode].color;
   const isTransfer = mode === "transfer";
@@ -212,6 +224,7 @@ export function InputTab() {
     } else {
       setDescription("");
       setCategoryId("");
+      setAllocationId("");
       categoryManuallySelected.current = false;
     }
   };
@@ -270,6 +283,7 @@ export function InputTab() {
           date: getISODateString(date),
           type: mode as "expense" | "income",
           boxId: selectedBoxId || undefined,
+          allocationId: mode === "expense" && allocationId ? allocationId : undefined,
         });
 
         if (result.error) {
@@ -405,6 +419,29 @@ export function InputTab() {
                 onOpenChange={handleCategorySelectOpenChange}
                 isLoading={isSuggestingCategory}
               />
+
+              {mode === "expense" && paymentAllocations.length > 0 && (
+                <Select
+                  value={allocationId || "__none__"}
+                  onValueChange={(val) =>
+                    setAllocationId(val === "__none__" ? "" : val)
+                  }
+                >
+                  <SelectTrigger className="w-full text-sm text-muted-foreground border-[var(--color-border)]">
+                    <SelectValue placeholder="Vincular a compromisso do plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">
+                      Sem vínculo com plano
+                    </SelectItem>
+                    {paymentAllocations.map((allocation) => (
+                      <SelectItem key={allocation.id} value={allocation.id}>
+                        {allocation.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </>
           )}
         </div>

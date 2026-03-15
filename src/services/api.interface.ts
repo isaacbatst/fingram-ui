@@ -35,6 +35,7 @@ export interface CreateTransactionRequest {
   date?: string; // ISO date string
   type: 'income' | 'expense';
   boxId?: string;
+  allocationId?: string;
 }
 
 export type BoxType = 'spending' | 'saving';
