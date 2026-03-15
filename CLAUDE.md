@@ -30,7 +30,9 @@ src/
 
 ## Design System (Duna/Estratos)
 
-**Fonte de verdade:** `docs/product/design-identity.md`. Consultar antes de criar ou alterar componentes visuais. Atualizar após qualquer mudança que altere padrões documentados.
+**Fonte de verdade visual:** `../docs/product/design-identity.md`. Consultar antes de criar ou alterar componentes visuais. Atualizar após qualquer mudança que altere padrões documentados.
+
+**Specs de produto:** `../docs/product/CONTEXT.md` (glossário e modelo de dados), `../docs/product/spec-operational.md` (operacional), `../docs/product/spec-integration.md` (integração Plano ↔ Operacional).
 
 ### Tokens
 
