@@ -529,6 +529,7 @@ export function GastosOverview({
                 id="edit-budget-amount"
                 value={editBudgetValue}
                 onChange={setEditBudgetValue}
+                onNext={handleSaveBudget}
                 disabled={isSaving}
                 autoFocus
               />
