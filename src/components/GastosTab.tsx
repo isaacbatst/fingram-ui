@@ -30,11 +30,12 @@ export function GastosTab() {
     10,
   );
 
-  const setSelectedYear = (year: number) => {
-    setSearchParams({ gastos_ano: year.toString(), gastos_pagina: "" });
-  };
-  const setSelectedMonth = (month: number) => {
-    setSearchParams({ gastos_mes: month.toString(), gastos_pagina: "" });
+  const setSelectedPeriod = (month: number, year: number) => {
+    setSearchParams({
+      gastos_mes: month.toString(),
+      gastos_ano: year.toString(),
+      gastos_pagina: "",
+    });
   };
 
   // Navigation actions (per spec param mutation table)
@@ -125,8 +126,7 @@ export function GastosTab() {
           <GastosOverview
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
-            setSelectedYear={setSelectedYear}
-            setSelectedMonth={setSelectedMonth}
+            setSelectedPeriod={setSelectedPeriod}
             onDrillCategory={drillToCategory}
             onOpenSearch={openFreeSearch}
           />
@@ -145,8 +145,7 @@ export function GastosTab() {
           <GastosTransacoes
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
-            setSelectedYear={setSelectedYear}
-            setSelectedMonth={setSelectedMonth}
+            setSelectedPeriod={setSelectedPeriod}
             onBack={goBackToOverview}
           />
         </div>

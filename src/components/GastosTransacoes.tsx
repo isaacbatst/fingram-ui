@@ -59,8 +59,7 @@ import type { Transaction } from "@/types/transaction";
 type GastosTransacoesProps = {
   selectedYear: number;
   selectedMonth: number;
-  setSelectedYear: (year: number) => void;
-  setSelectedMonth: (month: number) => void;
+  setSelectedPeriod: (month: number, year: number) => void;
   onBack: () => void;
 };
 
@@ -96,8 +95,7 @@ const formatDateLabel = (dateKey: string): string => {
 export function GastosTransacoes({
   selectedYear,
   selectedMonth,
-  setSelectedYear,
-  setSelectedMonth,
+  setSelectedPeriod,
   onBack,
 }: GastosTransacoesProps) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -451,9 +449,7 @@ export function GastosTransacoes({
             value={`${selectedYear}-${selectedMonth.toString().padStart(2, "0")}`}
             onValueChange={(val) => {
               const [year, month] = val.split("-").map(Number);
-              setSelectedYear(year);
-              setSelectedMonth(month);
-              setCurrentPage(1);
+              setSelectedPeriod(month, year);
             }}
           >
             <SelectTrigger className="h-8! rounded-full border-[var(--color-border)] bg-transparent text-sm px-3 w-auto">

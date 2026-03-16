@@ -65,8 +65,7 @@ function formatMoney(value: number): string {
 type GastosOverviewProps = {
   selectedYear: number;
   selectedMonth: number;
-  setSelectedYear: (year: number) => void;
-  setSelectedMonth: (month: number) => void;
+  setSelectedPeriod: (month: number, year: number) => void;
   onDrillCategory: (categoryId: string) => void;
   onOpenSearch: () => void;
 };
@@ -74,8 +73,7 @@ type GastosOverviewProps = {
 export function GastosOverview({
   selectedYear,
   selectedMonth,
-  setSelectedYear,
-  setSelectedMonth,
+  setSelectedPeriod,
   onDrillCategory,
   onOpenSearch,
 }: GastosOverviewProps) {
@@ -132,19 +130,17 @@ export function GastosOverview({
   // Month navigation
   const goToPrevMonth = () => {
     if (selectedMonth === 1) {
-      setSelectedMonth(12);
-      setSelectedYear(selectedYear - 1);
+      setSelectedPeriod(12, selectedYear - 1);
     } else {
-      setSelectedMonth(selectedMonth - 1);
+      setSelectedPeriod(selectedMonth - 1, selectedYear);
     }
   };
 
   const goToNextMonth = () => {
     if (selectedMonth === 12) {
-      setSelectedMonth(1);
-      setSelectedYear(selectedYear + 1);
+      setSelectedPeriod(1, selectedYear + 1);
     } else {
-      setSelectedMonth(selectedMonth + 1);
+      setSelectedPeriod(selectedMonth + 1, selectedYear);
     }
   };
 
@@ -352,12 +348,17 @@ export function GastosOverview({
                         : "var(--color-success)";
 
                   return (
-                    <div key={c.categoryId} className="rounded-xl border border-border duna-card duna-surface">
-                      <button
-                        type="button"
-                        className="w-full text-left p-3 transition-colors active:bg-muted/50"
-                        onClick={() => onDrillCategory(c.categoryId)}
-                      >
+                    <div
+                      key={c.categoryId}
+                      className="rounded-xl border border-border duna-card duna-surface cursor-pointer transition-colors active:bg-muted/50"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onDrillCategory(c.categoryId)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") onDrillCategory(c.categoryId);
+                      }}
+                    >
+                      <div className="p-3">
                         <div className="flex justify-between items-center mb-1.5">
                           <span className="text-base font-display text-foreground">{c.categoria}</span>
                           <div className="flex items-center gap-2">
@@ -378,7 +379,7 @@ export function GastosOverview({
                         </div>
                         <Progress value={pct} filledColor={filledColor} bgColor="var(--color-border)" className="h-2.5" />
                         <div className="mt-1 text-xs text-muted-foreground font-mono">de {formatMoney(c.valor)}</div>
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -395,11 +396,21 @@ export function GastosOverview({
                     {categoriesWithoutBudget.map((cat: Category) => {
                       const isDrillable = cat.transactionType !== "income";
                       return (
-                        <button
+                        <div
                           key={cat.id}
-                          type="button"
-                          className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50"
+                          role="button"
+                          tabIndex={0}
+                          className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50 cursor-pointer"
                           onClick={() => isDrillable ? onDrillCategory(cat.id) : handleOpenEdit(cat.id, cat.name)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              if (isDrillable) {
+                                onDrillCategory(cat.id);
+                              } else {
+                                handleOpenEdit(cat.id, cat.name);
+                              }
+                            }
+                          }}
                         >
                           <span className="font-display text-sm text-muted-foreground">{cat.name}</span>
                           <div className="flex items-center gap-2">
@@ -416,7 +427,7 @@ export function GastosOverview({
                             </button>
                             {isDrillable && <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -445,11 +456,21 @@ export function GastosOverview({
                     {categories.map((cat: Category) => {
                       const isDrillable = cat.transactionType !== "income";
                       return (
-                        <button
+                        <div
                           key={cat.id}
-                          type="button"
-                          className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50"
+                          role="button"
+                          tabIndex={0}
+                          className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50 cursor-pointer"
                           onClick={() => isDrillable ? onDrillCategory(cat.id) : handleOpenEdit(cat.id, cat.name)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              if (isDrillable) {
+                                onDrillCategory(cat.id);
+                              } else {
+                                handleOpenEdit(cat.id, cat.name);
+                              }
+                            }
+                          }}
                         >
                           <span className="font-display text-sm text-foreground tracking-tight">
                             {cat.name}
@@ -468,7 +489,7 @@ export function GastosOverview({
                             </button>
                             {isDrillable && <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
