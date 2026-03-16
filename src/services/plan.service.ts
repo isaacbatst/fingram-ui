@@ -37,7 +37,7 @@ export interface AllocationDTO {
   label: string;
   target: number;
   monthlyAmount: ChangePointDTO[];
-  holdsFunds: boolean;
+  realizationMode: 'immediate' | 'manual' | 'onCompletion';
   estratoId: string | null;
   yieldRate?: number;
   financing?: AllocationFinancingDTO;
@@ -85,6 +85,9 @@ export interface MonthDataDTO {
   totalWealth: number;
   totalCommitted: number;
   financingDetails: Record<string, FinancingMonthDetailDTO>;
+  allocationAccumulated: Record<string, number>;
+  allocationRealized: Record<string, number>;
+  realizedAllocations: string[];
 }
 
 // --- Requests ---
