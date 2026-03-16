@@ -91,6 +91,7 @@ export interface CompositionItem {
   value: number;
   color: string;
   percent: number;
+  isRealized?: boolean;
 }
 
 export interface PatrimonioData {
@@ -141,12 +142,20 @@ export function computePatrimonio(
   for (const alloc of allocations) {
     if (!holdsPhysicalFunds(alloc)) continue;
     const balance = current?.allocations[alloc.id] ?? 0;
+    // For onCompletion allocations, use accumulated value after realization
+    // (balance drops to 0 when auto-realized, but accumulated preserves the total)
+    const accumulated = current?.allocationAccumulated?.[alloc.id] ?? balance;
+    const isRealized = alloc.realizationMode === 'onCompletion'
+      && alloc.target > 0
+      && accumulated >= alloc.target;
+    const displayValue = isRealized ? accumulated : balance;
     items.push({
       id: alloc.id,
       label: alloc.label,
-      value: balance,
+      value: displayValue,
       color: getColor(alloc.id),
-      percent: total > 0 ? Math.round((balance / total) * 100) : 0,
+      percent: total > 0 ? Math.round((displayValue / total) * 100) : 0,
+      isRealized,
     });
   }
 

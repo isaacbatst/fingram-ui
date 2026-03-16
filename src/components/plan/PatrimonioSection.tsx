@@ -109,6 +109,11 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
                   <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
                     {item.label}
                   </span>
+                  {item.isRealized && (
+                    <span className="font-sans text-[8px] font-medium tracking-wider uppercase text-[var(--color-success)] bg-[var(--color-success-bg)] border border-[var(--color-success-border)] px-1 py-px rounded-full shrink-0">
+                      Realizado
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[11px] text-foreground">
