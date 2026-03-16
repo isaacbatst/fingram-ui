@@ -1,13 +1,15 @@
 import { memo } from "react";
+import { ChevronRight } from "lucide-react";
 import { formatCompactCurrency, formatCurrency } from "@/utils/plan-dashboard";
 import type { PatrimonioData, ComprometidoData } from "@/utils/plan-dashboard";
 
 interface Props {
   patrimonio: PatrimonioData;
   comprometido: ComprometidoData;
+  onAllocationClick: (allocationId: string) => void;
 }
 
-export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, comprometido }: Props) {
+export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, comprometido, onAllocationClick }: Props) {
   const showDelta = patrimonio.delta !== null;
   const deltaColor = !showDelta
     ? undefined
@@ -65,28 +67,61 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
         )}
 
         {/* Composition breakdown */}
-        <div className="flex flex-col gap-1.5">
-          {patrimonio.items.map((item) => (
-            <div key={item.id} className="flex justify-between items-center">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="w-[3px] h-3.5 rounded-sm shrink-0"
-                  style={{ background: item.color }}
-                />
-                <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
-                  {item.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] text-foreground">
-                  {formatCurrency(item.value)}
-                </span>
-                <span className="font-mono text-[10px] text-[var(--color-text-muted)] w-[32px] text-right">
-                  {item.percent}%
-                </span>
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col">
+          {patrimonio.items.map((item) => {
+            const isClickable = item.id !== '__cash__';
+
+            if (!isClickable) {
+              return (
+                <div key={item.id} className="flex justify-between items-center py-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-[3px] h-3.5 rounded-sm shrink-0"
+                      style={{ background: item.color }}
+                    />
+                    <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
+                      {item.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] text-foreground">
+                      {formatCurrency(item.value)}
+                    </span>
+                    <span className="font-mono text-[10px] text-[var(--color-text-muted)] w-[32px] text-right">
+                      {item.percent}%
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => onAllocationClick(item.id)}
+                className="flex justify-between items-center py-2 -mx-1 px-1 rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--color-bg-surface-hover)] active:bg-[var(--color-bg-surface-active)] min-h-[44px]"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-[3px] h-3.5 rounded-sm shrink-0"
+                    style={{ background: item.color }}
+                  />
+                  <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
+                    {item.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[11px] text-foreground">
+                    {formatCurrency(item.value)}
+                  </span>
+                  <span className="font-mono text-[10px] text-[var(--color-text-muted)] w-[32px] text-right">
+                    {item.percent}%
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -116,9 +151,13 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
           </div>
 
           {/* Items */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {comprometido.items.map((item) => (
-              <div key={item.id}>
+              <button
+                key={item.id}
+                onClick={() => onAllocationClick(item.id)}
+                className="py-2 -mx-1 px-1 rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--color-bg-surface-hover)] active:bg-[var(--color-bg-surface-active)] text-left min-h-[44px]"
+              >
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-1.5">
                     <span
@@ -129,9 +168,12 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
                       {item.label}
                     </span>
                   </div>
-                  <span className="font-mono text-[11px] text-foreground">
-                    {formatCurrency(item.value)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] text-foreground">
+                      {formatCurrency(item.value)}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
+                  </div>
                 </div>
                 {item.target > 0 && (
                   <div className="ml-[11px] flex items-center gap-2">
@@ -150,7 +192,7 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
                     </span>
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
