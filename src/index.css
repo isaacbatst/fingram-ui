@@ -256,6 +256,34 @@
   backdrop-filter: blur(12px);
 }
 
+/* ─── Global custom scrollbar (Estratos) ─── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(217, 175, 120, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(217, 175, 120, 0.15);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 175, 120, 0.28);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Hide scrollbar — used by filter chips horizontal scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;

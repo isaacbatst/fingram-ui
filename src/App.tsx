@@ -153,7 +153,7 @@ function AppContent() {
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
           {/* Mobile header */}
           <div className="lg:hidden flex justify-between items-center px-5 py-2">
             <DunaLogo size={24} />
@@ -161,7 +161,7 @@ function AppContent() {
           </div>
 
           {/* Tab content area */}
-          <div className="min-h-0 sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto overflow-y-auto">
+          <div className="sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
             {currentTab === "input" && (
               <div className="px-4">
                 <SaldoResumo

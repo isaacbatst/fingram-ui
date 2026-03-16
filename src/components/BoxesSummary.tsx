@@ -18,7 +18,7 @@ export function BoxesSummary() {
 
   return (
     <div className="mb-3">
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {boxes.map((box) => (
           <BoxCard key={box.id} box={box} />
         ))}
