@@ -106,12 +106,14 @@ export function GastosOverview({
   const { ceiling: budgetCeiling } = useBudgetCeiling();
 
   const orcamento =
-    budgetData?.budget?.map((b) => ({
-      categoria: b.category.name,
-      categoryId: b.category.id,
-      valor: b.amount,
-      usado: b.spent,
-    })) ?? [];
+    budgetData?.budget
+      ?.filter((b) => b.amount > 0)
+      .map((b) => ({
+        categoria: b.category.name,
+        categoryId: b.category.id,
+        valor: b.amount,
+        usado: b.spent,
+      })) ?? [];
 
   // Calcular totais do orçamento
   const totalOrcamento = orcamento.reduce((sum, item) => sum + item.valor, 0);
@@ -120,7 +122,7 @@ export function GastosOverview({
   const percentualUso =
     totalOrcamento > 0 ? (totalGasto / totalOrcamento) * 100 : 0;
 
-  // Categories with budget vs without
+  // Categories with budget vs without (amount=0 counts as "without")
   const categoriesWithBudget = orcamento;
   const categoriesWithoutBudget =
     categories?.filter(
