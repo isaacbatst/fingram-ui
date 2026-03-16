@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback, useDeferredValue } from "react";
+import { useState, useMemo, useCallback, useDeferredValue, useEffect } from "react";
 import { usePlans } from "@/hooks/usePlans";
 import { usePlan } from "@/hooks/usePlan";
 import { useProjection } from "@/hooks/useProjection";
 import { useBoxes } from "@/hooks/useBoxes";
+import { useSearchParams } from "@/hooks/useSearchParams";
 import { computeMilestones, computePatrimonio, computeComprometido } from "@/utils/plan-dashboard";
 import { getBoxColor } from "@/utils/box-colors";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -10,9 +11,14 @@ import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { PlanHeader } from "./PlanHeader";
 import { PatrimonioSection } from "./PatrimonioSection";
 import { ProjectionChart } from "./ProjectionChart";
-import { CompactAllocationList } from "./CompactAllocationList";
+import { AllocationDetailDrawer } from "./AllocationDetailDrawer";
 import { MonthBreakdown } from "./MonthBreakdown";
 import { MonthNavigator } from "./MonthNavigator";
+
+function computeTodayIndex(projection: { isReal: boolean }[]): number {
+  const idx = projection.findIndex(m => !m.isReal);
+  return idx === -1 ? projection.length - 1 : idx;
+}
 
 export function PlanDashboard() {
   const { plans, error: plansError, isLoading: plansLoading } = usePlans();
@@ -29,8 +35,54 @@ export function PlanDashboard() {
   const isLoading = plansLoading || planLoading || projLoading;
   const error = plansError || planError || projError;
 
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
-  const deferredMonthIndex = useDeferredValue(selectedMonthIndex);
+  // Today index — first projected month (or last month if all real)
+  const todayIndex = useMemo(
+    () => projection ? computeTodayIndex(projection) : 0,
+    [projection],
+  );
+
+  // Month selection synced with ?mes query param
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [selectedMonthIndex, setSelectedMonthIndexRaw] = useState<number | null>(null);
+
+  // Initialize from query param or todayIndex once projection loads
+  useEffect(() => {
+    if (!projection || projection.length === 0) return;
+    const mesParam = searchParams.get("mes");
+    if (mesParam !== null) {
+      const parsed = parseInt(mesParam, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed < projection.length) {
+        setSelectedMonthIndexRaw(parsed);
+        return;
+      }
+    }
+    // Invalid or absent — use todayIndex
+    setSelectedMonthIndexRaw(todayIndex);
+    setSearchParams({ mes: String(todayIndex) }, { replace: true });
+  }, [projection, todayIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setSelectedMonthIndex = useCallback((index: number) => {
+    setSelectedMonthIndexRaw(index);
+    setSearchParams({ mes: String(index) }, { replace: true });
+  }, [setSearchParams]);
+
+  const resolvedMonthIndex = selectedMonthIndex ?? todayIndex;
+  const deferredMonthIndex = useDeferredValue(resolvedMonthIndex);
+
+  // Drawer state
+  const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
+  const selectedAllocation = selectedAllocationId && plan
+    ? plan.allocations.find((a) => a.id === selectedAllocationId) ?? null
+    : null;
+
+  const handleAllocationClick = useCallback((allocationId: string) => {
+    setSelectedAllocationId(allocationId);
+  }, []);
+
+  const handleDrawerClose = useCallback(() => {
+    setSelectedAllocationId(null);
+  }, []);
 
   const getColor = useCallback(
     (allocationId: string) => plan ? getBoxColor(plan.allocations, allocationId) : 'var(--color-data-1)',
@@ -88,21 +140,16 @@ export function PlanDashboard() {
       <PlanHeader plan={plan} totalMonths={projection.length} />
       <MonthNavigator
         projection={projection}
-        selectedIndex={selectedMonthIndex}
+        selectedIndex={resolvedMonthIndex}
+        todayIndex={todayIndex}
         onChange={setSelectedMonthIndex}
       />
       <MonthBreakdown monthData={selectedMonth} allocations={plan.allocations} />
       {patrimonioData && comprometidoData && (
-        <PatrimonioSection patrimonio={patrimonioData} comprometido={comprometidoData} />
-      )}
-      {plan.allocations.length > 0 && (
-        <CompactAllocationList
-          allocations={plan.allocations}
-          lastMonth={selectedMonth}
-          milestones={milestones ?? []}
-          projection={projection}
-          planId={plan.id}
-          savingBoxes={savingBoxes}
+        <PatrimonioSection
+          patrimonio={patrimonioData}
+          comprometido={comprometidoData}
+          onAllocationClick={handleAllocationClick}
         />
       )}
       <ProjectionChart
@@ -111,6 +158,16 @@ export function PlanDashboard() {
         planMilestones={plan.milestones}
         selectedMonthIndex={deferredMonthIndex}
         onMonthSelect={setSelectedMonthIndex}
+      />
+      <AllocationDetailDrawer
+        allocation={selectedAllocation}
+        allocations={plan.allocations}
+        lastMonth={selectedMonth}
+        milestones={milestones ?? []}
+        projection={projection}
+        planId={plan.id}
+        savingBoxes={savingBoxes}
+        onClose={handleDrawerClose}
       />
     </div>
   );
