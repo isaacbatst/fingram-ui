@@ -22,7 +22,7 @@ export function MonthNavigator({ projection, selectedIndex, onChange }: Props) {
   }, [selectedIndex, max, onChange]);
 
   return (
-    <div className="flex items-center justify-center gap-3 my-3">
+    <div className="flex items-center justify-center gap-3 py-3 sticky top-0 z-40 bg-[var(--color-bg)]/90 backdrop-blur-md">
       <button
         onClick={goBack}
         disabled={selectedIndex === 0}

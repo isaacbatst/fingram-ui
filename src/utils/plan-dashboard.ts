@@ -81,6 +81,114 @@ export function computeCashStats(
   };
 }
 
+export interface CompositionItem {
+  id: string;
+  label: string;
+  value: number;
+  color: string;
+  percent: number;
+}
+
+export interface PatrimonioData {
+  total: number;
+  delta: number | null;
+  items: CompositionItem[];
+}
+
+export interface ComprometidoItem {
+  id: string;
+  label: string;
+  value: number;
+  target: number;
+  progress: number;
+  color: string;
+}
+
+export interface ComprometidoData {
+  total: number;
+  delta: number | null;
+  percentPaid: number | null;
+  items: ComprometidoItem[];
+}
+
+export function computePatrimonio(
+  projection: MonthDataDTO[],
+  allocations: AllocationDTO[],
+  monthIndex: number,
+  getColor: (allocationId: string) => string,
+): PatrimonioData {
+  const current = projection[monthIndex];
+  const prev = monthIndex > 0 ? projection[monthIndex - 1] : null;
+  const total = current?.totalWealth ?? 0;
+
+  const items: CompositionItem[] = [];
+
+  // Disponível (cash) first
+  const cash = current?.cash ?? 0;
+  items.push({
+    id: '__cash__',
+    label: 'Disponível',
+    value: cash,
+    color: 'var(--color-data-1)',
+    percent: total > 0 ? Math.round((cash / total) * 100) : 0,
+  });
+
+  // holdsFunds allocations
+  for (const alloc of allocations) {
+    if (!alloc.holdsFunds) continue;
+    const balance = current?.allocations[alloc.id] ?? 0;
+    items.push({
+      id: alloc.id,
+      label: alloc.label,
+      value: balance,
+      color: getColor(alloc.id),
+      percent: total > 0 ? Math.round((balance / total) * 100) : 0,
+    });
+  }
+
+  return {
+    total,
+    delta: prev ? total - prev.totalWealth : null,
+    items,
+  };
+}
+
+export function computeComprometido(
+  projection: MonthDataDTO[],
+  allocations: AllocationDTO[],
+  monthIndex: number,
+  getColor: (allocationId: string) => string,
+): ComprometidoData {
+  const current = projection[monthIndex];
+  const prev = monthIndex > 0 ? projection[monthIndex - 1] : null;
+  const total = current?.totalCommitted ?? 0;
+
+  const targetSum = allocations
+    .filter((b) => !b.holdsFunds && b.target > 0)
+    .reduce((sum, b) => sum + b.target, 0);
+
+  const items: ComprometidoItem[] = [];
+  for (const alloc of allocations) {
+    if (alloc.holdsFunds) continue;
+    const balance = current?.allocations[alloc.id] ?? 0;
+    items.push({
+      id: alloc.id,
+      label: alloc.label,
+      value: balance,
+      target: alloc.target,
+      progress: alloc.target > 0 ? Math.min(100, (balance / alloc.target) * 100) : 0,
+      color: getColor(alloc.id),
+    });
+  }
+
+  return {
+    total,
+    delta: prev ? total - prev.totalCommitted : null,
+    percentPaid: targetSum > 0 ? Math.round((total / targetSum) * 100) : null,
+    items,
+  };
+}
+
 export function formatCompactCurrency(value: number): string {
   const abs = Math.abs(value);
   if (abs < 1000) return String(Math.round(abs));

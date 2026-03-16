@@ -1,16 +1,16 @@
-import { useState, useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useCallback, useDeferredValue } from "react";
 import { usePlans } from "@/hooks/usePlans";
 import { usePlan } from "@/hooks/usePlan";
 import { useProjection } from "@/hooks/useProjection";
 import { useBoxes } from "@/hooks/useBoxes";
-import { computeKpis, computeMilestones, computeCashStats } from "@/utils/plan-dashboard";
+import { computeMilestones, computePatrimonio, computeComprometido } from "@/utils/plan-dashboard";
+import { getBoxColor } from "@/utils/box-colors";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { PlanHeader } from "./PlanHeader";
-import { KpiRow } from "./KpiRow";
+import { PatrimonioSection } from "./PatrimonioSection";
 import { ProjectionChart } from "./ProjectionChart";
-import { AllocationList } from "./AllocationList";
-import { CashSection } from "./CashSection";
+import { CompactAllocationList } from "./CompactAllocationList";
 import { MonthBreakdown } from "./MonthBreakdown";
 import { MonthNavigator } from "./MonthNavigator";
 
@@ -32,17 +32,21 @@ export function PlanDashboard() {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
   const deferredMonthIndex = useDeferredValue(selectedMonthIndex);
 
-  const kpis = useMemo(
-    () => (projection && plan ? computeKpis(projection, plan.allocations, deferredMonthIndex) : null),
-    [projection, plan, deferredMonthIndex],
+  const getColor = useCallback(
+    (allocationId: string) => plan ? getBoxColor(plan.allocations, allocationId) : 'var(--color-data-1)',
+    [plan],
+  );
+  const patrimonioData = useMemo(
+    () => (projection && plan ? computePatrimonio(projection, plan.allocations, deferredMonthIndex, getColor) : null),
+    [projection, plan, deferredMonthIndex, getColor],
+  );
+  const comprometidoData = useMemo(
+    () => (projection && plan ? computeComprometido(projection, plan.allocations, deferredMonthIndex, getColor) : null),
+    [projection, plan, deferredMonthIndex, getColor],
   );
   const milestones = useMemo(
     () => (projection && plan ? computeMilestones(projection, plan.allocations) : null),
     [projection, plan],
-  );
-  const cashStats = useMemo(
-    () => (projection ? computeCashStats(projection, deferredMonthIndex) : null),
-    [projection, deferredMonthIndex],
   );
 
   if (isLoading) {
@@ -88,16 +92,11 @@ export function PlanDashboard() {
         onChange={setSelectedMonthIndex}
       />
       <MonthBreakdown monthData={selectedMonth} allocations={plan.allocations} />
-      {kpis && <KpiRow kpis={kpis} />}
-      <ProjectionChart
-        projection={projection}
-        allocations={plan.allocations}
-        planMilestones={plan.milestones}
-        selectedMonthIndex={deferredMonthIndex}
-        onMonthSelect={setSelectedMonthIndex}
-      />
+      {patrimonioData && comprometidoData && (
+        <PatrimonioSection patrimonio={patrimonioData} comprometido={comprometidoData} />
+      )}
       {plan.allocations.length > 0 && (
-        <AllocationList
+        <CompactAllocationList
           allocations={plan.allocations}
           lastMonth={selectedMonth}
           milestones={milestones ?? []}
@@ -106,13 +105,13 @@ export function PlanDashboard() {
           savingBoxes={savingBoxes}
         />
       )}
-      {cashStats && (
-        <CashSection
-          projection={projection}
-          stats={cashStats}
-          selectedMonthIndex={deferredMonthIndex}
-        />
-      )}
+      <ProjectionChart
+        projection={projection}
+        allocations={plan.allocations}
+        planMilestones={plan.milestones}
+        selectedMonthIndex={deferredMonthIndex}
+        onMonthSelect={setSelectedMonthIndex}
+      />
     </div>
   );
 }

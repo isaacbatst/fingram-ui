@@ -74,9 +74,11 @@ export function AllocationCard({ allocation, allocations, lastMonth, eta, color,
         <span className="font-mono text-base font-semibold text-foreground">
           {formatCurrency(balance)}
         </span>
-        <span className="font-mono text-[11px] text-[var(--color-text-muted)]">
-          {allocation.target > 0 ? `de ${formatCurrency(allocation.target)}` : "sem limite"}
-        </span>
+        {allocation.target > 0 && (
+          <span className="font-mono text-[11px] text-[var(--color-text-muted)]">
+            de {formatCurrency(allocation.target)}
+          </span>
+        )}
       </div>
 
       {/* Progress bar */}

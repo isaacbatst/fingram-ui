@@ -192,6 +192,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 tickLine={false}
               />
               <Tooltip
+                itemSorter={(item) => -(Number(item.value) || 0)}
                 contentStyle={{
                   background: "rgba(8,9,12,0.92)",
                   border: "1px solid var(--color-border-strong)",
@@ -207,9 +208,17 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   const base = milestone ? `Mês ${month} — ${milestone.label}` : `Mês ${month}`;
                   return `${base} · ${dataLabel}`;
                 }}
-                formatter={(value, name) => {
-                  // Hide projected duplicate keys from tooltip — only show real or projected, not both
-                  if (String(name).endsWith(' (projeção)')) return [null, null];
+                formatter={(value, name, item) => {
+                  if (value === null || value === undefined) return [null, null];
+                  const strName = String(name);
+                  if (strName.endsWith(' (projeção)')) {
+                    const realName = strName.replace(' (projeção)', '');
+                    // At boundary month both keys have values — skip projected to avoid duplicates
+                    if (item.payload[realName] !== null && item.payload[realName] !== undefined) {
+                      return [null, null];
+                    }
+                    return [formatCurrency(Number(value)), realName];
+                  }
                   return [formatCurrency(Number(value)), name];
                 }}
               />
