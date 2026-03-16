@@ -23,6 +23,7 @@ import { useBudgets } from "@/hooks/useBudgets";
 import { useBudgetStartDay } from "@/hooks/useBudgetStartDay";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useState } from "react";
+import { mutate as globalMutate } from "swr";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
@@ -176,6 +177,7 @@ export function GastosOverview({
         setEditDrawerOpen(false);
         setEditCategoryId(null);
         mutate();
+        globalMutate("budget-ceiling");
       }
     } finally {
       setIsSaving(false);
