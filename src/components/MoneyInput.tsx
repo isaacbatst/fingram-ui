@@ -22,6 +22,19 @@ function formatCents(cents: number): string {
   });
 }
 
+/** Map a digit-space index to a position in the formatted string (after that many digits). */
+function posAfterNDigits(formatted: string, n: number): number {
+  if (n <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (formatted[i] >= "0" && formatted[i] <= "9") {
+      seen++;
+      if (seen === n) return i + 1;
+    }
+  }
+  return formatted.length;
+}
+
 export function MoneyInput({
   value,
   onChange,
@@ -34,7 +47,7 @@ export function MoneyInput({
   autoFocus,
 }: MoneyInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const justFocused = useRef(false);
+  const isAutoFocusing = useRef(!!autoFocus);
   const cents = Math.round(value * 100);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPos, setCursorPos] = useState<number | null>(null);
@@ -74,12 +87,26 @@ export function MoneyInput({
           const newCents = parseInt(newDigits, 10);
           if (newCents <= MAX_CENTS) {
             onChange(newCents / 100);
+            // Cursor advances: after (digitIndex + 1) digits in new formatted
+            const newFormatted = formatCents(newCents);
+            const newPos = posAfterNDigits(newFormatted, digitIndex + 1);
+            setCursorPos(newPos);
+            requestAnimationFrame(() => {
+              inputRef.current?.setSelectionRange(newPos, newPos);
+            });
           }
         } else if (digitIndex > 0) {
           const newDigits =
             digits.slice(0, digitIndex - 1) + digits.slice(digitIndex);
           const newCents = newDigits ? parseInt(newDigits, 10) : 0;
           onChange(newCents / 100);
+          // Cursor goes back: after (digitIndex - 1) digits in new formatted
+          const newFormatted = formatCents(newCents);
+          const newPos = posAfterNDigits(newFormatted, digitIndex - 1);
+          setCursorPos(newPos);
+          requestAnimationFrame(() => {
+            inputRef.current?.setSelectionRange(newPos, newPos);
+          });
         }
       } else {
         // Default: append/remove from end
@@ -92,12 +119,11 @@ export function MoneyInput({
         } else {
           onChange(Math.floor(cents / 10) / 100);
         }
-      }
 
-      setCursorPos(null);
-      requestAnimationFrame(() => {
-        moveCursorToEnd();
-      });
+        requestAnimationFrame(() => {
+          moveCursorToEnd();
+        });
+      }
     },
     [cents, formatted, cursorPos, onChange, onNext, moveCursorToEnd],
   );
@@ -120,27 +146,28 @@ export function MoneyInput({
 
   const handleFocus = useCallback(() => {
     setIsFocused(true);
-    setCursorPos(null);
-    justFocused.current = true;
-    requestAnimationFrame(() => {
-      moveCursorToEnd();
-    });
+    if (isAutoFocusing.current) {
+      // autoFocus: cursor at end (append mode)
+      setCursorPos(null);
+      requestAnimationFrame(() => {
+        moveCursorToEnd();
+      });
+      isAutoFocusing.current = false;
+    }
+    // User tap: handleClick will set cursorPos
   }, [moveCursorToEnd]);
 
   const handleClick = useCallback(() => {
-    if (justFocused.current) {
-      justFocused.current = false;
-      return;
-    }
     requestAnimationFrame(() => {
       const pos = inputRef.current?.selectionStart ?? null;
       if (pos !== null && pos < formatted.length) {
         setCursorPos(pos);
       } else {
         setCursorPos(null);
+        moveCursorToEnd();
       }
     });
-  }, [formatted.length]);
+  }, [formatted.length, moveCursorToEnd]);
 
   const cursorSpan = (
     <span className="inline-block w-[2px] h-[1em] bg-current align-middle ml-px animate-caret-blink" />
