@@ -2,13 +2,12 @@ import { AccentGlow } from "@/components/AccentGlow";
 import { AccountButton } from "@/components/AccountButton";
 import { DunaLogo } from "@/components/DunaLogo";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
+import { GastosTab } from "@/components/GastosTab";
 import { GrainOverlay } from "@/components/GrainOverlay";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { OrcamentoTab } from "@/components/OrcamentoTab";
 import { SaldoResumo } from "@/components/SaldoResumo";
 import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
-import { TransacoesTab } from "@/components/TransacoesTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VaultAccessTokenInput } from "@/components/VaultAccessTokenInput";
 import { ApiProvider } from "@/contexts/ApiContext/provider";
@@ -16,39 +15,39 @@ import { StorageProvider } from "@/contexts/StorageContext/provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { LucideIcon } from "lucide-react";
-import {
-  ChartPie,
-  DollarSign,
-  Layers,
-  Search,
-  TrendingUp,
-} from "lucide-react";
+import { ChartPie, DollarSign, Layers, TrendingUp } from "lucide-react";
+import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { EstratosTab } from "./components/EstratosTab";
 import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
-import { useCategories } from "./hooks/useCategories";
 import { useSearchParams } from "./hooks/useSearchParams";
 import { useSummary } from "./hooks/useSummary";
 
 const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
   { value: "input", icon: DollarSign, label: "Entrada" },
   { value: "estratos", icon: Layers, label: "Estratos" },
-  { value: "orcamento", icon: ChartPie, label: "Orçamento" },
-  { value: "transacoes", icon: Search, label: "Busca" },
+  { value: "gastos", icon: ChartPie, label: "Gastos" },
   { value: "plano", icon: TrendingUp, label: "Plano" },
 ];
 
 function AppContent() {
   const auth = useApi();
   const summary = useSummary();
-  const categories = useCategories();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("aba") || "input";
   const setCurrentTab = (tab: string) => {
     setSearchParams({ aba: tab });
   };
+
+  // Retrocompatibility: redirect old tab values
+  useEffect(() => {
+    const aba = searchParams.get("aba");
+    if (aba === "orcamento" || aba === "transacoes") {
+      setSearchParams({ aba: "gastos" });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Mostrar loading enquanto a autenticação está carregando
   if (auth.isLoading) {
@@ -127,7 +126,7 @@ function AppContent() {
   return (
     <div className="h-dvh flex flex-col lg:flex-row bg-background text-foreground">
       <Tabs
-        defaultValue={currentTab}
+        value={currentTab}
         className="flex-1 min-h-0 flex flex-col lg:flex-row"
         onValueChange={setCurrentTab}
       >
@@ -181,17 +180,8 @@ function AppContent() {
             >
               <EstratosTab />
             </TabsContent>
-            <TabsContent
-              value="orcamento"
-              className="px-4 flex flex-col flex-1 min-h-0"
-            >
-              <OrcamentoTab />
-            </TabsContent>
-            <TabsContent value="transacoes" className="px-4 flex flex-col flex-1 min-h-0">
-              <TransacoesTab
-                categories={categories.data || []}
-                mutateSummary={summary.mutate}
-              />
+            <TabsContent value="gastos" className="px-4 flex flex-col flex-1 min-h-0">
+              <GastosTab />
             </TabsContent>
             <TabsContent value="plano" className="px-4 flex flex-col flex-1 min-h-0">
               <PlanoTab />
