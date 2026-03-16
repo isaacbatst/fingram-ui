@@ -30,7 +30,7 @@ export const MonthBreakdown = memo(function MonthBreakdown({ monthData, allocati
 
   return (
     <div className="mb-4">
-      <span className="font-display text-base text-foreground">Distribuição</span>
+      <span className="font-display text-base text-foreground">Movimentações</span>
 
       <div className="mt-2 p-3.5 bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-md)]">
         {/* Stacked bar */}
@@ -57,7 +57,7 @@ export const MonthBreakdown = memo(function MonthBreakdown({ monthData, allocati
               <div
                 style={{
                   width: `${(surplus / income) * 100}%`,
-                  background: "rgba(217,175,120,0.35)",
+                  background: "rgba(184,125,138,0.35)",
                 }}
               />
             )}
@@ -104,13 +104,13 @@ export const MonthBreakdown = memo(function MonthBreakdown({ monthData, allocati
             <div className="flex items-center gap-1.5">
               <span
                 className="w-[3px] h-4 rounded-sm"
-                style={{ background: isNegativeSurplus ? "var(--color-danger)" : "var(--color-data-1)" }}
+                style={{ background: "var(--color-flow-income)" }}
               />
-              <span className="font-sans font-medium text-[var(--color-text-secondary)]">Sobra</span>
+              <span className="font-sans font-medium text-[var(--color-text-secondary)]">Saldo</span>
             </div>
             <span
               className="font-mono font-semibold"
-              style={{ color: isNegativeSurplus ? "var(--color-danger)" : "var(--color-data-1)" }}
+              style={{ color: isNegativeSurplus ? "var(--color-danger)" : "var(--color-flow-income)" }}
             >
               {isNegativeSurplus ? "-" : "+"}{formatCurrency(Math.abs(surplus))}
             </span>

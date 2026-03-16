@@ -45,7 +45,7 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
         </div>
 
         {/* Hero value */}
-        <div className="font-mono text-2xl font-semibold text-[var(--color-accent-light)] leading-tight mb-3">
+        <div className="font-mono text-2xl font-semibold text-[var(--color-text-primary)] leading-tight mb-3">
           {formatCurrency(patrimonio.total)}
         </div>
 

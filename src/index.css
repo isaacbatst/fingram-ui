@@ -57,6 +57,7 @@
   /* Flow chart (distinct from data series to avoid confusion) */
   --color-flow-income:     #7bad6e;
   --color-flow-expense:    #d97456;
+  --color-flow-surplus:    #b87d8a;
 
   /* Typography */
   --font-display:          'DM Serif Text', Georgia, serif;

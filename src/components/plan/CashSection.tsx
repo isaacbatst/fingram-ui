@@ -59,8 +59,8 @@ export const CashSection = memo(function CashSection({ projection, stats, select
 
       <div className="flex justify-between font-sans text-[11px] text-[var(--color-text-muted)] mt-1">
         <span>
-          Sobra média:{" "}
-          <span className="font-mono text-[var(--color-success)]">
+          Saldo médio:{" "}
+          <span className="font-mono text-[var(--color-flow-income)]">
             +{formatCurrency(stats.averageSurplus)}/mês
           </span>
         </span>
