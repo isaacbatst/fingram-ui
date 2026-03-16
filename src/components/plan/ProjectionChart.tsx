@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import type { AllocationDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
-import { formatCompactCurrency, formatCurrency } from "@/utils/plan-dashboard";
+import { formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
 
 import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
 
@@ -39,7 +39,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
   const [rangeMonths, setRangeMonths] = useState<number>(Infinity);
 
-  const holdsFundsAllocations = useMemo(() => allocations.filter((b) => b.holdsFunds), [allocations]);
+  const holdsFundsAllocations = useMemo(() => allocations.filter(holdsPhysicalFunds), [allocations]);
 
   const visibleProjection = useMemo(
     () => rangeMonths === Infinity ? projection : projection.slice(0, rangeMonths),

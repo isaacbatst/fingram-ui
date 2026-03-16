@@ -24,6 +24,9 @@ function buildMonth(overrides: Partial<MonthDataDTO> & { month: number }): Month
     totalWealth: 0,
     totalCommitted: 0,
     financingDetails: {},
+    allocationAccumulated: {},
+    allocationRealized: {},
+    realizedAllocations: [],
     ...overrides,
   };
 }
@@ -35,7 +38,7 @@ describe("computeKpis", () => {
       buildMonth({ month: 2, totalWealth: 20000, cash: 8000, totalCommitted: 6000 }),
     ];
     const boxes: AllocationDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], realizationMode: 'immediate', estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.patrimonio.value).toBe(20000);
@@ -58,7 +61,7 @@ describe("computeKpis", () => {
       buildMonth({ month: 1, totalCommitted: 50000 }),
     ];
     const boxes: AllocationDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], realizationMode: 'immediate', estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.comprometido.percent).toBe(50);
@@ -69,8 +72,8 @@ describe("computeKpis", () => {
       buildMonth({ month: 1, totalCommitted: 50000 }),
     ];
     const boxes: AllocationDTO[] = [
-      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
-      { id: "b2", label: "Outro", target: 0, monthlyAmount: [], holdsFunds: false, estratoId: null, scheduledMovements: [] },
+      { id: "b1", label: "Terreno", target: 100000, monthlyAmount: [], realizationMode: 'immediate', estratoId: null, scheduledMovements: [] },
+      { id: "b2", label: "Outro", target: 0, monthlyAmount: [], realizationMode: 'immediate', estratoId: null, scheduledMovements: [] },
     ];
     const kpis = computeKpis(projection, boxes);
     expect(kpis.comprometido.percent).toBe(50);
@@ -120,7 +123,7 @@ describe("computeMilestones", () => {
       buildMonth({ month: 3, allocations: { b1: 15000 } }),
     ];
     const boxes: AllocationDTO[] = [
-      { id: "b1", label: "Casamento", target: 10000, monthlyAmount: [], holdsFunds: true, estratoId: null, scheduledMovements: [] },
+      { id: "b1", label: "Casamento", target: 10000, monthlyAmount: [], realizationMode: 'manual', estratoId: null, scheduledMovements: [] },
     ];
     const milestones = computeMilestones(projection, boxes);
     expect(milestones).toEqual([{ month: 2, label: "Casamento", boxId: "b1" }]);
@@ -131,7 +134,7 @@ describe("computeMilestones", () => {
       buildMonth({ month: 1, allocations: { b1: 5000 } }),
     ];
     const boxes: AllocationDTO[] = [
-      { id: "b1", label: "Ações", target: 0, monthlyAmount: [], holdsFunds: true, estratoId: null, scheduledMovements: [] },
+      { id: "b1", label: "Ações", target: 0, monthlyAmount: [], realizationMode: 'manual', estratoId: null, scheduledMovements: [] },
     ];
     const milestones = computeMilestones(projection, boxes);
     expect(milestones).toEqual([]);

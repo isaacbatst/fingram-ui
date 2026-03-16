@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 import type { AllocationDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
 import type { BoxDTO } from "@/services/api.interface";
 import type { DerivedMilestone } from "@/utils/plan-dashboard";
-import { formatCurrency, formatMonthYear, getActiveMonthlyAmount } from "@/utils/plan-dashboard";
+import { formatCurrency, formatMonthYear, getActiveMonthlyAmount, holdsPhysicalFunds } from "@/utils/plan-dashboard";
 import { getBoxColor } from "@/utils/box-colors";
 import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
 import { useBindAllocation } from "@/hooks/useBindAllocation";
@@ -61,7 +61,7 @@ export function AllocationDetailDrawer({
   const financing: FinancingMonthDetailDTO | undefined = lastMonth.financingDetails[allocation.id];
   const milestone = milestones.find((m) => m.boxId === allocation.id);
   const etaMonth = milestone ? projection.find((m) => m.month === milestone.month) : null;
-  const isHoldsFunds = allocation.holdsFunds;
+  const isHoldsFunds = holdsPhysicalFunds(allocation);
 
   const linkedBox = isHoldsFunds && allocation.estratoId
     ? savingBoxes.find((b) => b.id === allocation.estratoId)
@@ -87,7 +87,11 @@ export function AllocationDetailDrawer({
                 {allocation.label}
               </DrawerTitle>
               <DrawerDescription className="font-sans text-[11px] text-[var(--color-text-muted)]">
-                {isHoldsFunds ? "Reservado para você" : "Pago a terceiros"}
+                {allocation.realizationMode === 'immediate'
+                  ? "Pago a terceiros"
+                  : allocation.realizationMode === 'onCompletion'
+                    ? "Reservado → realiza ao atingir meta"
+                    : "Reservado para você"}
               </DrawerDescription>
             </div>
           </div>

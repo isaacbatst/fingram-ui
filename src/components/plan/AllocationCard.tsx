@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import type { AllocationDTO, MonthDataDTO, FinancingMonthDetailDTO } from "@/services/plan.service";
 import type { BoxDTO } from "@/services/api.interface";
-import { formatCurrency, formatMonthYear, getActiveMonthlyAmount } from "@/utils/plan-dashboard";
+import { formatCurrency, formatMonthYear, getActiveMonthlyAmount, holdsPhysicalFunds } from "@/utils/plan-dashboard";
 import { FinancingPhaseIndicator } from "./FinancingPhaseIndicator";
 import { useBindAllocation } from "@/hooks/useBindAllocation";
 import {
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function AllocationCard({ allocation, allocations, lastMonth, eta, color, planId, savingBoxes }: Props) {
-  const isHoldsFunds = allocation.holdsFunds;
+  const isHoldsFunds = holdsPhysicalFunds(allocation);
   const balance = lastMonth.allocations[allocation.id] ?? 0;
   const progress = allocation.target > 0 ? Math.min(100, (balance / allocation.target) * 100) : null;
   const financing: FinancingMonthDetailDTO | undefined = lastMonth.financingDetails[allocation.id];
@@ -65,7 +65,11 @@ export function AllocationCard({ allocation, allocations, lastMonth, eta, color,
             borderColor: `color-mix(in srgb, ${color} 20%, transparent)`,
           }}
         >
-          {isHoldsFunds ? "Reservado" : "Pago"}
+          {allocation.realizationMode === 'immediate'
+            ? "Pago"
+            : allocation.realizationMode === 'onCompletion'
+              ? "Realiza ao completar"
+              : "Reservado"}
         </span>
       </div>
 

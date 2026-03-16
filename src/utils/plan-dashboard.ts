@@ -1,5 +1,7 @@
 import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/plan.service";
 
+export const holdsPhysicalFunds = (a: { realizationMode: string }) => a.realizationMode !== 'immediate';
+
 export interface KpiData {
   value: number;
   delta: number | null;
@@ -21,7 +23,7 @@ export function computeKpis(
   const prev = idx > 0 ? projection[idx - 1] : null;
 
   const targetSum = allocations
-    .filter((b) => !b.holdsFunds && b.target > 0)
+    .filter((b) => b.realizationMode === 'immediate' && b.target > 0)
     .reduce((sum, b) => sum + b.target, 0);
 
   return {
@@ -41,6 +43,8 @@ export function computeKpis(
   };
 }
 
+
+
 export interface DerivedMilestone {
   month: number;
   label: string;
@@ -52,8 +56,8 @@ export function computeMilestones(projection: MonthDataDTO[], allocations: Alloc
   for (const allocation of allocations) {
     if (allocation.target <= 0) continue;
     for (const monthData of projection) {
-      const balance = monthData.allocations[allocation.id] ?? 0;
-      if (balance >= allocation.target) {
+      const accumulated = monthData.allocationAccumulated?.[allocation.id] ?? monthData.allocations[allocation.id] ?? 0;
+      if (accumulated >= allocation.target) {
         milestones.push({ month: monthData.month, label: allocation.label, boxId: allocation.id });
         break;
       }
@@ -133,9 +137,9 @@ export function computePatrimonio(
     percent: total > 0 ? Math.round((cash / total) * 100) : 0,
   });
 
-  // holdsFunds allocations
+  // non-immediate allocations hold physical funds
   for (const alloc of allocations) {
-    if (!alloc.holdsFunds) continue;
+    if (!holdsPhysicalFunds(alloc)) continue;
     const balance = current?.allocations[alloc.id] ?? 0;
     items.push({
       id: alloc.id,
@@ -164,12 +168,12 @@ export function computeComprometido(
   const total = current?.totalCommitted ?? 0;
 
   const targetSum = allocations
-    .filter((b) => !b.holdsFunds && b.target > 0)
+    .filter((b) => b.realizationMode === 'immediate' && b.target > 0)
     .reduce((sum, b) => sum + b.target, 0);
 
   const items: ComprometidoItem[] = [];
   for (const alloc of allocations) {
-    if (alloc.holdsFunds) continue;
+    if (alloc.realizationMode !== 'immediate') continue;
     const balance = current?.allocations[alloc.id] ?? 0;
     items.push({
       id: alloc.id,
