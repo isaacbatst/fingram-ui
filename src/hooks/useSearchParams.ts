@@ -8,7 +8,11 @@ export const useSearchParams = () => {
   const setSearchParams = (params: Record<string, string>) => {
     const newParams = new URLSearchParams(window.location.search);
     for (const [key, value] of Object.entries(params)) {
-      newParams.set(key, value);
+      if (value === "") {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
     }
     window.history.pushState({}, '', `?${newParams.toString()}`);
     setSearchParamsState(newParams);
