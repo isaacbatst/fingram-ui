@@ -169,9 +169,7 @@ export function GastosOverview({
       if (!allBudgets.find((b) => b.categoryId === editCategoryId)) {
         allBudgets.push({ categoryId: editCategoryId, amount: editBudgetValue });
       }
-      const result = await setBudgets(
-        allBudgets.filter((b) => b.amount > 0),
-      );
+      const result = await setBudgets(allBudgets);
       if (result.success) {
         setEditDrawerOpen(false);
         setEditCategoryId(null);
