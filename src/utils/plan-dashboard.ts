@@ -91,7 +91,6 @@ export interface CompositionItem {
   value: number;
   color: string;
   percent: number;
-  isRealized?: boolean;
 }
 
 export interface PatrimonioData {
@@ -138,24 +137,22 @@ export function computePatrimonio(
     percent: total > 0 ? Math.round((cash / total) * 100) : 0,
   });
 
-  // non-immediate allocations hold physical funds
+  // non-immediate allocations that still hold physical funds (exclude realized onCompletion)
   for (const alloc of allocations) {
     if (!holdsPhysicalFunds(alloc)) continue;
     const balance = current?.allocations[alloc.id] ?? 0;
-    // For onCompletion allocations, use accumulated value after realization
-    // (balance drops to 0 when auto-realized, but accumulated preserves the total)
     const accumulated = current?.allocationAccumulated?.[alloc.id] ?? balance;
     const isRealized = alloc.realizationMode === 'onCompletion'
       && alloc.target > 0
       && accumulated >= alloc.target;
-    const displayValue = isRealized ? accumulated : balance;
+    // Realized onCompletion → moves to Comprometido card
+    if (isRealized) continue;
     items.push({
       id: alloc.id,
       label: alloc.label,
-      value: displayValue,
+      value: balance,
       color: getColor(alloc.id),
-      percent: total > 0 ? Math.round((displayValue / total) * 100) : 0,
-      isRealized,
+      percent: total > 0 ? Math.round((balance / total) * 100) : 0,
     });
   }
 
@@ -176,22 +173,49 @@ export function computeComprometido(
   const prev = monthIndex > 0 ? projection[monthIndex - 1] : null;
   const total = current?.totalCommitted ?? 0;
 
+  // Include immediate + realized onCompletion in target sum
   const targetSum = allocations
-    .filter((b) => b.realizationMode === 'immediate' && b.target > 0)
+    .filter((b) => {
+      if (b.target <= 0) return false;
+      if (b.realizationMode === 'immediate') return true;
+      if (b.realizationMode === 'onCompletion') {
+        const acc = current?.allocationAccumulated?.[b.id] ?? 0;
+        return acc >= b.target;
+      }
+      return false;
+    })
     .reduce((sum, b) => sum + b.target, 0);
 
   const items: ComprometidoItem[] = [];
   for (const alloc of allocations) {
-    if (alloc.realizationMode !== 'immediate') continue;
     const balance = current?.allocations[alloc.id] ?? 0;
-    items.push({
-      id: alloc.id,
-      label: alloc.label,
-      value: balance,
-      target: alloc.target,
-      progress: alloc.target > 0 ? Math.min(100, (balance / alloc.target) * 100) : 0,
-      color: getColor(alloc.id),
-    });
+    const accumulated = current?.allocationAccumulated?.[alloc.id] ?? balance;
+
+    if (alloc.realizationMode === 'immediate') {
+      // Pagamento: always in Comprometido
+      items.push({
+        id: alloc.id,
+        label: alloc.label,
+        value: balance,
+        target: alloc.target,
+        progress: alloc.target > 0 ? Math.min(100, (balance / alloc.target) * 100) : 0,
+        color: getColor(alloc.id),
+      });
+    } else if (
+      alloc.realizationMode === 'onCompletion'
+      && alloc.target > 0
+      && accumulated >= alloc.target
+    ) {
+      // onCompletion realized: moves from Patrimônio to Comprometido
+      items.push({
+        id: alloc.id,
+        label: alloc.label,
+        value: accumulated,
+        target: alloc.target,
+        progress: 100,
+        color: getColor(alloc.id),
+      });
+    }
   }
 
   return {
