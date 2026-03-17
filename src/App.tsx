@@ -189,7 +189,7 @@ function AppContent() {
           </div>
 
           {/* Mobile bottom bar */}
-          <div className="lg:hidden flex">
+          <div className="lg:hidden flex sticky bottom-0 z-50 bg-[var(--color-bg)]">
             <TabsList className="flex-1 w-auto h-14">
               {TAB_ITEMS.map(({ value, icon: Icon, label }) => (
                 <TabsTrigger key={value} value={value} className="flex-col gap-0.5 py-1.5">
