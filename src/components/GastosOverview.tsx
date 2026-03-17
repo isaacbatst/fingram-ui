@@ -35,7 +35,7 @@ import {
   ListIcon,
   PieChartIcon,
 } from "lucide-react";
-import { ScrollArea } from "./ui/scroll-area";
+
 import { Label } from "@/components/ui/label";
 import { BudgetPieChart } from "./BudgetPieChart";
 
@@ -265,7 +265,7 @@ export function GastosOverview({
 
       {/* Main content */}
       {budgetData && !error && (
-        <ScrollArea className="flex flex-col flex-1 pr-3 overflow-y-auto">
+        <div className="flex flex-col flex-1">
           {hasBudgets ? (
             <>
               {/* Ring chart */}
@@ -352,102 +352,152 @@ export function GastosOverview({
                 )
               )}
 
-              {/* Category list */}
-              <div className="space-y-3">
-                {categoriesWithBudget.map((c) => {
-                  const pct = c.valor > 0 ? Math.min(100, (c.usado / c.valor) * 100) : 0;
-                  const filledColor =
-                    pct > 90
-                      ? "var(--color-danger)"
-                      : pct > 70
-                        ? "var(--color-warning)"
-                        : "var(--color-success)";
-
-                  return (
-                    <div
-                      key={c.categoryId}
-                      className="rounded-xl border border-border duna-card duna-surface cursor-pointer transition-colors active:bg-muted/50"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onDrillCategory(c.categoryId)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") onDrillCategory(c.categoryId);
-                      }}
-                    >
-                      <div className="p-3">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-base font-display text-foreground">{c.categoria}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground font-mono">{formatMoney(c.usado)}</span>
-                            <button
-                              type="button"
-                              className="p-1 rounded-md hover:bg-muted/50 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEdit(c.categoryId, c.categoria);
-                              }}
-                              aria-label={`Editar orçamento de ${c.categoria}`}
-                            >
-                              <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </div>
-                        <Progress value={pct} filledColor={filledColor} bgColor="var(--color-border)" className="h-2.5" />
-                        <div className="mt-1 text-xs text-muted-foreground font-mono">de {formatMoney(c.valor)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* View toggle */}
+              <div className="flex items-center justify-center gap-1 mb-4">
+                {([
+                  { key: "lista" as const, label: "Lista", icon: ListIcon },
+                  { key: "planejado" as const, label: "Planejado", icon: PieChartIcon },
+                  { key: "executado" as const, label: "Executado", icon: PieChartIcon },
+                ]).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setViewMode(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                      viewMode === key
+                        ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)]"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              {/* Categories without budget */}
-              {categoriesWithoutBudget.length > 0 && (
-                <div className="mt-6">
-                  <div className="border-t border-border mb-3" />
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Sem orçamento definido:
-                  </p>
-                  <div className="space-y-1">
-                    {categoriesWithoutBudget.map((cat: Category) => {
-                      const isDrillable = cat.transactionType !== "income";
+              {/* Pie chart: Planejado */}
+              {viewMode === "planejado" && (
+                <BudgetPieChart
+                  data={categoriesWithBudget.map((c) => ({
+                    name: c.categoria,
+                    value: c.valor,
+                  }))}
+                  total={totalOrcamento}
+                />
+              )}
+
+              {/* Pie chart: Executado */}
+              {viewMode === "executado" && (
+                <BudgetPieChart
+                  data={categoriesWithBudget.map((c) => ({
+                    name: c.categoria,
+                    value: c.usado,
+                    budget: c.valor,
+                  }))}
+                  total={totalGasto}
+                />
+              )}
+
+              {/* Category list */}
+              {viewMode === "lista" && (
+                <>
+                  <div className="space-y-3">
+                    {categoriesWithBudget.map((c) => {
+                      const pct = c.valor > 0 ? Math.min(100, (c.usado / c.valor) * 100) : 0;
+                      const filledColor =
+                        pct > 90
+                          ? "var(--color-danger)"
+                          : pct > 70
+                            ? "var(--color-warning)"
+                            : "var(--color-success)";
+
                       return (
                         <div
-                          key={cat.id}
+                          key={c.categoryId}
+                          className="rounded-xl border border-border duna-card duna-surface cursor-pointer transition-colors active:bg-muted/50"
                           role="button"
                           tabIndex={0}
-                          className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50 cursor-pointer"
-                          onClick={() => isDrillable ? onDrillCategory(cat.id) : handleOpenEdit(cat.id, cat.name)}
+                          onClick={() => onDrillCategory(c.categoryId)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              if (isDrillable) {
-                                onDrillCategory(cat.id);
-                              } else {
-                                handleOpenEdit(cat.id, cat.name);
-                              }
-                            }
+                            if (e.key === "Enter" || e.key === " ") onDrillCategory(c.categoryId);
                           }}
                         >
-                          <span className="font-display text-sm text-muted-foreground">{cat.name}</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className="p-1 rounded-md hover:bg-muted/50 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEdit(cat.id, cat.name);
-                              }}
-                              aria-label={`Definir orçamento de ${cat.name}`}
-                            >
-                              <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            {isDrillable && <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
+                          <div className="p-3">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-base font-display text-foreground">{c.categoria}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground font-mono">{formatMoney(c.usado)}</span>
+                                <button
+                                  type="button"
+                                  className="p-1 rounded-md hover:bg-muted/50 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEdit(c.categoryId, c.categoria);
+                                  }}
+                                  aria-label={`Editar orçamento de ${c.categoria}`}
+                                >
+                                  <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                            <Progress value={pct} filledColor={filledColor} bgColor="var(--color-border)" className="h-2.5" />
+                            <div className="mt-1 text-xs text-muted-foreground font-mono">de {formatMoney(c.valor)}</div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
+
+                  {/* Categories without budget */}
+                  {categoriesWithoutBudget.length > 0 && (
+                    <div className="mt-6">
+                      <div className="border-t border-border mb-3" />
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Sem orçamento definido:
+                      </p>
+                      <div className="space-y-1">
+                        {categoriesWithoutBudget.map((cat: Category) => {
+                          const isDrillable = cat.transactionType !== "income";
+                          return (
+                            <div
+                              key={cat.id}
+                              role="button"
+                              tabIndex={0}
+                              className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors active:bg-muted/50 cursor-pointer"
+                              onClick={() => isDrillable ? onDrillCategory(cat.id) : handleOpenEdit(cat.id, cat.name)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  if (isDrillable) {
+                                    onDrillCategory(cat.id);
+                                  } else {
+                                    handleOpenEdit(cat.id, cat.name);
+                                  }
+                                }
+                              }}
+                            >
+                              <span className="font-display text-sm text-muted-foreground">{cat.name}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  className="p-1 rounded-md hover:bg-muted/50 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEdit(cat.id, cat.name);
+                                  }}
+                                  aria-label={`Definir orçamento de ${cat.name}`}
+                                >
+                                  <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                {isDrillable && <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           ) : (
@@ -513,7 +563,7 @@ export function GastosOverview({
               </>
             )
           )}
-        </ScrollArea>
+        </div>
       )}
 
       {/* Edit Drawer (per-category) */}

@@ -115,7 +115,7 @@ export function GastosTab() {
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
       {showOverview && (
         <div
-          className="absolute inset-0 flex flex-col"
+          className="absolute inset-0 flex flex-col overflow-y-auto"
           style={{
             transform: overviewTransform,
             transition: transitioning ? "transform 350ms var(--ease-out)" : "none",
@@ -134,7 +134,7 @@ export function GastosTab() {
       )}
       {showTransacoes && (
         <div
-          className="absolute inset-0 flex flex-col"
+          className="absolute inset-0 flex flex-col overflow-y-auto"
           style={{
             transform: transacoesTransform,
             transition: transitioning ? "transform 350ms var(--ease-out)" : "none",
