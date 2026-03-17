@@ -54,6 +54,7 @@ const isToday = (date: Date): boolean => {
 // ── Types ──
 
 type InputMode = "expense" | "income" | "transfer";
+type ExpenseSubtype = "daily" | "planned";
 
 const MODE_CONFIG: Record<
   InputMode,
@@ -77,6 +78,47 @@ const MODE_CONFIG: Record<
 };
 
 const MODES: InputMode[] = ["expense", "income", "transfer"];
+
+// ── Expense Subtype Selector ──
+
+function ExpenseSubtypeSelector({
+  value,
+  onChange,
+}: {
+  value: ExpenseSubtype;
+  onChange: (subtype: ExpenseSubtype) => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => onChange("daily")}
+        className={cn(
+          "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border-2 transition-colors duration-200",
+          value === "daily"
+            ? "bg-[var(--color-success-bg)] border-[var(--color-success-border)] text-[var(--color-success)]"
+            : "bg-muted/30 border-[var(--color-border)] text-muted-foreground hover:border-muted-foreground/50"
+        )}
+      >
+        <span className="text-xl">🛒</span>
+        <span className="text-xs font-semibold">Dia a dia</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("planned")}
+        className={cn(
+          "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border-2 transition-colors duration-200",
+          value === "planned"
+            ? "bg-[var(--color-info-bg)] border-[var(--color-info-border)] text-[var(--color-info)]"
+            : "bg-muted/30 border-[var(--color-border)] text-muted-foreground hover:border-muted-foreground/50"
+        )}
+      >
+        <span className="text-xl">📋</span>
+        <span className="text-xs font-semibold">Planejada</span>
+      </button>
+    </div>
+  );
+}
 
 // ── Segmented Control ──
 
@@ -128,6 +170,7 @@ function ModeSelector({
 
 export function InputTab() {
   const [mode, setMode] = useState<InputMode>("expense");
+  const [expenseSubtype, setExpenseSubtype] = useState<ExpenseSubtype>("daily");
 
   // ── Shared state ──
   const [amount, setAmount] = useState(0);
@@ -235,6 +278,21 @@ export function InputTab() {
     }
   };
 
+  const handleExpenseSubtypeChange = (subtype: ExpenseSubtype) => {
+    setExpenseSubtype(subtype);
+    if (subtype === "daily") {
+      setAllocationId("");
+    } else {
+      setCategoryId("");
+      categoryManuallySelected.current = false;
+    }
+  };
+
+  const handleModeChange = (newMode: InputMode) => {
+    setMode(newMode);
+    setExpenseSubtype("daily");
+  };
+
   // ── Reset form ──
   const resetForm = () => {
     setAmount(0);
@@ -297,16 +355,23 @@ export function InputTab() {
         return;
       }
 
+      const isPlanned = mode === "expense" && expenseSubtype === "planned" && paymentAllocations.length > 0;
+
+      if (isPlanned && !allocationId) {
+        toast.error("Selecione uma alocação do plano");
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const result = await createTransaction({
           amount,
           description: description.trim(),
-          categoryId: categoryId || undefined,
+          categoryId: isPlanned ? undefined : (categoryId || undefined),
           date: getISODateString(date),
           type: mode as "expense" | "income",
           boxId: selectedBoxId || undefined,
-          allocationId: mode === "expense" && allocationId ? allocationId : undefined,
+          allocationId: isPlanned && allocationId ? allocationId : undefined,
         });
 
         if (result.error) {
@@ -445,8 +510,17 @@ export function InputTab() {
 
       {/* 3-option segmented control */}
       <div className="mb-5">
-        <ModeSelector value={mode} onChange={setMode} />
+        <ModeSelector value={mode} onChange={handleModeChange} />
       </div>
+
+      {mode === "expense" && paymentAllocations.length > 0 && (
+        <div className="mb-5">
+          <ExpenseSubtypeSelector
+            value={expenseSubtype}
+            onChange={handleExpenseSubtypeChange}
+          />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         {/* Hero amount — generous spacing establishes visual hierarchy */}
@@ -525,33 +599,32 @@ export function InputTab() {
                 triggerRef={estratoSelectTriggerRef}
               />
 
-              <CategorySelect
-                categories={filteredCategories.map((cat) => ({
-                  label: cat.name,
-                  value: cat.id,
-                  type: cat.transactionType,
-                }))}
-                value={categoryId}
-                onChange={handleCategoryChange}
-                currentTransactionType={mode as "expense" | "income"}
-                onOpenChange={handleCategorySelectOpenChange}
-                isLoading={isSuggestingCategory}
-              />
+              {/* Category — only for "dia a dia" expenses and income */}
+              {(mode !== "expense" || expenseSubtype === "daily" || paymentAllocations.length === 0) && (
+                <CategorySelect
+                  categories={filteredCategories.map((cat) => ({
+                    label: cat.name,
+                    value: cat.id,
+                    type: cat.transactionType,
+                  }))}
+                  value={categoryId}
+                  onChange={handleCategoryChange}
+                  currentTransactionType={mode as "expense" | "income"}
+                  onOpenChange={handleCategorySelectOpenChange}
+                  isLoading={isSuggestingCategory}
+                />
+              )}
 
-              {mode === "expense" && paymentAllocations.length > 0 && (
+              {/* Allocation — only for "planejada" expenses */}
+              {mode === "expense" && expenseSubtype === "planned" && paymentAllocations.length > 0 && (
                 <Select
-                  value={allocationId || "__none__"}
-                  onValueChange={(val) =>
-                    setAllocationId(val === "__none__" ? "" : val)
-                  }
+                  value={allocationId}
+                  onValueChange={setAllocationId}
                 >
                   <SelectTrigger className="w-full text-sm text-muted-foreground border-[var(--color-border)]">
-                    <SelectValue placeholder="Vincular a compromisso do plano" />
+                    <SelectValue placeholder="Selecionar alocação do plano" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">
-                      Sem vínculo com plano
-                    </SelectItem>
                     {paymentAllocations.map((allocation) => (
                       <SelectItem key={allocation.id} value={allocation.id}>
                         {allocation.label}
