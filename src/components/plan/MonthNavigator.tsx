@@ -28,7 +28,7 @@ export function MonthNavigator({ projection, selectedIndex, todayIndex, onChange
   }, [isAtToday, todayIndex, onChange]);
 
   return (
-    <div className="flex flex-col items-center py-3 sticky top-0 z-40 bg-[var(--color-bg)]/90 backdrop-blur-md">
+    <div className="flex flex-col items-center py-3 sticky top-0 z-40 bg-[var(--color-bg)] backdrop-blur-md">
       <div className="flex items-center justify-center gap-3">
         <button
           onClick={goBack}
@@ -43,7 +43,7 @@ export function MonthNavigator({ projection, selectedIndex, todayIndex, onChange
           <div className="font-mono text-sm text-foreground">
             {current ? formatMonthYear(current.date) : "—"}
           </div>
-          <div className="font-sans text-[10px] text-[var(--color-text-muted)]">
+          <div className="font-sans text-[10px] mt-1 text-[var(--color-text-muted)]">
             mês {selectedIndex + 1} de {max + 1}
           </div>
         </div>
