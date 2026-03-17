@@ -92,6 +92,7 @@ function ExpenseSubtypeSelector({
     <div className="flex gap-3">
       <button
         type="button"
+        aria-pressed={value === "daily"}
         onClick={() => onChange("daily")}
         className={cn(
           "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border-2 transition-colors duration-200",
@@ -105,6 +106,7 @@ function ExpenseSubtypeSelector({
       </button>
       <button
         type="button"
+        aria-pressed={value === "planned"}
         onClick={() => onChange("planned")}
         className={cn(
           "flex-1 flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border-2 transition-colors duration-200",
@@ -241,7 +243,8 @@ export function InputTab() {
       !description.trim() ||
       categorySelectOpened ||
       categoryManuallySelected.current ||
-      isTransfer
+      isTransfer ||
+      (mode === "expense" && expenseSubtype === "planned")
     )
       return;
 
@@ -371,7 +374,7 @@ export function InputTab() {
           date: getISODateString(date),
           type: mode as "expense" | "income",
           boxId: selectedBoxId || undefined,
-          allocationId: isPlanned && allocationId ? allocationId : undefined,
+          allocationId: isPlanned ? allocationId : undefined,
         });
 
         if (result.error) {
