@@ -189,11 +189,10 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
   return (
     <div className="mb-6">
-      {/* Title */}
-      <span className="font-display text-base text-foreground block mb-2">Projeção</span>
-
-      {/* Controls: Range + View toggle */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Title + Controls: xs=stacked, sm=title+controls, lg=single row */}
+      <div className="flex flex-col gap-2 mb-3 lg:flex-row lg:items-center lg:justify-between">
+        <span className="font-display text-base text-foreground">Projeção</span>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex gap-0.5 bg-[rgba(217,175,120,0.04)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] p-0.5">
           {RANGE_PRESETS.map((preset) => (
             <button
@@ -225,6 +224,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
               {v === "trajectory" ? "Trajetória" : "Fluxo mensal"}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
