@@ -2,12 +2,13 @@ type SaldoResumoProps = {
   saldo: number;
   receitas: number;
   despesas: number;
+  despesasPlanejadas: number;
 };
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
-export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
+export function SaldoResumo({ saldo, receitas, despesas, despesasPlanejadas }: SaldoResumoProps) {
   return (
     <div
       className="rounded-lg border border-[var(--color-accent-border)] p-4 sm:p-5 mb-4 sm:mt-3 duna-glass duna-stagger-1"
@@ -59,6 +60,14 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
             {fmt(despesas)}
           </span>
         </div>
+        {despesasPlanejadas > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-info-bg)] border border-[var(--color-info-border)]">
+            <span className="text-[11px] font-medium text-[var(--color-info)] uppercase tracking-wide">Plan</span>
+            <span className="text-sm font-medium font-mono text-[var(--color-info)]">
+              {fmt(despesasPlanejadas)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
