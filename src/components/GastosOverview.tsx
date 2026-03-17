@@ -32,9 +32,14 @@ import {
   ChevronRightIcon,
   SettingsIcon,
   Search as SearchIcon,
+  ListIcon,
+  PieChartIcon,
 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Label } from "@/components/ui/label";
+import { BudgetPieChart } from "./BudgetPieChart";
+
+type ViewMode = "lista" | "planejado" | "executado";
 
 const months = [
   { value: 1, label: "Janeiro" },
@@ -85,6 +90,9 @@ export function GastosOverview({
     setBudgetStartDay,
     isLoading: isLoadingStartDay,
   } = useBudgetStartDay();
+
+  // View mode
+  const [viewMode, setViewMode] = useState<ViewMode>("lista");
 
   // Edit drawer state
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -288,54 +296,60 @@ export function GastosOverview({
 
               {/* Budget ceiling from plan */}
               {budgetCeiling?.ceiling !== null && budgetCeiling !== null && (
-                <div className="mb-6 rounded-xl border border-border p-4 duna-card duna-surface space-y-3">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-muted-foreground">Custo de vida planejado</span>
-                    <span className="font-mono font-semibold text-foreground">
-                      {formatMoney(budgetCeiling.ceiling!)}/mês
-                    </span>
-                  </div>
-
-                  {/* Allocated vs ceiling progress bar */}
-                  <div className="space-y-1.5">
-                    <Progress
-                      value={budgetCeiling.ceiling! > 0
-                        ? Math.min(100, (budgetCeiling.allocated / budgetCeiling.ceiling!) * 100)
-                        : 0}
-                      filledColor={budgetCeiling.overBudget ? "var(--color-warning)" : "var(--color-accent)"}
-                      bgColor="var(--color-border)"
-                      className="h-2"
-                    />
-                    <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                      <span>
-                        {formatMoney(budgetCeiling.allocated)} alocado
-                      </span>
-                      <span className="font-mono">
-                        de {formatMoney(budgetCeiling.ceiling!)}
+                budgetCeiling.overBudget || (budgetCeiling.buffer !== null && budgetCeiling.buffer > 0) ? (
+                  <div className="mb-6 rounded-xl border border-border p-4 duna-card duna-surface space-y-3">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-sm text-muted-foreground">Custo de vida planejado</span>
+                      <span className="font-mono font-semibold text-foreground">
+                        {formatMoney(budgetCeiling.ceiling!)}/mês
                       </span>
                     </div>
-                  </div>
 
-                  {/* Over-budget warning */}
-                  {budgetCeiling.overBudget && (
-                    <div className="flex items-start gap-2 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 px-3 py-2">
-                      <span className="text-[var(--color-warning)] text-sm leading-snug">
-                        Orçamento excede o custo de vida planejado em{" "}
-                        <span className="font-mono font-semibold">
-                          {formatMoney(budgetCeiling.allocated - budgetCeiling.ceiling!)}
+                    {/* Allocated vs ceiling progress bar */}
+                    <div className="space-y-1.5">
+                      <Progress
+                        value={budgetCeiling.ceiling! > 0
+                          ? Math.min(100, (budgetCeiling.allocated / budgetCeiling.ceiling!) * 100)
+                          : 0}
+                        filledColor={budgetCeiling.overBudget ? "var(--color-warning)" : "var(--color-accent)"}
+                        bgColor="var(--color-border)"
+                        className="h-2"
+                      />
+                      <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                        <span>
+                          {formatMoney(budgetCeiling.allocated)} alocado
                         </span>
-                      </span>
+                        <span className="font-mono">
+                          de {formatMoney(budgetCeiling.ceiling!)}
+                        </span>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Buffer remaining */}
-                  {!budgetCeiling.overBudget && budgetCeiling.buffer !== null && budgetCeiling.buffer > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Buffer não alocado:{" "}
-                      <span className="font-mono">{formatMoney(budgetCeiling.buffer)}</span>
-                    </p>
-                  )}
-                </div>
+                    {/* Over-budget warning */}
+                    {budgetCeiling.overBudget && (
+                      <div className="flex items-start gap-2 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 px-3 py-2">
+                        <span className="text-[var(--color-warning)] text-sm leading-snug">
+                          Orçamento excede o custo de vida planejado em{" "}
+                          <span className="font-mono font-semibold">
+                            {formatMoney(budgetCeiling.allocated - budgetCeiling.ceiling!)}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Buffer remaining */}
+                    {!budgetCeiling.overBudget && budgetCeiling.buffer !== null && budgetCeiling.buffer > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Buffer não alocado:{" "}
+                        <span className="font-mono">{formatMoney(budgetCeiling.buffer)}</span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mb-4 text-xs text-muted-foreground text-center">
+                    Custo de vida planejado: <span className="font-mono">{formatMoney(budgetCeiling.ceiling!)}/mês</span>
+                  </p>
+                )
               )}
 
               {/* Category list */}

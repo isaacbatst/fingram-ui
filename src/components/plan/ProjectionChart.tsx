@@ -199,7 +199,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
               key={preset.label}
               onClick={() => handleRangeChange(preset.months)}
               className={cn(
-                "font-mono text-[10px] font-medium px-2 py-1 rounded transition-all border",
+                "font-mono text-[10px] font-medium px-2 py-1 rounded transition-all border grow lg:grow-0",
                 rangeMonths === preset.months
                   ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
                   : "bg-transparent text-[var(--color-text-muted)] border-transparent",
@@ -215,7 +215,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
               key={v}
               onClick={() => setView(v)}
               className={cn(
-                "font-sans text-[11px] font-medium px-2.5 py-1 rounded transition-all border",
+                "font-sans text-[11px] font-medium px-2.5 py-1 rounded transition-all border grow lg:grow-0",
                 view === v
                   ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
                   : "bg-transparent text-[var(--color-text-muted)] border-transparent",
