@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback } from "react";
+import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import {
   Area,
   AreaChart,
@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -31,6 +30,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
   const [view, setView] = useState<ChartView>("trajectory");
 
   const RANGE_PRESETS = [
+    { label: "6M", months: 6 },
     { label: "1A", months: 12 },
     { label: "2A", months: 24 },
     { label: "5A", months: 60 },
@@ -41,10 +41,38 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
   const holdsFundsAllocations = useMemo(() => allocations.filter(holdsPhysicalFunds), [allocations]);
 
-  const visibleProjection = useMemo(
-    () => rangeMonths === Infinity ? projection : projection.slice(0, rangeMonths),
-    [projection, rangeMonths],
-  );
+  // Scroll: measure container, compute chart width for zoom level
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const obs = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
+    obs.observe(scrollRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  const chartWidth = useMemo(() => {
+    if (containerWidth === 0 || rangeMonths === Infinity) return containerWidth;
+    const pxPerPoint = containerWidth / rangeMonths;
+    return Math.max(pxPerPoint * projection.length, containerWidth);
+  }, [containerWidth, rangeMonths, projection.length]);
+
+  // Auto-scroll to today when range changes
+  const todayMonth = useMemo(() => {
+    const idx = projection.findIndex(m => !m.isReal);
+    return idx === -1 ? projection.length - 1 : idx;
+  }, [projection]);
+
+  useEffect(() => {
+    if (!scrollRef.current || rangeMonths === Infinity || containerWidth === 0) return;
+    const pxPerPoint = containerWidth / rangeMonths;
+    const scrollTo = Math.max(0, todayMonth * pxPerPoint - containerWidth / 2);
+    scrollRef.current.scrollLeft = scrollTo;
+  }, [rangeMonths, containerWidth, todayMonth]);
+
+  // Always use full projection (scroll handles viewport)
+  const visibleProjection = projection;
 
   // Find the boundary month between real (past) and projected (future) data
   const todayBoundaryMonth = useMemo(() => {
@@ -174,9 +202,9 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
       {/* Chart */}
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
-        <ResponsiveContainer width="100%" height={180}>
-          {view === "trajectory" ? (
-            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+        <div ref={scrollRef} className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {containerWidth > 0 && view === "trajectory" ? (
+            <AreaChart width={chartWidth || containerWidth} height={180} data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -192,7 +220,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 tickLine={false}
               />
               <Tooltip
-                itemSorter={(item) => -(Number(item.value) || 0)}
+                itemSorter={(item) => String(item.name ?? '')}
                 contentStyle={{
                   background: "rgba(8,9,12,0.92)",
                   border: "1px solid var(--color-border-strong)",
@@ -304,8 +332,8 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 ];
               })}
             </AreaChart>
-          ) : (
-            <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
+          ) : containerWidth > 0 ? (
+            <BarChart width={chartWidth || containerWidth} height={180} data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -369,8 +397,8 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
               <Bar dataKey="incomeClipped" name="incomeClipped" fill="var(--color-flow-income)" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
               <Bar dataKey="outflowClipped" name="outflowClipped" fill="var(--color-flow-expense)" fillOpacity={0.5} radius={[0, 0, 2, 2]} />
             </BarChart>
-          )}
-        </ResponsiveContainer>
+          ) : null}
+        </div>
       </div>
 
       {/* Legend */}
