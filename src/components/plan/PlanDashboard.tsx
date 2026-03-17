@@ -158,6 +158,8 @@ export function PlanDashboard() {
         planMilestones={plan.milestones}
         selectedMonthIndex={deferredMonthIndex}
         onMonthSelect={setSelectedMonthIndex}
+        searchParams={searchParams}
+        setSearchParams={setSearchParams}
       />
       <AllocationDetailDrawer
         allocation={selectedAllocation}

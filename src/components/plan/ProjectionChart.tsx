@@ -26,50 +26,73 @@ interface Props {
   planMilestones: PlanDTO["milestones"];
   selectedMonthIndex: number;
   onMonthSelect: (index: number) => void;
+  searchParams: URLSearchParams;
+  setSearchParams: (params: Record<string, string>, options?: { replace?: boolean }) => void;
 }
 
-export const ProjectionChart = memo(function ProjectionChart({ projection, allocations, planMilestones, selectedMonthIndex, onMonthSelect }: Props) {
-  const [view, setView] = useState<ChartView>("trajectory");
+const RANGE_PRESETS = [
+  { label: "6M", months: 6 },
+  { label: "1A", months: 12 },
+  { label: "2A", months: 24 },
+  { label: "5A", months: 60 },
+  { label: "Tudo", months: Infinity },
+] as const;
 
-  const RANGE_PRESETS = [
-    { label: "6M", months: 6 },
-    { label: "1A", months: 12 },
-    { label: "2A", months: 24 },
-    { label: "5A", months: 60 },
-    { label: "Tudo", months: Infinity },
-  ] as const;
+const VALID_RANGES = new Set(RANGE_PRESETS.map(p => p.months));
+const DEFAULT_RANGE = 6;
 
-  const [rangeMonths, setRangeMonths] = useState<number>(Infinity);
-  const [rangeOffset, setRangeOffset] = useState(0);
+function parseRange(param: string | null): number {
+  if (param === "tudo") return Infinity;
+  const n = parseInt(param ?? '', 10);
+  return VALID_RANGES.has(n) ? n : DEFAULT_RANGE;
+}
 
-  // Reset offset when range changes; start at page containing "today"
+function rangeToParam(months: number): string {
+  return months === Infinity ? "tudo" : String(months);
+}
+
+export const ProjectionChart = memo(function ProjectionChart({ projection, allocations, planMilestones, selectedMonthIndex, onMonthSelect, searchParams, setSearchParams }: Props) {
+  // Init from query params
+  const view: ChartView = searchParams.get("modo") === "fluxo" ? "flow" : "trajectory";
+  const rangeMonths = parseRange(searchParams.get("escopo"));
+
   const todayIndex = useMemo(() => {
     const idx = projection.findIndex(m => !m.isReal);
     return idx === -1 ? projection.length - 1 : idx;
   }, [projection]);
 
+  const defaultOffset = useMemo(() => {
+    if (rangeMonths === Infinity) return 0;
+    return Math.floor(todayIndex / rangeMonths) * rangeMonths;
+  }, [todayIndex, rangeMonths]);
+
+  const pagParam = parseInt(searchParams.get("pag") ?? '', 10);
+  const rangeOffset = !isNaN(pagParam) && pagParam >= 0 && pagParam < projection.length
+    ? pagParam
+    : defaultOffset;
+
+  const setView = useCallback((v: ChartView) => {
+    setSearchParams({ modo: v === "flow" ? "fluxo" : "trajetoria" }, { replace: true });
+  }, [setSearchParams]);
+
   const handleRangeChange = useCallback((months: number) => {
-    setRangeMonths(months);
-    if (months === Infinity) {
-      setRangeOffset(0);
-    } else {
-      // Start at the page that contains "today"
-      const page = Math.floor(todayIndex / months);
-      setRangeOffset(page * months);
-    }
-  }, [todayIndex]);
+    const offset = months === Infinity ? 0 : Math.floor(todayIndex / months) * months;
+    setSearchParams({ escopo: rangeToParam(months), pag: String(offset) }, { replace: true });
+  }, [todayIndex, setSearchParams]);
 
   const maxOffset = rangeMonths === Infinity ? 0 : Math.max(0, projection.length - rangeMonths);
   const canPageBack = rangeOffset > 0;
   const canPageForward = rangeMonths !== Infinity && rangeOffset + rangeMonths < projection.length;
 
   const pageBack = useCallback(() => {
-    setRangeOffset(prev => Math.max(0, prev - rangeMonths));
-  }, [rangeMonths]);
+    const next = Math.max(0, rangeOffset - rangeMonths);
+    setSearchParams({ pag: String(next) }, { replace: true });
+  }, [rangeMonths, rangeOffset, setSearchParams]);
 
   const pageForward = useCallback(() => {
-    setRangeOffset(prev => Math.min(maxOffset, prev + rangeMonths));
-  }, [rangeMonths, maxOffset]);
+    const next = Math.min(maxOffset, rangeOffset + rangeMonths);
+    setSearchParams({ pag: String(next) }, { replace: true });
+  }, [rangeMonths, rangeOffset, maxOffset, setSearchParams]);
 
   const holdsFundsAllocations = useMemo(() => allocations.filter(holdsPhysicalFunds), [allocations]);
 
@@ -166,42 +189,42 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
   return (
     <div className="mb-6">
-      {/* Header + Toggle + Range */}
-      <div className="flex justify-between items-center mb-3">
-        <span className="font-display text-base text-foreground">Projeção</span>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-0.5 bg-[rgba(217,175,120,0.04)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] p-0.5">
-            {RANGE_PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                onClick={() => handleRangeChange(preset.months)}
-                className={cn(
-                  "font-mono text-[10px] font-medium px-2 py-1 rounded transition-all border",
-                  rangeMonths === preset.months
-                    ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
-                    : "bg-transparent text-[var(--color-text-muted)] border-transparent",
-                )}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-0.5 bg-[rgba(217,175,120,0.04)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] p-0.5">
-            {(["trajectory", "flow"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={cn(
-                  "font-sans text-[11px] font-medium px-2.5 py-1 rounded transition-all border",
-                  view === v
-                    ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
-                    : "bg-transparent text-[var(--color-text-muted)] border-transparent",
-                )}
-              >
-                {v === "trajectory" ? "Trajetória" : "Fluxo mensal"}
-              </button>
-            ))}
-          </div>
+      {/* Title */}
+      <span className="font-display text-base text-foreground block mb-2">Projeção</span>
+
+      {/* Controls: Range + View toggle */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex gap-0.5 bg-[rgba(217,175,120,0.04)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] p-0.5">
+          {RANGE_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              onClick={() => handleRangeChange(preset.months)}
+              className={cn(
+                "font-mono text-[10px] font-medium px-2 py-1 rounded transition-all border",
+                rangeMonths === preset.months
+                  ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
+                  : "bg-transparent text-[var(--color-text-muted)] border-transparent",
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-0.5 bg-[rgba(217,175,120,0.04)] border border-[var(--color-border-subtle)] rounded-[var(--radius-sm)] p-0.5">
+          {(["trajectory", "flow"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={cn(
+                "font-sans text-[11px] font-medium px-2.5 py-1 rounded transition-all border",
+                view === v
+                  ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
+                  : "bg-transparent text-[var(--color-text-muted)] border-transparent",
+              )}
+            >
+              {v === "trajectory" ? "Trajetória" : "Fluxo mensal"}
+            </button>
+          ))}
         </div>
       </div>
 
