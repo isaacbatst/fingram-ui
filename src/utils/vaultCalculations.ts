@@ -33,6 +33,7 @@ export interface SerializedVault {
   percentageTotalBudgetedAmount: number;
   totalSpentAmount: number;
   totalIncomeAmount: number;
+  totalPlannedExpenses: number;
   budgetStartDay: number; // Dia de início do período do orçamento (1-28)
 }
 
