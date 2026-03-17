@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import {
   Area,
   AreaChart,
@@ -6,10 +6,12 @@ import {
   BarChart,
   CartesianGrid,
   ReferenceLine,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AllocationDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
 import { formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
@@ -38,41 +40,45 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
   ] as const;
 
   const [rangeMonths, setRangeMonths] = useState<number>(Infinity);
+  const [rangeOffset, setRangeOffset] = useState(0);
 
-  const holdsFundsAllocations = useMemo(() => allocations.filter(holdsPhysicalFunds), [allocations]);
-
-  // Scroll: measure container, compute chart width for zoom level
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    const obs = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
-    obs.observe(scrollRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const chartWidth = useMemo(() => {
-    if (containerWidth === 0 || rangeMonths === Infinity) return containerWidth;
-    const pxPerPoint = containerWidth / rangeMonths;
-    return Math.max(pxPerPoint * projection.length, containerWidth);
-  }, [containerWidth, rangeMonths, projection.length]);
-
-  // Auto-scroll to today when range changes
-  const todayMonth = useMemo(() => {
+  // Reset offset when range changes; start at page containing "today"
+  const todayIndex = useMemo(() => {
     const idx = projection.findIndex(m => !m.isReal);
     return idx === -1 ? projection.length - 1 : idx;
   }, [projection]);
 
-  useEffect(() => {
-    if (!scrollRef.current || rangeMonths === Infinity || containerWidth === 0) return;
-    const pxPerPoint = containerWidth / rangeMonths;
-    const scrollTo = Math.max(0, todayMonth * pxPerPoint - containerWidth / 2);
-    scrollRef.current.scrollLeft = scrollTo;
-  }, [rangeMonths, containerWidth, todayMonth]);
+  const handleRangeChange = useCallback((months: number) => {
+    setRangeMonths(months);
+    if (months === Infinity) {
+      setRangeOffset(0);
+    } else {
+      // Start at the page that contains "today"
+      const page = Math.floor(todayIndex / months);
+      setRangeOffset(page * months);
+    }
+  }, [todayIndex]);
 
-  // Always use full projection (scroll handles viewport)
-  const visibleProjection = projection;
+  const maxOffset = rangeMonths === Infinity ? 0 : Math.max(0, projection.length - rangeMonths);
+  const canPageBack = rangeOffset > 0;
+  const canPageForward = rangeMonths !== Infinity && rangeOffset + rangeMonths < projection.length;
+
+  const pageBack = useCallback(() => {
+    setRangeOffset(prev => Math.max(0, prev - rangeMonths));
+  }, [rangeMonths]);
+
+  const pageForward = useCallback(() => {
+    setRangeOffset(prev => Math.min(maxOffset, prev + rangeMonths));
+  }, [rangeMonths, maxOffset]);
+
+  const holdsFundsAllocations = useMemo(() => allocations.filter(holdsPhysicalFunds), [allocations]);
+
+  const visibleProjection = useMemo(
+    () => rangeMonths === Infinity
+      ? projection
+      : projection.slice(rangeOffset, rangeOffset + rangeMonths),
+    [projection, rangeMonths, rangeOffset],
+  );
 
   // Find the boundary month between real (past) and projected (future) data
   const todayBoundaryMonth = useMemo(() => {
@@ -85,17 +91,12 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
   }, [visibleProjection]);
 
   const trajectoryData = useMemo(() => visibleProjection.map((m) => {
-    // For the past segment: only include values for real months, null for future
-    // For the future segment: only include values for projected months, but include the
-    // boundary real month so the two segments connect visually
     const isPast = m.isReal;
     const isBoundary = m.month === todayBoundaryMonth;
     const row: Record<string, number | null> = {
       month: m.month,
       isReal: m.isReal ? 1 : 0,
-      // Past data key: solid line (real months + boundary)
       'Disponível': isPast ? m.cash : null,
-      // Future data key: dashed line (projected months + boundary for connection)
       'Disponível (projeção)': (!isPast || isBoundary) ? m.cash : null,
     };
     holdsFundsAllocations.forEach((allocation) => {
@@ -114,11 +115,10 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
       outflow: -(m.costOfLiving + Object.values(m.allocationPayments).reduce((s, v) => s + v, 0)),
     }));
 
-    // Compute a Y domain that clips outliers so normal bars are visible
     const allFlowValues = flowDataRaw.flatMap((d) => [d.income, d.outflow]);
     const sorted = [...allFlowValues].sort((a, b) => Math.abs(a) - Math.abs(b));
     const p95 = Math.abs(sorted[Math.floor(sorted.length * 0.95)]);
-    const flowYMax = Math.ceil(p95 * 1.3 / 10000) * 10000; // round up with padding
+    const flowYMax = Math.ceil(p95 * 1.3 / 10000) * 10000;
 
     const flowData = flowDataRaw.map((d) => ({
       month: d.month,
@@ -159,6 +159,11 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
   const formatXTick = (month: number) => `M${month}`;
 
+  // Page indicator label
+  const pageLabel = rangeMonths !== Infinity
+    ? `M${visibleProjection[0]?.month ?? 0}–M${visibleProjection[visibleProjection.length - 1]?.month ?? 0}`
+    : null;
+
   return (
     <div className="mb-6">
       {/* Header + Toggle + Range */}
@@ -169,7 +174,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
             {RANGE_PRESETS.map((preset) => (
               <button
                 key={preset.label}
-                onClick={() => setRangeMonths(preset.months)}
+                onClick={() => handleRangeChange(preset.months)}
                 className={cn(
                   "font-mono text-[10px] font-medium px-2 py-1 rounded transition-all border",
                   rangeMonths === preset.months
@@ -202,9 +207,9 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
       {/* Chart */}
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
-        <div ref={scrollRef} className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {containerWidth > 0 && view === "trajectory" ? (
-            <AreaChart width={chartWidth || containerWidth} height={180} data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+        <ResponsiveContainer width="100%" height={180}>
+          {view === "trajectory" ? (
+            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -241,7 +246,6 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   const strName = String(name);
                   if (strName.endsWith(' (projeção)')) {
                     const realName = strName.replace(' (projeção)', '');
-                    // At boundary month both keys have values — skip projected to avoid duplicates
                     if (item.payload[realName] !== null && item.payload[realName] !== undefined) {
                       return [null, null];
                     }
@@ -258,7 +262,6 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   strokeDasharray="2 4"
                 />
               ))}
-              {/* Hoje marker at the real/projected boundary */}
               {todayBoundaryMonth !== null && (
                 <ReferenceLine
                   x={todayBoundaryMonth}
@@ -280,7 +283,6 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 strokeWidth={1}
                 strokeDasharray="4 4"
               />
-              {/* Past (real) — solid, full opacity */}
               <Area
                 type="monotone"
                 dataKey="Disponível"
@@ -290,7 +292,6 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 fillOpacity={0.15}
                 connectNulls={false}
               />
-              {/* Future (projected) — dashed, reduced opacity */}
               <Area
                 type="monotone"
                 dataKey="Disponível (projeção)"
@@ -332,8 +333,8 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 ];
               })}
             </AreaChart>
-          ) : containerWidth > 0 ? (
-            <BarChart width={chartWidth || containerWidth} height={180} data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
+          ) : (
+            <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -350,7 +351,6 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 tickLine={false}
               />
               <ReferenceLine y={0} stroke="var(--color-border-subtle)" />
-              {/* Hoje marker at the real/projected boundary */}
               {todayBoundaryMonth !== null && (
                 <ReferenceLine
                   x={todayBoundaryMonth}
@@ -397,8 +397,33 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
               <Bar dataKey="incomeClipped" name="incomeClipped" fill="var(--color-flow-income)" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
               <Bar dataKey="outflowClipped" name="outflowClipped" fill="var(--color-flow-expense)" fillOpacity={0.5} radius={[0, 0, 2, 2]} />
             </BarChart>
-          ) : null}
-        </div>
+          )}
+        </ResponsiveContainer>
+
+        {/* Page navigation */}
+        {rangeMonths !== Infinity && (
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <button
+              onClick={pageBack}
+              disabled={!canPageBack}
+              aria-label="Página anterior"
+              className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-secondary)] transition-colors enabled:hover:text-[var(--color-accent)] disabled:opacity-25"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
+              {pageLabel}
+            </span>
+            <button
+              onClick={pageForward}
+              disabled={!canPageForward}
+              aria-label="Próxima página"
+              className="p-1 rounded-[var(--radius-sm)] text-[var(--color-text-secondary)] transition-colors enabled:hover:text-[var(--color-accent)] disabled:opacity-25"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Legend */}
