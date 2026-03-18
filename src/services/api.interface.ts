@@ -97,6 +97,7 @@ export interface CreateTransactionResponse {
   vault?: unknown;
   error?: string;
   suggestion?: AllocationSuggestion | null;
+  divergence?: AllocationSuggestion | null;
 }
 
 export interface SuggestAllocationResponse {

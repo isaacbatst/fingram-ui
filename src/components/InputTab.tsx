@@ -206,6 +206,9 @@ export function InputTab() {
   const [pendingTransactionCode, setPendingTransactionCode] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
 
+  // ── Divergence state ──
+  const [divergence, setDivergence] = useState<AllocationSuggestion | null>(null);
+
   // ── Transfer state ──
   const [fromBoxId, setFromBoxId] = useState("");
   const [toBoxId, setToBoxId] = useState("");
@@ -412,6 +415,10 @@ export function InputTab() {
             setSuggestion(result.suggestion);
             setPendingTransactionCode(result.transaction.code);
           }
+
+          if (result.divergence) {
+            setDivergence(result.divergence);
+          }
         }
       } catch (error) {
         console.error("Error creating transaction:", error);
@@ -532,6 +539,58 @@ export function InputTab() {
               className="bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
             >
               {isLinking ? "Vinculando..." : "Vincular"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Divergence dialog */}
+      <AlertDialog
+        open={!!divergence}
+        onOpenChange={(open) => {
+          if (!open) setDivergence(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valor divergente</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  O plano esperava{" "}
+                  <span className="font-mono font-medium text-foreground">
+                    {divergence
+                      ? formatCurrency(divergence.scheduledMovement.amount)
+                      : ""}
+                  </span>{" "}
+                  para{" "}
+                  <span className="font-medium text-foreground">
+                    {divergence?.scheduledMovement.label}
+                  </span>{" "}
+                  de{" "}
+                  <span className="font-medium text-foreground">
+                    {divergence?.allocationLabel}
+                  </span>
+                  .
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Diferença:{" "}
+                  <span className="font-mono">
+                    {divergence
+                      ? formatCurrency(Math.abs(divergence.divergenceAmount))
+                      : ""}
+                  </span>{" "}
+                  ({divergence?.divergencePercent.toFixed(1)}%)
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => setDivergence(null)}
+              className="bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
+            >
+              Entendi
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
