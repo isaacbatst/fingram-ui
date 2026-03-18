@@ -1,5 +1,5 @@
 import { CategorySelect } from "@/components/CategorySelect";
-import { DatePicker } from "@/components/DatePicker";
+import { DatePicker, type DatePickerHandle } from "@/components/DatePicker";
 import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
 import {
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateTransaction } from "@/hooks/useCreateTransaction";
+import { useAllocations } from "@/hooks/useAllocations";
 import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useTransfer } from "@/hooks/useTransfer";
 import type { AllocationSuggestion } from "@/services/api.interface";
@@ -198,6 +199,7 @@ export function InputTab() {
 
   // ── Allocation state (expense tagging) ──
   const [allocationId, setAllocationId] = useState<string>("");
+  const [withdrawalType, setWithdrawalType] = useState<"withdrawal" | "realization" | "">("");
 
   // ── Suggestion state ──
   const [suggestion, setSuggestion] = useState<AllocationSuggestion | null>(null);
@@ -210,6 +212,7 @@ export function InputTab() {
 
   // ── Refs for auto-advance ──
   const descriptionRef = useRef<HTMLInputElement>(null);
+  const datePickerRef = useRef<DatePickerHandle>(null);
   const estratoSelectTriggerRef = useRef<HTMLButtonElement>(null);
   const fromBoxTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -219,9 +222,17 @@ export function InputTab() {
   const { createTransfer } = useTransfer();
   const { apiService } = useApi();
   const { allocations: paymentAllocations } = usePaymentAllocations();
+  const { allocations: allAllocations } = useAllocations();
 
   const activeColor = MODE_CONFIG[mode].color;
   const isTransfer = mode === "transfer";
+
+  // Detect if selected estrato is linked to a Reserva allocation
+  const linkedReservaAllocation = mode === "expense" && expenseSubtype === "planned" && selectedBoxId
+    ? allAllocations.find(
+        (a) => a.estratoId === selectedBoxId && a.realizationMode !== "immediate",
+      )
+    : null;
 
   // Filter categories based on transaction type
   const filteredCategories =
@@ -285,6 +296,7 @@ export function InputTab() {
     setExpenseSubtype(subtype);
     if (subtype === "daily") {
       setAllocationId("");
+      setWithdrawalType("");
     } else {
       setCategoryId("");
       categoryManuallySelected.current = false;
@@ -309,6 +321,7 @@ export function InputTab() {
       setDescription("");
       setCategoryId("");
       setAllocationId("");
+      setWithdrawalType("");
       categoryManuallySelected.current = false;
     }
   };
@@ -358,12 +371,23 @@ export function InputTab() {
         return;
       }
 
-      const isPlanned = mode === "expense" && expenseSubtype === "planned" && paymentAllocations.length > 0;
+      const isPlanned = mode === "expense" && expenseSubtype === "planned";
+      const isLinkedReserva = isPlanned && !!linkedReservaAllocation;
+      const isPaymentPlanned = isPlanned && !isLinkedReserva && paymentAllocations.length > 0;
 
-      if (isPlanned && !allocationId) {
+      if (isPaymentPlanned && !allocationId) {
         toast.error("Selecione uma alocação do plano");
         return;
       }
+
+      if (isLinkedReserva && !withdrawalType) {
+        toast.error("Selecione o tipo de saída (saque ou realização)");
+        return;
+      }
+
+      const resolvedAllocationId = isLinkedReserva
+        ? linkedReservaAllocation.id
+        : isPaymentPlanned ? allocationId : undefined;
 
       setIsSubmitting(true);
       try {
@@ -374,7 +398,8 @@ export function InputTab() {
           date: getISODateString(date),
           type: mode as "expense" | "income",
           boxId: selectedBoxId || undefined,
-          allocationId: isPlanned ? allocationId : undefined,
+          allocationId: resolvedAllocationId,
+          withdrawalType: isLinkedReserva ? (withdrawalType as "withdrawal" | "realization") : undefined,
         });
 
         if (result.error) {
@@ -442,6 +467,7 @@ export function InputTab() {
     if (e.key === "Enter") {
       e.preventDefault();
       descriptionRef.current?.blur();
+      datePickerRef.current?.open();
     }
   };
 
@@ -516,7 +542,7 @@ export function InputTab() {
         <ModeSelector value={mode} onChange={handleModeChange} />
       </div>
 
-      {mode === "expense" && paymentAllocations.length > 0 && (
+      {mode === "expense" && allAllocations.length > 0 && (
         <div className="mb-5">
           <ExpenseSubtypeSelector
             value={expenseSubtype}
@@ -589,6 +615,7 @@ export function InputTab() {
               />
 
               <DatePicker
+                ref={datePickerRef}
                 date={date}
                 onDateChange={handleDateChange}
                 onClose={focusEstratoSelect}
@@ -603,7 +630,7 @@ export function InputTab() {
               />
 
               {/* Category — only for "dia a dia" expenses and income */}
-              {(mode !== "expense" || expenseSubtype === "daily" || paymentAllocations.length === 0) && (
+              {(mode !== "expense" || expenseSubtype === "daily" || allAllocations.length === 0) && (
                 <CategorySelect
                   categories={filteredCategories.map((cat) => ({
                     label: cat.name,
@@ -618,8 +645,31 @@ export function InputTab() {
                 />
               )}
 
-              {/* Allocation — only for "planejada" expenses */}
-              {mode === "expense" && expenseSubtype === "planned" && paymentAllocations.length > 0 && (
+              {/* Linked Reserva — show withdrawal type */}
+              {mode === "expense" && expenseSubtype === "planned" && linkedReservaAllocation && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Vinculado a <span className="font-medium text-foreground">{linkedReservaAllocation.label}</span>
+                  </p>
+                  <Select
+                    value={withdrawalType}
+                    onValueChange={(v) => setWithdrawalType(v as "withdrawal" | "realization")}
+                  >
+                    <SelectTrigger className="w-full text-sm text-muted-foreground border-[var(--color-border)]">
+                      <SelectValue placeholder="Tipo de saída" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="withdrawal">Saque</SelectItem>
+                      {linkedReservaAllocation.realizationMode !== "never" && (
+                        <SelectItem value="realization">Realização</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Payment allocation — only for "planejada" expenses without linked reserva */}
+              {mode === "expense" && expenseSubtype === "planned" && !linkedReservaAllocation && paymentAllocations.length > 0 && (
                 <Select
                   value={allocationId}
                   onValueChange={setAllocationId}

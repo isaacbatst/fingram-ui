@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -12,6 +12,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+export interface DatePickerHandle {
+  open: () => void
+}
+
 interface DatePickerProps {
   date?: Date
   onDateChange?: (date: Date | undefined) => void
@@ -20,15 +24,19 @@ interface DatePickerProps {
   className?: string
 }
 
-export function DatePicker({
+export const DatePicker = forwardRef<DatePickerHandle, DatePickerProps>(function DatePicker({
   date,
   onDateChange,
   onClose,
   placeholder = "Selecione uma data",
   className
-}: DatePickerProps) {
+}, ref) {
   const [open, setOpen] = useState(false)
   const wasOpen = useRef(false)
+
+  useImperativeHandle(ref, () => ({
+    open: () => setOpen(true),
+  }))
 
   const handleSelect = (selectedDate: Date | undefined) => {
     onDateChange?.(selectedDate)
@@ -70,4 +78,4 @@ export function DatePicker({
       </PopoverContent>
     </Popover>
   )
-}
+})
