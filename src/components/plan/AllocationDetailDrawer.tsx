@@ -116,7 +116,27 @@ export function AllocationDetailDrawer({
                 </span>
               )}
             </div>
-            {progress !== null && (
+            {progress !== null && isRealizable && (
+              <div className="h-1.5 bg-[rgba(240,232,220,0.06)] rounded-sm overflow-hidden mt-2 relative">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${hasTarget ? Math.min(100, (accumulated / allocation.target) * 100) : 0}%`,
+                    background: color,
+                    opacity: 0.25,
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${hasTarget ? Math.min(100, (realized / allocation.target) * 100) : 0}%`,
+                    background: color,
+                    opacity: 0.7,
+                  }}
+                />
+              </div>
+            )}
+            {progress !== null && !isRealizable && (
               <div className="h-1.5 bg-[rgba(240,232,220,0.06)] rounded-sm overflow-hidden mt-2">
                 <div
                   className="h-full rounded-sm transition-[width] duration-500 ease-out"
