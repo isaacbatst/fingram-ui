@@ -162,4 +162,21 @@ export const planService = {
     const params = type ? `?type=${encodeURIComponent(type)}` : "";
     return request(`/allocations${params}`, {}, "Erro ao carregar alocações");
   },
+
+  reconcile(
+    planId: string,
+    allocationId: string,
+    action: string,
+    actual: number,
+    expected: number,
+  ): Promise<AllocationDTO> {
+    return request(
+      `/${planId}/allocations/${allocationId}/reconcile`,
+      {
+        method: "POST",
+        body: JSON.stringify({ action, actual, expected }),
+      },
+      "Erro ao reconciliar divergência",
+    );
+  },
 };

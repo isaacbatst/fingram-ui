@@ -83,6 +83,7 @@ export interface EditTransferRequest {
 export interface AllocationSuggestion {
   allocationId: string;
   allocationLabel: string;
+  planId?: string;
   scheduledMovement: {
     month: number;
     amount: number;
@@ -90,7 +91,15 @@ export interface AllocationSuggestion {
   };
   divergencePercent: number;
   divergenceAmount: number;
+  actual?: number;
 }
+
+export type ReconcileAction =
+  | 'extraAmortization'
+  | 'additionalCost'
+  | 'updateMonthlyAmount'
+  | 'discount'
+  | 'pendingPayment';
 
 export interface CreateTransactionResponse {
   transaction?: TransactionDTO;

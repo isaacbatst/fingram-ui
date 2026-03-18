@@ -29,8 +29,10 @@ import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { useAllocations } from "@/hooks/useAllocations";
 import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useTransfer } from "@/hooks/useTransfer";
-import type { AllocationSuggestion } from "@/services/api.interface";
+import type { AllocationSuggestion, ReconcileAction } from "@/services/api.interface";
+import { planService } from "@/services/plan.service";
 import { format } from "date-fns";
+import { mutate } from "swr";
 import { ArrowDown, Check } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -169,6 +171,32 @@ function ModeSelector({
   );
 }
 
+// ── Reconcile Button ──
+
+function ReconcileButton({
+  label,
+  sublabel,
+  loading,
+  onClick,
+}: {
+  label: string;
+  sublabel: string;
+  loading: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      className="w-full text-left p-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] hover:border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)] transition-colors disabled:opacity-50 min-h-[44px]"
+    >
+      <span className="font-sans text-sm text-foreground block">{label}</span>
+      <span className="font-sans text-[11px] text-muted-foreground">{sublabel}</span>
+    </button>
+  );
+}
+
 // ── Main Component ──
 
 export function InputTab() {
@@ -208,6 +236,7 @@ export function InputTab() {
 
   // ── Divergence state ──
   const [divergence, setDivergence] = useState<AllocationSuggestion | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
 
   // ── Transfer state ──
   const [fromBoxId, setFromBoxId] = useState("");
@@ -459,6 +488,37 @@ export function InputTab() {
     setPendingTransactionCode(null);
   }, []);
 
+  // ── Reconciliation handler ──
+  const handleReconcile = useCallback(
+    async (action: ReconcileAction) => {
+      if (!divergence?.planId || divergence.actual === undefined) return;
+
+      setIsReconciling(true);
+      try {
+        await planService.reconcile(
+          divergence.planId,
+          divergence.allocationId,
+          action,
+          divergence.actual,
+          divergence.scheduledMovement.amount,
+        );
+        toast.success("Plano atualizado");
+        // Invalidate plan/projection data
+        mutate((key) =>
+          typeof key === "string"
+            ? key.startsWith("projection") || key.startsWith("plans")
+            : false,
+        );
+      } catch {
+        toast.error("Erro ao reconciliar divergência");
+      } finally {
+        setIsReconciling(false);
+        setDivergence(null);
+      }
+    },
+    [divergence],
+  );
+
   // ── Auto-advance helpers ──
   const focusDescription = useCallback(() => {
     descriptionRef.current?.focus();
@@ -544,11 +604,11 @@ export function InputTab() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Divergence dialog */}
+      {/* Divergence reconciliation dialog */}
       <AlertDialog
         open={!!divergence}
         onOpenChange={(open) => {
-          if (!open) setDivergence(null);
+          if (!open && !isReconciling) setDivergence(null);
         }}
       >
         <AlertDialogContent>
@@ -557,41 +617,93 @@ export function InputTab() {
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <p>
-                  O plano esperava{" "}
-                  <span className="font-mono font-medium text-foreground">
-                    {divergence
-                      ? formatCurrency(divergence.scheduledMovement.amount)
-                      : ""}
-                  </span>{" "}
-                  para{" "}
-                  <span className="font-medium text-foreground">
-                    {divergence?.scheduledMovement.label}
-                  </span>{" "}
-                  de{" "}
-                  <span className="font-medium text-foreground">
-                    {divergence?.allocationLabel}
-                  </span>
-                  .
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Diferença:{" "}
-                  <span className="font-mono">
-                    {divergence
-                      ? formatCurrency(Math.abs(divergence.divergenceAmount))
-                      : ""}
-                  </span>{" "}
-                  ({divergence?.divergencePercent.toFixed(1)}%)
+                  {divergence && divergence.actual !== undefined && divergence.actual > divergence.scheduledMovement.amount ? (
+                    <>
+                      <span className="font-mono font-medium text-foreground">
+                        {formatCurrency(divergence.actual)}
+                      </span>
+                      {" "}registrado em{" "}
+                      <span className="font-medium text-foreground">{divergence.allocationLabel}</span>
+                      . O plano esperava{" "}
+                      <span className="font-mono font-medium text-foreground">
+                        {formatCurrency(divergence.scheduledMovement.amount)}
+                      </span>
+                      .
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-mono font-medium text-foreground">
+                        {divergence?.actual !== undefined ? formatCurrency(divergence.actual) : ""}
+                      </span>
+                      {" "}registrado em{" "}
+                      <span className="font-medium text-foreground">{divergence?.allocationLabel}</span>
+                      . O plano esperava{" "}
+                      <span className="font-mono font-medium text-foreground">
+                        {divergence ? formatCurrency(divergence.scheduledMovement.amount) : ""}
+                      </span>
+                      .
+                    </>
+                  )}
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
+
+          {divergence && divergence.actual !== undefined && (
+            <div className="flex flex-col gap-2 px-6 pb-2">
+              {divergence.actual > divergence.scheduledMovement.amount ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    O valor a mais é:
+                  </p>
+                  <ReconcileButton
+                    label="Amortização / antecipação"
+                    sublabel="Reduz saldo devedor"
+                    loading={isReconciling}
+                    onClick={() => handleReconcile("extraAmortization")}
+                  />
+                  <ReconcileButton
+                    label="Custo adicional"
+                    sublabel="Multa, juros ou reajuste"
+                    loading={isReconciling}
+                    onClick={() => handleReconcile("additionalCost")}
+                  />
+                  <ReconcileButton
+                    label="A parcela mudou"
+                    sublabel="Atualiza o plano para esse valor"
+                    loading={isReconciling}
+                    onClick={() => handleReconcile("updateMonthlyAmount")}
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    O valor restante:
+                  </p>
+                  <ReconcileButton
+                    label="Foi desconto"
+                    sublabel="Economizei este mês"
+                    loading={isReconciling}
+                    onClick={() => handleReconcile("discount")}
+                  />
+                  <ReconcileButton
+                    label="Falta pagar"
+                    sublabel="Vou completar depois"
+                    loading={isReconciling}
+                    onClick={() => handleReconcile("pendingPayment")}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          <AlertDialogFooter className="px-6 pb-4">
+            <AlertDialogCancel
+              disabled={isReconciling}
               onClick={() => setDivergence(null)}
-              className="bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]/80"
             >
-              Entendi
-            </AlertDialogAction>
+              Ignorar
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
