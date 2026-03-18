@@ -135,7 +135,7 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
                 Comprometido
               </span>
               <span className="font-sans text-[9px] text-[var(--color-text-muted)]">
-                pago a terceiros
+                pagamentos e realizações
               </span>
             </div>
             {comprometido.percentPaid !== null && (
@@ -152,48 +152,86 @@ export const PatrimonioSection = memo(function PatrimonioSection({ patrimonio, c
 
           {/* Items */}
           <div className="flex flex-col">
-            {comprometido.items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onAllocationClick(item.id)}
-                className="py-2 -mx-1 px-1 rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--color-bg-surface-hover)] active:bg-[var(--color-bg-surface-active)] text-left min-h-[44px]"
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-[3px] h-3.5 rounded-sm shrink-0"
-                      style={{ background: item.color }}
-                    />
-                    <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
-                      {item.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-foreground">
-                      {formatCurrency(item.value)}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
-                  </div>
-                </div>
-                {item.target > 0 && (
-                  <div className="ml-[11px] flex items-center gap-2">
-                    <div className="flex-1 h-1 bg-[rgba(240,232,220,0.06)] rounded-sm overflow-hidden">
-                      <div
-                        className="h-full rounded-sm transition-[width] duration-500 ease-out"
-                        style={{
-                          width: `${item.progress}%`,
-                          background: item.color,
-                          opacity: 0.6,
-                        }}
+            {comprometido.items.map((item) => {
+              const accumulated = item.accumulated ?? 0;
+              const realized = item.realized ?? 0;
+
+              // Unified: bar always shows progress toward target
+              const progress = item.kind === 'payment'
+                ? item.progress
+                : (item.target > 0 ? Math.min(100, (realized / item.target) * 100) : 0);
+
+              // Secondary text
+              const subtitle = item.kind === 'payment'
+                ? (item.target > 0 ? `${formatCompactCurrency(item.value)} de ${formatCompactCurrency(item.target)}` : undefined)
+                : (item.target > 0 ? `${formatCompactCurrency(realized)} realizado · ${formatCompactCurrency(accumulated)} acumulado · de ${formatCompactCurrency(item.target)}` : undefined);
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onAllocationClick(item.id)}
+                  className="py-2 -mx-1 px-1 rounded-[var(--radius-sm)] transition-colors hover:bg-[var(--color-bg-surface-hover)] active:bg-[var(--color-bg-surface-active)] text-left min-h-[44px]"
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="w-[3px] h-3.5 rounded-sm shrink-0"
+                        style={{ background: item.color }}
                       />
+                      <span className="font-sans text-[11px] text-[var(--color-text-secondary)]">
+                        {item.label}
+                      </span>
                     </div>
-                    <span className="font-mono text-[9px] text-[var(--color-text-muted)] shrink-0">
-                      {Math.round(item.progress)}%
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] text-foreground">
+                        {formatCurrency(item.value)}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] shrink-0" />
+                    </div>
                   </div>
-                )}
-              </button>
-            ))}
+                  {subtitle && (
+                    <div className="ml-[11px] flex items-center gap-2">
+                      {item.kind === 'realizable' ? (
+                        <div className="flex-1 h-1.5 bg-[rgba(240,232,220,0.06)] rounded-sm overflow-hidden relative">
+                          {/* Back layer: accumulated (faint) */}
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-out"
+                            style={{
+                              width: `${item.target > 0 ? Math.min(100, (accumulated / item.target) * 100) : 0}%`,
+                              background: item.color,
+                              opacity: 0.25,
+                            }}
+                          />
+                          {/* Front layer: realized (solid) */}
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-out"
+                            style={{
+                              width: `${progress}%`,
+                              background: item.color,
+                              opacity: 0.7,
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex-1 h-1 bg-[rgba(240,232,220,0.06)] rounded-sm overflow-hidden">
+                          <div
+                            className="h-full rounded-sm transition-[width] duration-500 ease-out"
+                            style={{
+                              width: `${progress}%`,
+                              background: item.color,
+                              opacity: 0.6,
+                            }}
+                          />
+                        </div>
+                      )}
+                      <span className="font-mono text-[9px] text-[var(--color-text-muted)] shrink-0">
+                        {subtitle}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

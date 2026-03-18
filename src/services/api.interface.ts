@@ -37,6 +37,7 @@ export interface CreateTransactionRequest {
   type: 'income' | 'expense';
   boxId?: string;
   allocationId?: string;
+  withdrawalType?: 'withdrawal' | 'realization';
 }
 
 export type BoxType = 'spending' | 'saving';

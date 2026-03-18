@@ -37,7 +37,7 @@ export interface AllocationDTO {
   label: string;
   target: number;
   monthlyAmount: ChangePointDTO[];
-  realizationMode: 'immediate' | 'manual' | 'onCompletion';
+  realizationMode: 'immediate' | 'manual' | 'onCompletion' | 'never';
   estratoId: string | null;
   yieldRate?: number;
   financing?: AllocationFinancingDTO;

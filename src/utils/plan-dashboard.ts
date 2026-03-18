@@ -106,6 +106,10 @@ export interface ComprometidoItem {
   target: number;
   progress: number;
   color: string;
+  kind: 'payment' | 'realizable';
+  accumulated?: number;
+  realized?: number;
+  available?: number;
 }
 
 export interface ComprometidoData {
@@ -137,16 +141,10 @@ export function computePatrimonio(
     percent: total > 0 ? Math.round((cash / total) * 100) : 0,
   });
 
-  // non-immediate allocations that still hold physical funds (exclude realized onCompletion)
+  // Only permanent reserves (never) stay in Patrimônio
   for (const alloc of allocations) {
-    if (!holdsPhysicalFunds(alloc)) continue;
+    if (alloc.realizationMode !== 'never') continue;
     const balance = current?.allocations[alloc.id] ?? 0;
-    const accumulated = current?.allocationAccumulated?.[alloc.id] ?? balance;
-    const isRealized = alloc.realizationMode === 'onCompletion'
-      && alloc.target > 0
-      && accumulated >= alloc.target;
-    // Realized onCompletion → moves to Comprometido card
-    if (isRealized) continue;
     items.push({
       id: alloc.id,
       label: alloc.label,
@@ -173,16 +171,13 @@ export function computeComprometido(
   const prev = monthIndex > 0 ? projection[monthIndex - 1] : null;
   const total = current?.totalCommitted ?? 0;
 
-  // Include immediate + realized onCompletion in target sum
+  // Target sum: immediate + realizable (manual, onCompletion)
   const targetSum = allocations
     .filter((b) => {
       if (b.target <= 0) return false;
-      if (b.realizationMode === 'immediate') return true;
-      if (b.realizationMode === 'onCompletion') {
-        const acc = current?.allocationAccumulated?.[b.id] ?? 0;
-        return acc >= b.target;
-      }
-      return false;
+      return b.realizationMode === 'immediate'
+        || b.realizationMode === 'manual'
+        || b.realizationMode === 'onCompletion';
     })
     .reduce((sum, b) => sum + b.target, 0);
 
@@ -190,6 +185,7 @@ export function computeComprometido(
   for (const alloc of allocations) {
     const balance = current?.allocations[alloc.id] ?? 0;
     const accumulated = current?.allocationAccumulated?.[alloc.id] ?? balance;
+    const realized = current?.allocationRealized?.[alloc.id] ?? 0;
 
     if (alloc.realizationMode === 'immediate') {
       // Pagamento: always in Comprometido
@@ -200,20 +196,22 @@ export function computeComprometido(
         target: alloc.target,
         progress: alloc.target > 0 ? Math.min(100, (balance / alloc.target) * 100) : 0,
         color: getColor(alloc.id),
+        kind: 'payment',
       });
-    } else if (
-      alloc.realizationMode === 'onCompletion'
-      && alloc.target > 0
-      && accumulated >= alloc.target
-    ) {
-      // onCompletion realized: moves from Patrimônio to Comprometido
+    } else if (alloc.realizationMode === 'manual' || alloc.realizationMode === 'onCompletion') {
+      // Realizable: show accumulated, realized, and available
+      const available = accumulated - realized;
       items.push({
         id: alloc.id,
         label: alloc.label,
         value: accumulated,
         target: alloc.target,
-        progress: 100,
+        progress: alloc.target > 0 ? Math.min(100, (accumulated / alloc.target) * 100) : 0,
         color: getColor(alloc.id),
+        kind: 'realizable',
+        accumulated,
+        realized,
+        available,
       });
     }
   }
