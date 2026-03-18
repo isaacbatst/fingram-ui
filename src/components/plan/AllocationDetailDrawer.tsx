@@ -54,6 +54,10 @@ export function AllocationDetailDrawer({
 
   const color = getBoxColor(allocations, allocation.id);
   const balance = lastMonth.allocations[allocation.id] ?? 0;
+  const accumulated = lastMonth.allocationAccumulated?.[allocation.id] ?? balance;
+  const realized = lastMonth.allocationRealized?.[allocation.id] ?? 0;
+  const available = accumulated - realized;
+  const isRealizable = allocation.realizationMode === 'manual' || allocation.realizationMode === 'onCompletion';
   const hasTarget = allocation.target > 0;
   const progress = hasTarget ? Math.min(100, (balance / allocation.target) * 100) : null;
   const isComplete = hasTarget && balance >= allocation.target;
@@ -91,7 +95,9 @@ export function AllocationDetailDrawer({
                   ? "Pago a terceiros"
                   : allocation.realizationMode === 'onCompletion'
                     ? "Reservado → realiza ao atingir meta"
-                    : "Reservado para você"}
+                  : allocation.realizationMode === 'manual'
+                    ? "Reservado → realização manual"
+                    : "Reserva permanente"}
               </DrawerDescription>
             </div>
           </div>
@@ -119,6 +125,36 @@ export function AllocationDetailDrawer({
               </div>
             )}
           </div>
+
+          {/* Realizable: accumulated / realized / available */}
+          {isRealizable && (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2.5 rounded-[var(--radius-sm)] bg-[var(--color-bg-surface)]">
+                <span className="font-sans text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">
+                  Acumulado
+                </span>
+                <span className="font-mono text-sm text-foreground">
+                  {formatCurrency(accumulated)}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-[var(--radius-sm)] bg-[var(--color-bg-surface)]">
+                <span className="font-sans text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">
+                  Realizado
+                </span>
+                <span className="font-mono text-sm text-foreground">
+                  {formatCurrency(realized)}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-[var(--radius-sm)] bg-[var(--color-bg-surface)]">
+                <span className="font-sans text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">
+                  Disponível
+                </span>
+                <span className="font-mono text-sm text-[var(--color-accent-light)] font-medium">
+                  {formatCurrency(available)}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Monthly + ETA row */}
           <div className="flex justify-between items-center p-3 rounded-[var(--radius-sm)] bg-[var(--color-bg-surface)]">
