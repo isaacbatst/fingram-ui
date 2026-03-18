@@ -168,7 +168,6 @@ function AppContent() {
                   saldo={vault.balance}
                   receitas={vault.totalIncomeAmount}
                   despesas={vault.totalSpentAmount}
-                  despesasPlanejadas={vault.totalPlannedExpenses}
                 />
               </div>
             )}
