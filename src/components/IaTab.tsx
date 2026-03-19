@@ -1,4 +1,5 @@
-import type { AgentInputItem, RunToolApprovalItem } from "@openai/agents";
+import type { AgentInputItem, ToolApprovalItemJSON } from "@/types/agent";
+import { parseSSE } from "@/utils/sse-parser";
 import { ArrowUpIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { History } from "./IaHistory";
@@ -12,9 +13,9 @@ export function IaTab() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [history, setHistory] = useState<AgentInputItem[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [approvals, setApprovals] = useState<
-    ReturnType<RunToolApprovalItem["toJSON"]>[]
-  >([]);
+  const [approvals, setApprovals] = useState<ToolApprovalItemJSON[]>([]);
+  const streamingTextRef = useRef("");
+
   const onSend = async (message: string) => {
     await makeRequest({ message });
   };
@@ -51,20 +52,12 @@ export function IaTab() {
     message?: string;
     decisions?: Map<string, "approved" | "rejected">;
   }) {
-    const messages = [...history];
+    streamingTextRef.current = "";
 
     if (message) {
-      messages.push({ type: "message", role: "user", content: message });
-    }
-
-    const lastHistory = history[history.length - 1];
-    if (
-      !lastHistory ||
-      ("status" in lastHistory && lastHistory.status !== "in_progress")
-    ) {
-      setHistory([
-        ...messages,
-        // This is just a placeholder to show on the UI to show the agent is working
+      setHistory((prev) => [
+        ...prev,
+        { type: "message", role: "user", content: message },
         {
           type: "message",
           role: "assistant",
@@ -74,37 +67,113 @@ export function IaTab() {
       ]);
     }
 
-    // We will send the messages to the API route along with the conversation ID if we have one
-    // and the decisions if we had any approvals in this turn
-    const response = await fetch(
-      `${StandaloneApiService.BASE_URL}/vault/agent`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages,
-          conversationId,
-          decisions: Object.fromEntries(decisions ?? []),
-        }),
+    try {
+      const response = await fetch(
+        `${StandaloneApiService.BASE_URL}/vault/agent/stream`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message,
+            conversationId,
+            decisions: Object.fromEntries(decisions ?? []),
+          }),
+        }
+      );
+
+      if (!response.ok || !response.body) {
+        throw new Error("Stream request failed");
       }
-    );
 
-    const data = await response.json();
-    if (data.conversationId) {
-      setConversationId(data.conversationId);
-    }
+      const reader = response.body.getReader();
 
-    if (data.history) {
-      setHistory(data.history);
-    }
+      for await (const sseEvent of parseSSE(reader)) {
+        const data = JSON.parse(sseEvent.data);
 
-    if (data.approvals) {
-      setApprovals(data.approvals);
-    } else {
-      setApprovals([]);
+        switch (sseEvent.event) {
+          case "text_delta": {
+            streamingTextRef.current += data.delta;
+            const currentText = streamingTextRef.current;
+            setHistory((prev) => {
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (
+                lastIdx >= 0 &&
+                updated[lastIdx].type === "message" &&
+                updated[lastIdx].role === "assistant"
+              ) {
+                updated[lastIdx] = {
+                  ...updated[lastIdx],
+                  content: currentText,
+                  status: "completed",
+                };
+              }
+              return updated;
+            });
+            break;
+          }
+
+          case "approval_requested": {
+            if (data.conversationId) {
+              setConversationId(data.conversationId);
+            }
+            setApprovals(data.approvals ?? []);
+            break;
+          }
+
+          case "done": {
+            if (data.conversationId) {
+              setConversationId(data.conversationId);
+            }
+            if (data.history) {
+              setHistory(data.history);
+            }
+            setApprovals([]);
+            break;
+          }
+
+          case "error": {
+            setHistory((prev) => {
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (
+                lastIdx >= 0 &&
+                updated[lastIdx].type === "message" &&
+                updated[lastIdx].role === "assistant"
+              ) {
+                updated[lastIdx] = {
+                  ...updated[lastIdx],
+                  content: "Desculpe, ocorreu um erro. Tente novamente.",
+                  status: "completed",
+                };
+              }
+              return updated;
+            });
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Stream error:", error);
+      setHistory((prev) => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (
+          lastIdx >= 0 &&
+          updated[lastIdx].type === "message" &&
+          updated[lastIdx].role === "assistant"
+        ) {
+          updated[lastIdx] = {
+            ...updated[lastIdx],
+            content: "Desculpe, ocorreu um erro. Tente novamente.",
+            status: "completed",
+          };
+        }
+        return updated;
+      });
     }
   }
 
