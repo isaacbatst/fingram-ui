@@ -226,7 +226,7 @@ export function Approvals({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-background">
         <DialogHeader>
           <DialogTitle>Aprovação Necessária</DialogTitle>
           <DialogDescription>
