@@ -1,4 +1,4 @@
-import type { AgentInputItem } from "@openai/agents";
+import type { AgentInputItem } from "@/types/agent";
 import { useMemo } from "react";
 import {
   type ProcessedFunctionCallItem
@@ -27,8 +27,8 @@ function processItems(items: AgentInputItem[]): ProcessedItem[] {
     if (item.type === "function_call") {
       processedItems.push({
         type: "function_call",
-        name: item.name,
-        arguments: item.arguments,
+        name: item.name ?? "",
+        arguments: item.arguments ?? "",
         id: item.id ?? "",
         callId: item.callId ?? "",
         status: "in_progress",
@@ -62,7 +62,7 @@ function processItems(items: AgentInputItem[]): ProcessedItem[] {
     if (item.type === "message") {
       processedItems.push({
         type: "message",
-        role: item.role === "system" ? "assistant" : item.role,
+        role: item.role === "system" ? "assistant" : (item.role as "user" | "assistant") ?? "assistant",
         content:
           typeof item.content === "string"
             ? item.content

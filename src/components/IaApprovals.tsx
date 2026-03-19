@@ -6,11 +6,11 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import type { RunToolApprovalItem } from '@openai/agents';
+import type { ToolApprovalItemJSON } from '@/types/agent';
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 
-type Item = ReturnType<RunToolApprovalItem['toJSON']>;
+type Item = ToolApprovalItemJSON;
 
 type TransactionArgs = {
   transaction: {
@@ -176,7 +176,7 @@ export function Approvals({
   approvals,
   onDone,
 }: {
-  approvals: ReturnType<RunToolApprovalItem['toJSON']>[];
+  approvals: ToolApprovalItemJSON[];
   onDone: (decisions: Map<string, 'approved' | 'rejected'>) => void;
 }) {
   const [decisions, setDecisions] = useState<

@@ -1,4 +1,4 @@
-import type { AgentInputItem, RunToolApprovalItem } from "@openai/agents";
+import type { AgentInputItem, ToolApprovalItemJSON } from "@/types/agent";
 import { ArrowUpIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { History } from "./IaHistory";
@@ -12,9 +12,7 @@ export function IaTab() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [history, setHistory] = useState<AgentInputItem[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [approvals, setApprovals] = useState<
-    ReturnType<RunToolApprovalItem["toJSON"]>[]
-  >([]);
+  const [approvals, setApprovals] = useState<ToolApprovalItemJSON[]>([]);
   const onSend = async (message: string) => {
     await makeRequest({ message });
   };
@@ -51,20 +49,10 @@ export function IaTab() {
     message?: string;
     decisions?: Map<string, "approved" | "rejected">;
   }) {
-    const messages = [...history];
-
     if (message) {
-      messages.push({ type: "message", role: "user", content: message });
-    }
-
-    const lastHistory = history[history.length - 1];
-    if (
-      !lastHistory ||
-      ("status" in lastHistory && lastHistory.status !== "in_progress")
-    ) {
-      setHistory([
-        ...messages,
-        // This is just a placeholder to show on the UI to show the agent is working
+      setHistory((prev) => [
+        ...prev,
+        { type: "message", role: "user", content: message },
         {
           type: "message",
           role: "assistant",
@@ -74,8 +62,6 @@ export function IaTab() {
       ]);
     }
 
-    // We will send the messages to the API route along with the conversation ID if we have one
-    // and the decisions if we had any approvals in this turn
     const response = await fetch(
       `${StandaloneApiService.BASE_URL}/vault/agent`,
       {
@@ -85,7 +71,7 @@ export function IaTab() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages,
+          message,
           conversationId,
           decisions: Object.fromEntries(decisions ?? []),
         }),
