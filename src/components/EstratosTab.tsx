@@ -57,6 +57,8 @@ import { DatePicker } from "@/components/DatePicker";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorDisplay } from "./ErrorDisplay";
 import type { BoxDTO, BoxType } from "@/services/api.interface";
+import { useAllocationTrackingByBox } from "@/hooks/useAllocationTrackingByBox";
+import { formatCompactCurrency } from "@/utils/plan-dashboard";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -73,6 +75,7 @@ export function EstratosTab() {
   const { createTransfer } = useTransfer();
   const { apiService } = useApi();
   const { mutate } = useSWRConfig();
+  const trackingByBox = useAllocationTrackingByBox();
 
   // Create dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -319,52 +322,83 @@ export function EstratosTab() {
   const spendingBoxes = boxes?.filter((b) => b.type === "spending") ?? [];
   const savingBoxes = boxes?.filter((b) => b.type === "saving") ?? [];
 
-  const renderBoxCard = (box: BoxDTO, index: number) => (
-    <button
-      key={box.id}
-      type="button"
-      className={`w-full text-left rounded-xl border border-border p-4 duna-card duna-surface duna-stagger-${Math.min(index + 1, 6)} transition-colors active:bg-muted/50`}
-      onClick={() => handleOpenDetail(box)}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-display tracking-tight text-base text-foreground">
-          {box.name}
-        </span>
-        {box.isDefault && (
-          <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full shrink-0">
-            padrão
+  const renderBoxCard = (box: BoxDTO, index: number) => {
+    const tracking = trackingByBox[box.id];
+
+    return (
+      <button
+        key={box.id}
+        type="button"
+        className={`w-full text-left rounded-xl border border-border p-4 duna-card duna-surface duna-stagger-${Math.min(index + 1, 6)} transition-colors active:bg-muted/50`}
+        onClick={() => handleOpenDetail(box)}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-display tracking-tight text-base text-foreground">
+            {box.name}
           </span>
-        )}
-      </div>
-
-      <div className="text-sm text-muted-foreground font-mono tracking-tight">
-        {formatCurrency(box.balance)}
-      </div>
-
-      {box.goalAmount != null && box.goalProgress != null ? (
-        <div className="mt-3">
-          <div className="flex justify-between items-center gap-2">
-            <Progress
-              value={Math.min(100, box.goalProgress)}
-              filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
-              bgColor="var(--color-border)"
-              className="h-2 flex-1"
-            />
-            <span className="text-xs font-mono text-muted-foreground shrink-0">
-              {Math.min(100, Math.round(box.goalProgress))}%
+          {box.isDefault && (
+            <span className="text-[9px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full shrink-0">
+              padrão
             </span>
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-1">
-            Meta: {formatCurrency(box.goalAmount)}
-          </div>
+          )}
         </div>
-      ) : box.type === "saving" ? (
-        <div className="text-[11px] text-muted-foreground/50 mt-2">
-          Sem meta definida
+
+        <div className="text-sm text-muted-foreground font-mono tracking-tight">
+          {formatCurrency(box.balance)}
         </div>
-      ) : null}
-    </button>
-  );
+
+        {tracking && (
+          <div className="mt-3">
+            <div className="text-[10px] text-muted-foreground mb-1.5">
+              {formatCompactCurrency(tracking.realized)} realizado · {formatCompactCurrency(tracking.accumulated)} acumulado
+              {tracking.target > 0 && ` · de ${formatCompactCurrency(tracking.target)}`}
+            </div>
+            {tracking.target > 0 && (
+              <div className="relative h-2 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full opacity-30"
+                  style={{
+                    width: `${Math.min(100, (tracking.accumulated / tracking.target) * 100)}%`,
+                    backgroundColor: "var(--color-accent)",
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full"
+                  style={{
+                    width: `${Math.min(100, (tracking.realized / tracking.target) * 100)}%`,
+                    backgroundColor: "var(--color-accent)",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {!tracking && box.goalAmount != null && box.goalProgress != null ? (
+          <div className="mt-3">
+            <div className="flex justify-between items-center gap-2">
+              <Progress
+                value={Math.min(100, box.goalProgress)}
+                filledColor={box.goalProgress >= 100 ? "var(--color-success)" : "var(--color-accent)"}
+                bgColor="var(--color-border)"
+                className="h-2 flex-1"
+              />
+              <span className="text-xs font-mono text-muted-foreground shrink-0">
+                {Math.min(100, Math.round(box.goalProgress))}%
+              </span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-1">
+              Meta: {formatCurrency(box.goalAmount)}
+            </div>
+          </div>
+        ) : !tracking && box.type === "saving" ? (
+          <div className="text-[11px] text-muted-foreground/50 mt-2">
+            Sem meta definida
+          </div>
+        ) : null}
+      </button>
+    );
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -486,7 +520,57 @@ export function EstratosTab() {
                   {formatCurrency(selectedBox.balance)}
                 </div>
 
-                {selectedBox.goalAmount != null && selectedBox.goalProgress != null && (
+                {(() => {
+                  const tracking = trackingByBox[selectedBox.id];
+                  if (!tracking) return null;
+
+                  return (
+                    <div className="mb-4 rounded-lg border border-border p-3">
+                      <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+                        {tracking.label}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mb-2">
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Acumulado</div>
+                          <div className="text-sm font-mono text-foreground">{formatCurrency(tracking.accumulated)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Realizado</div>
+                          <div className="text-sm font-mono text-foreground">{formatCurrency(tracking.realized)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-muted-foreground">Em mãos</div>
+                          <div className="text-sm font-mono text-foreground">{formatCurrency(tracking.available)}</div>
+                        </div>
+                      </div>
+                      {tracking.target > 0 && (
+                        <div>
+                          <div className="relative h-2 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full opacity-30"
+                              style={{
+                                width: `${Math.min(100, (tracking.accumulated / tracking.target) * 100)}%`,
+                                backgroundColor: "var(--color-accent)",
+                              }}
+                            />
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full"
+                              style={{
+                                width: `${Math.min(100, (tracking.realized / tracking.target) * 100)}%`,
+                                backgroundColor: "var(--color-accent)",
+                              }}
+                            />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            Meta: {formatCurrency(tracking.target)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {selectedBox.goalAmount != null && selectedBox.goalProgress != null && !trackingByBox[selectedBox.id] && (
                   <div className="mb-4">
                     <div className="flex justify-between items-center gap-2 mb-1">
                       <Progress
