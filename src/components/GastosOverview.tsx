@@ -34,7 +34,13 @@ import {
   Search as SearchIcon,
   ListIcon,
   PieChartIcon,
+  PlusIcon,
+  Trash2Icon,
 } from "lucide-react";
+import {
+  getEffectiveStartDay,
+  type BudgetStartDaySchedule,
+} from "@/lib/budget-period";
 
 import { Label } from "@/components/ui/label";
 import { BudgetPieChart } from "./BudgetPieChart";
@@ -58,6 +64,10 @@ const months = [
 
 // Generate days 1-28 for budget start day selection
 const days = Array.from({ length: 28 }, (_, i) => i + 1);
+
+// Year range for override selection (current year ± 3)
+const currentYear = new Date().getUTCFullYear();
+const years = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i);
 
 function formatMoney(value: number): string {
   return value.toLocaleString("pt-BR", {
@@ -86,8 +96,8 @@ export function GastosOverview({
   const { setBudgets } = useBudgets();
   const { data: categories } = useCategories();
   const {
-    budgetStartDay,
-    setBudgetStartDay,
+    schedule,
+    saveSchedule,
     isLoading: isLoadingStartDay,
   } = useBudgetStartDay();
 
@@ -103,7 +113,11 @@ export function GastosOverview({
 
   // Settings drawer state
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
-  const [pendingStartDay, setPendingStartDay] = useState<number | null>(null);
+  const [draftSchedule, setDraftSchedule] =
+    useState<BudgetStartDaySchedule | null>(null);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  const activeSchedule = draftSchedule ?? schedule;
 
   const {
     data: budgetData,
@@ -158,6 +172,15 @@ export function GastosOverview({
   const monthLabel =
     months.find((m) => m.value === selectedMonth)?.label ?? "";
 
+  const effectiveStartDayForViewed = getEffectiveStartDay(
+    schedule,
+    selectedYear,
+    selectedMonth,
+  );
+  const hasOverrideForViewed = schedule.overrides.some(
+    (o) => o.year === selectedYear && o.month === selectedMonth,
+  );
+
   // Open edit drawer for a category
   const handleOpenEdit = (categoryId: string, categoryName: string) => {
     const existing = orcamento.find((o) => o.categoryId === categoryId);
@@ -192,16 +215,106 @@ export function GastosOverview({
     }
   };
 
-  // Handle start day change
-  const handleStartDayChange = async (value: string) => {
-    const day = parseInt(value, 10);
-    setPendingStartDay(day);
-    const result = await setBudgetStartDay(day);
-    if (result.success) {
-      setSettingsDrawerOpen(false);
-      mutate();
+  const handleOpenSettings = () => {
+    setDraftSchedule({
+      defaultDay: schedule.defaultDay,
+      overrides: schedule.overrides.map((o) => ({ ...o })),
+    });
+    setSettingsDrawerOpen(true);
+  };
+
+  const handleOpenSettingsForCurrentMonth = () => {
+    const overridesCopy = schedule.overrides.map((o) => ({ ...o }));
+    const alreadyExists = overridesCopy.some(
+      (o) => o.year === selectedYear && o.month === selectedMonth,
+    );
+    if (!alreadyExists) {
+      overridesCopy.push({
+        year: selectedYear,
+        month: selectedMonth,
+        day: schedule.defaultDay,
+      });
     }
-    setPendingStartDay(null);
+    setDraftSchedule({
+      defaultDay: schedule.defaultDay,
+      overrides: overridesCopy,
+    });
+    setSettingsDrawerOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setSettingsDrawerOpen(false);
+    setDraftSchedule(null);
+  };
+
+  const handleDefaultDayChange = (value: string) => {
+    const day = parseInt(value, 10);
+    setDraftSchedule((prev) => ({
+      defaultDay: day,
+      overrides: (prev ?? schedule).overrides,
+    }));
+  };
+
+  const handleAddOverride = () => {
+    setDraftSchedule((prev) => {
+      const base = prev ?? schedule;
+      const taken = new Set(
+        base.overrides.map((o) => `${o.year}-${o.month}`),
+      );
+      let year = selectedYear;
+      let month = selectedMonth;
+      while (taken.has(`${year}-${month}`)) {
+        month += 1;
+        if (month > 12) {
+          month = 1;
+          year += 1;
+        }
+      }
+      return {
+        defaultDay: base.defaultDay,
+        overrides: [
+          ...base.overrides,
+          { year, month, day: base.defaultDay },
+        ],
+      };
+    });
+  };
+
+  const handleUpdateOverride = (
+    index: number,
+    patch: Partial<{ year: number; month: number; day: number }>,
+  ) => {
+    setDraftSchedule((prev) => {
+      const base = prev ?? schedule;
+      const next = base.overrides.map((o, i) =>
+        i === index ? { ...o, ...patch } : o,
+      );
+      return { defaultDay: base.defaultDay, overrides: next };
+    });
+  };
+
+  const handleRemoveOverride = (index: number) => {
+    setDraftSchedule((prev) => {
+      const base = prev ?? schedule;
+      return {
+        defaultDay: base.defaultDay,
+        overrides: base.overrides.filter((_, i) => i !== index),
+      };
+    });
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!draftSchedule) return;
+    setIsSavingSchedule(true);
+    try {
+      const result = await saveSchedule(draftSchedule);
+      if (result.success) {
+        handleCloseSettings();
+        mutate();
+      }
+    } finally {
+      setIsSavingSchedule(false);
+    }
   };
 
   const hasBudgets = orcamento.length > 0;
@@ -219,9 +332,21 @@ export function GastosOverview({
         >
           <ChevronLeftIcon className="h-5 w-5" />
         </Button>
-        <h2 className="font-display text-2xl text-foreground tracking-tight">
-          {monthLabel} {selectedYear}
-        </h2>
+        <div className="flex flex-col items-center">
+          <h2 className="font-display text-2xl text-foreground tracking-tight">
+            {monthLabel} {selectedYear}
+          </h2>
+          <button
+            type="button"
+            onClick={handleOpenSettingsForCurrentMonth}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors leading-tight tracking-wide"
+            aria-label={`Ajustar início do período de ${monthLabel} ${selectedYear}`}
+          >
+            {hasOverrideForViewed
+              ? `ajustado · começa dia ${effectiveStartDayForViewed}`
+              : `começa dia ${effectiveStartDayForViewed}`}
+          </button>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -243,7 +368,7 @@ export function GastosOverview({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setSettingsDrawerOpen(true)}
+          onClick={handleOpenSettings}
           className="absolute right-0 h-9 w-9"
           aria-label="Configurações do orçamento"
         >
@@ -626,7 +751,10 @@ export function GastosOverview({
       {/* Settings Drawer */}
       <Drawer
         open={settingsDrawerOpen}
-        onOpenChange={setSettingsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseSettings();
+          else setSettingsDrawerOpen(true);
+        }}
       >
         <DrawerContent>
           <DrawerHeader>
@@ -638,17 +766,15 @@ export function GastosOverview({
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="px-4 pb-4 space-y-4">
+          <div className="px-4 pb-4 space-y-6 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="settings-start-day">
                 Dia de início do período
               </Label>
               <Select
-                value={
-                  pendingStartDay?.toString() ?? budgetStartDay.toString()
-                }
-                onValueChange={handleStartDayChange}
-                disabled={isLoadingStartDay || pendingStartDay !== null}
+                value={activeSchedule.defaultDay.toString()}
+                onValueChange={handleDefaultDayChange}
+                disabled={isLoadingStartDay || isSavingSchedule}
               >
                 <SelectTrigger id="settings-start-day">
                   <SelectValue placeholder="Selecione o dia" />
@@ -662,19 +788,134 @@ export function GastosOverview({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                O orçamento será calculado do dia {budgetStartDay} de cada mês
-                até o dia {budgetStartDay - 1 || 28} do mês seguinte.
+                {activeSchedule.defaultDay === 1
+                  ? "Por padrão, o mês começa no dia 1 e termina no último dia do mesmo mês."
+                  : `Por padrão, o mês começa no dia ${activeSchedule.defaultDay} e termina no dia ${activeSchedule.defaultDay - 1} do mês seguinte.`}
               </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label>Ajustes por mês</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use quando o salário cai em data diferente em um mês
+                  específico (ex: antecipação por feriado).
+                </p>
+              </div>
+
+              {activeSchedule.overrides.map((override, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-lg border border-border p-2"
+                >
+                  <Select
+                    value={override.month.toString()}
+                    onValueChange={(value) =>
+                      handleUpdateOverride(idx, { month: parseInt(value, 10) })
+                    }
+                    disabled={isSavingSchedule}
+                  >
+                    <SelectTrigger className="flex-1 min-w-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((m) => (
+                        <SelectItem key={m.value} value={m.value.toString()}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={override.year.toString()}
+                    onValueChange={(value) =>
+                      handleUpdateOverride(idx, { year: parseInt(value, 10) })
+                    }
+                    disabled={isSavingSchedule}
+                  >
+                    <SelectTrigger
+                      className="w-24"
+                      aria-label="Ano do ajuste"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={override.day.toString()}
+                    onValueChange={(value) =>
+                      handleUpdateOverride(idx, { day: parseInt(value, 10) })
+                    }
+                    disabled={isSavingSchedule}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {days.map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveOverride(idx)}
+                    disabled={isSavingSchedule}
+                    className="h-11 w-11 shrink-0 text-muted-foreground"
+                    aria-label={`Remover exceção de ${override.month}/${override.year}`}
+                  >
+                    <Trash2Icon className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddOverride}
+                disabled={isSavingSchedule}
+                className="w-full"
+              >
+                <PlusIcon className="h-4 w-4 mr-1" />
+                Adicionar exceção
+              </Button>
             </div>
           </div>
 
           <DrawerFooter>
-            <Button
-              variant="outline"
-              onClick={() => setSettingsDrawerOpen(false)}
-            >
-              Fechar
-            </Button>
+            <div className="flex gap-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={handleCloseSettings}
+                disabled={isSavingSchedule}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={handleSaveSchedule}
+                disabled={isSavingSchedule || isLoadingStartDay}
+              >
+                {isSavingSchedule ? "Salvando..." : "Salvar configuração"}
+              </Button>
+            </div>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

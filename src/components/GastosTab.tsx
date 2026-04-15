@@ -1,6 +1,6 @@
 import { useSearchParams } from "@/hooks/useSearchParams";
 import { useBudgetStartDay } from "@/hooks/useBudgetStartDay";
-import { getCurrentBudgetPeriod } from "@/lib/utils";
+import { getCurrentBudgetPeriod } from "@/lib/budget-period";
 import { GastosOverview } from "./GastosOverview";
 import { GastosTransacoes } from "./GastosTransacoes";
 
@@ -14,8 +14,8 @@ function getLevel(searchParams: URLSearchParams): Level {
 
 export function GastosTab() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { budgetStartDay } = useBudgetStartDay();
-  const defaultPeriod = getCurrentBudgetPeriod(budgetStartDay);
+  const { schedule } = useBudgetStartDay();
+  const defaultPeriod = getCurrentBudgetPeriod(schedule);
 
   const level = getLevel(searchParams);
 
