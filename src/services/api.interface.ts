@@ -2,6 +2,7 @@ import type { BudgetSummaryData } from "@/hooks/useBudgetSummary";
 import type { Category } from "@/hooks/useCategories";
 import type { SummaryData } from "@/hooks/useSummary";
 import type { TransactionsParams } from "@/hooks/useTransactions";
+import type { BudgetStartDaySchedule } from "@/lib/budget-period";
 import type { Paginated } from "@/utils/paginated";
 import type { TransactionDTO } from "@/utils/transaction.dto,";
 
@@ -114,13 +115,15 @@ export interface SuggestAllocationResponse {
   error?: string;
 }
 
-export interface SetBudgetStartDayResponse {
-  budgetStartDay?: number;
+export interface BudgetStartDayConfigResponse {
+  defaultDay: number;
+  overrides: BudgetStartDaySchedule['overrides'];
   error?: string;
 }
 
-export interface GetBudgetStartDayResponse {
-  budgetStartDay: number;
+export interface SetBudgetStartDayConfigResponse {
+  defaultDay?: number;
+  overrides?: BudgetStartDaySchedule['overrides'];
   error?: string;
 }
 
@@ -166,8 +169,10 @@ export interface ApiService {
   }>;
 
   // Budget Settings
-  setBudgetStartDay(day: number): Promise<SetBudgetStartDayResponse>;
-  getBudgetStartDay(): Promise<GetBudgetStartDayResponse>;
+  getBudgetStartDayConfig(): Promise<BudgetStartDayConfigResponse>;
+  setBudgetStartDayConfig(
+    config: BudgetStartDaySchedule,
+  ): Promise<SetBudgetStartDayConfigResponse>;
 
   // Category Suggestion
   suggestCategory(request: SuggestCategoryRequest): Promise<SuggestCategoryResponse>;
