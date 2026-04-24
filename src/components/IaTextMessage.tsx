@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type TextMessageProps = {
   text: string;
@@ -33,7 +34,34 @@ const markdownComponents: Components = {
       {children}
     </code>
   ),
+  table: ({ children }) => (
+    <div className="my-2 -mx-1 overflow-x-auto">
+      <table className="w-full border-collapse text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="border-b border-border">{children}</thead>
+  ),
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => (
+    <tr className="border-b border-border/50 last:border-0">{children}</tr>
+  ),
+  th: ({ children, style }) => (
+    <th
+      className="px-2 py-1.5 text-left font-semibold text-muted-foreground"
+      style={style}
+    >
+      {children}
+    </th>
+  ),
+  td: ({ children, style }) => (
+    <td className="px-2 py-1.5 align-top" style={style}>
+      {children}
+    </td>
+  ),
 };
+
+const remarkPlugins = [remarkGfm];
 
 export function TextMessage({ text, isUser }: TextMessageProps) {
   return (
@@ -53,7 +81,10 @@ export function TextMessage({ text, isUser }: TextMessageProps) {
         {isUser ? (
           text
         ) : (
-          <ReactMarkdown components={markdownComponents}>
+          <ReactMarkdown
+            components={markdownComponents}
+            remarkPlugins={remarkPlugins}
+          >
             {text}
           </ReactMarkdown>
         )}
