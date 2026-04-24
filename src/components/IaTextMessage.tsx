@@ -66,15 +66,15 @@ const remarkPlugins = [remarkGfm];
 export function TextMessage({ text, isUser }: TextMessageProps) {
   return (
     <div
-      className={clsx('flex flex-row gap-2', {
+      className={clsx('flex flex-row gap-2 w-full min-w-0', {
         'justify-end py-2': isUser,
       })}
     >
       <div
-        className={clsx('rounded-[16px]', {
+        className={clsx('rounded-[16px] min-w-0', {
           'px-4 py-2 max-w-[90%] ml-4 text-foreground bg-muted whitespace-pre-wrap':
             isUser,
-          'py-2 text-foreground': !isUser,
+          'py-2 text-foreground flex-1': !isUser,
           'animate-bounce bg-muted': text === '⚫︎⚫︎⚫︎',
         })}
       >
