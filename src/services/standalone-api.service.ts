@@ -128,6 +128,9 @@ export class StandaloneApiService implements ApiService {
     if (params?.boxId) {
       url.searchParams.append("boxId", params.boxId);
     }
+    if (params?.allPeriods) {
+      url.searchParams.append("allPeriods", "true");
+    }
 
     const response = await this.makeRequest(`/transactions?${url.searchParams.toString()}`);
     return response.json();

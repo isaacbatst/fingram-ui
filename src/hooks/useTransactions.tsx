@@ -11,6 +11,7 @@ export interface TransactionsParams {
   categoryId?: string; // Adicionando filtro por categoria
   description?: string; // Adicionando filtro por descrição
   boxId?: string;
+  allPeriods?: boolean;
 }
 
 export function useTransactions(params?: TransactionsParams) {
@@ -19,14 +20,15 @@ export function useTransactions(params?: TransactionsParams) {
   // Função para criar uma chave única baseada nos parâmetros
   const getKey = useCallback(() => {
     if (!isAuthenticated) return null;
-    
+
     const keyParts = ["transactions"];
     if (params?.page) keyParts.push(`page:${params.page}`);
     if (params?.year && params?.month) keyParts.push(`date:${params.year}-${params.month}`);
     if (params?.categoryId) keyParts.push(`category:${params.categoryId}`);
     if (params?.description) keyParts.push(`desc:${params.description}`);
     if (params?.boxId) keyParts.push(`box:${params.boxId}`);
-    
+    if (params?.allPeriods) keyParts.push("all");
+
     return keyParts.join("|");
   }, [isAuthenticated, params]);
 
