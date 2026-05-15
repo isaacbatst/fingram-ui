@@ -2,6 +2,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker, type DatePickerHandle } from "@/components/DatePicker";
 import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
+import { RastroRecente } from "@/components/RastroRecente";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -883,6 +884,8 @@ export function InputTab() {
           </Button>
         </div>
       </form>
+
+      <RastroRecente />
     </div>
   );
 }
