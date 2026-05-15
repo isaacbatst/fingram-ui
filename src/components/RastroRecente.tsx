@@ -77,7 +77,10 @@ function SkeletonRow({ idx }: { idx: number }) {
 }
 
 export function RastroRecente() {
-  const { data, error, isLoading } = useTransactions({ page: 1 });
+  const { data, error, isLoading } = useTransactions({
+    page: 1,
+    allPeriods: true,
+  });
   const [, setSearchParams] = useSearchParams();
 
   const transactions = useMemo<TransactionDTO[]>(
