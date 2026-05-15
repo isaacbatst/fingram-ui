@@ -4,6 +4,8 @@ interface SetSearchParamsOptions {
   replace?: boolean;
 }
 
+const SEARCH_PARAMS_CHANGED = "duna:searchparamschange";
+
 export const useSearchParams = () => {
   const [searchParams, setSearchParamsState] = useState(
     new URLSearchParams(window.location.search)
@@ -25,12 +27,17 @@ export const useSearchParams = () => {
       window.history.pushState({}, '', url);
     }
     setSearchParamsState(newParams);
+    window.dispatchEvent(new Event(SEARCH_PARAMS_CHANGED));
   };
 
   useEffect(() => {
     const listener = () => setSearchParamsState(new URLSearchParams(window.location.search));
     window.addEventListener("popstate", listener);
-    return () => window.removeEventListener("popstate", listener);
+    window.addEventListener(SEARCH_PARAMS_CHANGED, listener);
+    return () => {
+      window.removeEventListener("popstate", listener);
+      window.removeEventListener(SEARCH_PARAMS_CHANGED, listener);
+    };
   }, []);
 
   return [searchParams, setSearchParams] as const;
