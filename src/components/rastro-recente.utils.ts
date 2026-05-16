@@ -1,6 +1,5 @@
 import type { TransactionDTO } from "@/utils/transaction.dto,";
 
-export const MAX_ROWS = 5;
 export const OPACITY_FLOOR = 0.5;
 export const OPACITY_DECAY = 0.12;
 
