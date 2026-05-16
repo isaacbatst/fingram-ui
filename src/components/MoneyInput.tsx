@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface MoneyInputProps {
@@ -22,19 +22,6 @@ function formatCents(cents: number): string {
   });
 }
 
-/** Map a digit-space index to a position in the formatted string (after that many digits). */
-function posAfterNDigits(formatted: string, n: number): number {
-  if (n <= 0) return 0;
-  let seen = 0;
-  for (let i = 0; i < formatted.length; i++) {
-    if (formatted[i] >= "0" && formatted[i] <= "9") {
-      seen++;
-      if (seen === n) return i + 1;
-    }
-  }
-  return formatted.length;
-}
-
 export function MoneyInput({
   value,
   onChange,
@@ -50,6 +37,14 @@ export function MoneyInput({
   const cents = Math.round(value * 100);
   const formatted = formatCents(cents);
 
+  const isFullySelected = () => {
+    const input = inputRef.current;
+    if (!input) return false;
+    return (
+      input.selectionStart === 0 && input.selectionEnd === input.value.length
+    );
+  };
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
@@ -64,40 +59,17 @@ export function MoneyInput({
 
       e.preventDefault();
 
-      const pos = inputRef.current?.selectionStart ?? formatted.length;
-      const digits = formatted.replace(/\D/g, "");
-
-      // Map cursor position in formatted string to digit index
-      let digitIndex = 0;
-      for (let i = 0; i < pos; i++) {
-        if (formatted[i] >= "0" && formatted[i] <= "9") digitIndex++;
-      }
+      const baseCents = isFullySelected() ? 0 : cents;
 
       if (isDigit) {
-        const newDigits =
-          digits.slice(0, digitIndex) + e.key + digits.slice(digitIndex);
-        const newCents = parseInt(newDigits, 10);
-        if (newCents <= MAX_CENTS) {
-          onChange(newCents / 100);
-          const newFormatted = formatCents(newCents);
-          const newPos = posAfterNDigits(newFormatted, digitIndex + 1);
-          requestAnimationFrame(() => {
-            inputRef.current?.setSelectionRange(newPos, newPos);
-          });
-        }
-      } else if (digitIndex > 0) {
-        const newDigits =
-          digits.slice(0, digitIndex - 1) + digits.slice(digitIndex);
-        const newCents = newDigits ? parseInt(newDigits, 10) : 0;
-        onChange(newCents / 100);
-        const newFormatted = formatCents(newCents);
-        const newPos = posAfterNDigits(newFormatted, digitIndex - 1);
-        requestAnimationFrame(() => {
-          inputRef.current?.setSelectionRange(newPos, newPos);
-        });
+        const newCents = baseCents * 10 + Number(e.key);
+        if (newCents <= MAX_CENTS) onChange(newCents / 100);
+      } else {
+        const newCents = Math.floor(baseCents / 10);
+        if (newCents !== cents) onChange(newCents / 100);
       }
     },
-    [formatted, onChange, onNext],
+    [cents, onChange, onNext],
   );
 
   const handlePaste = useCallback(
@@ -107,13 +79,31 @@ export function MoneyInput({
       const digits = text.replace(/\D/g, "");
       if (digits) {
         const pastedCents = parseInt(digits, 10);
-        if (pastedCents <= MAX_CENTS) {
-          onChange(pastedCents / 100);
-        }
+        if (pastedCents <= MAX_CENTS) onChange(pastedCents / 100);
       }
     },
     [onChange],
   );
+
+  // Caret-aware editing breaks when the formatted width changes (thousands
+  // separator appears/disappears, leading zero added), so we lock the caret
+  // to the end and treat typing as a right-to-left calculator.
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (document.activeElement !== input) return;
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+  }, [formatted]);
+
+  const handleFocus = useCallback(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    requestAnimationFrame(() => {
+      const end = input.value.length;
+      input.setSelectionRange(end, end);
+    });
+  }, []);
 
   return (
     <input
@@ -125,6 +115,7 @@ export function MoneyInput({
       onChange={() => {}}
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
+      onFocus={handleFocus}
       required={required}
       disabled={disabled}
       autoFocus={autoFocus}
