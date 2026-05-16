@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  MAX_ROWS,
   OPACITY_FLOOR,
   formatAmount,
   getRowOpacity,
@@ -44,8 +43,8 @@ describe("getRowOpacity", () => {
     expect(getRowOpacity(100)).toBe(OPACITY_FLOOR);
   });
 
-  it("never returns below the floor for valid row indices (0..MAX_ROWS-1)", () => {
-    for (let i = 0; i < MAX_ROWS; i++) {
+  it("stays within [OPACITY_FLOOR, 1] for any non-negative index", () => {
+    for (let i = 0; i < 20; i++) {
       expect(getRowOpacity(i)).toBeGreaterThanOrEqual(OPACITY_FLOOR);
       expect(getRowOpacity(i)).toBeLessThanOrEqual(1);
     }

@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/format-relative-time";
+import { formatShortDate } from "@/lib/format-short-date";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useSearchParams } from "@/hooks/useSearchParams";
 import type { TransactionDTO } from "@/utils/transaction.dto,";
 import {
-  MAX_ROWS,
   formatAmount,
   getRowOpacity,
   getRowVisual,
@@ -20,7 +20,8 @@ type RowProps = {
 
 function Row({ tx, idx, onClick }: RowProps) {
   const { color, sign, label, isTransfer } = getRowVisual(tx);
-  const time = formatRelativeTime(tx.createdAt);
+  const cadastro = formatRelativeTime(tx.createdAt);
+  const referencia = formatShortDate(tx.date);
 
   return (
     <button
@@ -28,12 +29,12 @@ function Row({ tx, idx, onClick }: RowProps) {
       onClick={onClick}
       style={{ opacity: getRowOpacity(idx) }}
       className={cn(
-        "flex w-full items-center gap-3 min-h-[44px] px-2 -mx-2 py-2 rounded-md text-left",
+        "flex w-full items-start gap-3 min-h-[44px] px-2 -mx-2 py-2 rounded-md text-left",
         "transition-colors active:bg-[var(--color-bg-surface-hover)] hover:bg-[var(--color-bg-surface-hover)]/40",
       )}
-      aria-label={`${label}, ${time}, R$ ${formatAmount(tx.amount)}`}
+      aria-label={`${label}, cadastrado ${cadastro}, referente a ${referencia}, R$ ${formatAmount(tx.amount)}`}
     >
-      <span className="shrink-0 flex items-center justify-center size-3" aria-hidden>
+      <span className="shrink-0 flex items-center justify-center size-3 mt-[5px]" aria-hidden>
         {isTransfer ? (
           <ArrowRightLeft className="size-3 text-[var(--color-info)]" />
         ) : (
@@ -43,14 +44,14 @@ function Row({ tx, idx, onClick }: RowProps) {
           />
         )}
       </span>
-      <span className="flex-1 min-w-0 text-sm text-foreground truncate">
-        {label}
-      </span>
-      <span className="shrink-0 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
-        {time}
+      <span className="flex-1 min-w-0 flex flex-col">
+        <span className="text-sm text-foreground truncate">{label}</span>
+        <span className="text-[10px] font-mono text-muted-foreground tracking-wide whitespace-nowrap">
+          cad. {cadastro} · ref. {referencia}
+        </span>
       </span>
       <span
-        className="shrink-0 font-mono text-sm font-semibold whitespace-nowrap"
+        className="shrink-0 font-mono text-sm font-semibold whitespace-nowrap mt-[1px]"
         style={{ color }}
       >
         {sign && `${sign} `}R$ {formatAmount(tx.amount)}
@@ -84,7 +85,7 @@ export function RastroRecente() {
   const [, setSearchParams] = useSearchParams();
 
   const transactions = useMemo<TransactionDTO[]>(
-    () => (data?.items ?? []).slice(0, MAX_ROWS),
+    () => data?.items ?? [],
     [data],
   );
 
@@ -124,7 +125,7 @@ export function RastroRecente() {
       )}
 
       {transactions.length > 0 && (
-        <ul className="flex flex-col">
+        <ul className="flex flex-col max-h-[280px] overflow-y-auto -mx-2 px-2">
           {transactions.map((tx, idx) => (
             <li
               key={tx.id}
