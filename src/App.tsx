@@ -5,6 +5,7 @@ import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { GastosTab } from "@/components/GastosTab";
 import { GrainOverlay } from "@/components/GrainOverlay";
 import { InputTab } from "@/components/InputTab";
+import { ImportExtrato } from "@/components/ImportExtrato";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { SaldoResumo } from "@/components/SaldoResumo";
 import { TempTokenConfirmation } from "@/components/TempTokenConfirmation";
@@ -173,8 +174,9 @@ function AppContent() {
                 />
               </div>
             )}
-            <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0">
+            <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0 gap-4">
               <InputTab />
+              <ImportExtrato />
             </TabsContent>
             <TabsContent
               value="estratos"
