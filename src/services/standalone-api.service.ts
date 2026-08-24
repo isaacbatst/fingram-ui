@@ -24,6 +24,13 @@ import type {
   EditBoxRequest,
   CreateTransferRequest,
   EditTransferRequest,
+  UploadImportRequest,
+  UploadImportResponse,
+  ImportReviewParams,
+  ImportReviewData,
+  EditImportEntryRequest,
+  ImportEntryDTO,
+  ConfirmImportResponse,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -348,6 +355,111 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao deletar transferência:", error);
       return { error: "Erro ao deletar transferência" };
+    }
+  }
+
+  // --- Import de extrato (OFX) ---
+
+  /**
+   * Diferente de makeRequest, preserva a mensagem de erro da API. No import ela é o
+   * principal sinal para o usuário ("Arquivo não parece ser um OFX válido"), então
+   * trocá-la por um texto genérico deixaria a tela sem explicação.
+   */
+  private async makeImportRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const response = await fetch(`${API_BASE_URL}/vault/import${endpoint}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+
+    if (response.status === 401) {
+      throw new Error("Token de acesso inválido ou expirado.");
+    }
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
+      throw new Error(message || "Erro ao conectar com o servidor");
+    }
+
+    return response;
+  }
+
+  async uploadImport(request: UploadImportRequest): Promise<UploadImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/upload', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao importar extrato:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao importar extrato" };
+    }
+  }
+
+  async getImportReview(batchId: string, params?: ImportReviewParams): Promise<ImportReviewData> {
+    const search = new URLSearchParams();
+    if (params?.status) search.append("status", params.status);
+    if (params?.page) search.append("page", params.page.toString());
+    if (params?.pageSize) search.append("pageSize", params.pageSize.toString());
+
+    const query = search.toString();
+    const response = await this.makeImportRequest(`/batch/${batchId}${query ? `?${query}` : ""}`);
+    return response.json();
+  }
+
+  async editImportEntry(
+    request: EditImportEntryRequest,
+  ): Promise<{ entry?: ImportEntryDTO; error?: string }> {
+    try {
+      const response = await this.makeImportRequest('/entry/edit', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      return { entry: await response.json() };
+    } catch (error) {
+      console.error("Erro ao editar lançamento:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao editar lançamento" };
+    }
+  }
+
+  async dismissImportEntry(entryId: string): Promise<{ entry?: ImportEntryDTO; error?: string }> {
+    try {
+      const response = await this.makeImportRequest('/entry/dismiss', {
+        method: 'POST',
+        body: JSON.stringify({ entryId }),
+      });
+      return { entry: await response.json() };
+    } catch (error) {
+      console.error("Erro ao ignorar lançamento:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao ignorar lançamento" };
+    }
+  }
+
+  async confirmImportEntries(entryIds: string[]): Promise<ConfirmImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ entryIds }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao confirmar lançamentos:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao confirmar lançamentos" };
+    }
+  }
+
+  async confirmImportBatch(batchId: string): Promise<ConfirmImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/batch/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ batchId }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao confirmar importação:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao confirmar importação" };
     }
   }
 }

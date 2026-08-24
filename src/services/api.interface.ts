@@ -190,4 +190,92 @@ export interface ApiService {
   createTransfer(request: CreateTransferRequest): Promise<{ transferId?: string; error?: string }>;
   editTransfer(request: EditTransferRequest): Promise<{ error?: string }>;
   deleteTransfer(transferId: string): Promise<{ error?: string }>;
+
+  // Import de extrato (OFX)
+  uploadImport(request: UploadImportRequest): Promise<UploadImportResponse>;
+  getImportReview(batchId: string, params?: ImportReviewParams): Promise<ImportReviewData>;
+  editImportEntry(request: EditImportEntryRequest): Promise<{ entry?: ImportEntryDTO; error?: string }>;
+  dismissImportEntry(entryId: string): Promise<{ entry?: ImportEntryDTO; error?: string }>;
+  confirmImportEntries(entryIds: string[]): Promise<ConfirmImportResponse>;
+  confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
+}
+
+export type ImportEntryStatus = "pending" | "confirmed" | "dismissed";
+export type ImportSuggestionSource = "history" | "ai" | "none";
+
+export interface ImportBatchDTO {
+  id: string;
+  accountKey: string;
+  accountLabel: string | null;
+  boxId: string | null;
+  kind: "bank" | "creditcard";
+  currency: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  ledgerBalance: number | null;
+  fileName: string | null;
+  status: "reviewing" | "done";
+  /** Lançamentos do arquivo que esta conta já tinha visto. */
+  duplicateCount: number;
+  createdAt: string;
+}
+
+export interface ImportEntryDTO {
+  id: string;
+  batchId: string;
+  fitId: string;
+  date: string;
+  amount: number;
+  type: "income" | "expense";
+  description: string;
+  categoryId: string | null;
+  boxId: string | null;
+  suggestedCategoryId: string | null;
+  suggestionSource: ImportSuggestionSource;
+  status: ImportEntryStatus;
+  transactionId: string | null;
+  /** Texto original do banco, preservado mesmo depois de editar a descrição. */
+  rawDescription: string | null;
+  rawAmount: number;
+  rawDate: string;
+}
+
+export interface UploadImportRequest {
+  contentBase64: string;
+  fileName?: string;
+  boxId?: string;
+}
+
+export interface UploadImportResponse {
+  batches?: ImportBatchDTO[];
+  error?: string;
+}
+
+export interface ImportReviewParams {
+  status?: ImportEntryStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ImportReviewData {
+  batch: ImportBatchDTO;
+  counts: Record<ImportEntryStatus, number>;
+  duplicateCount: number;
+  entries: Paginated<ImportEntryDTO>;
+}
+
+export interface EditImportEntryRequest {
+  entryId: string;
+  date?: string;
+  amount?: number;
+  type?: "income" | "expense";
+  description?: string;
+  categoryId?: string | null;
+  boxId?: string | null;
+}
+
+export interface ConfirmImportResponse {
+  confirmed?: number;
+  skipped?: string[];
+  error?: string;
 }
