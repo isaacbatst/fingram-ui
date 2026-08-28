@@ -2,6 +2,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker, type DatePickerHandle } from "@/components/DatePicker";
 import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
+import { ImportExtrato } from "@/components/ImportExtrato";
 import { RastroRecente } from "@/components/RastroRecente";
 import {
   AlertDialog,
@@ -57,7 +58,7 @@ const isToday = (date: Date): boolean => {
 
 // ── Types ──
 
-type InputMode = "expense" | "income" | "transfer";
+type InputMode = "expense" | "income" | "transfer" | "import";
 type ExpenseSubtype = "daily" | "planned";
 
 const MODE_CONFIG: Record<
@@ -74,14 +75,22 @@ const MODE_CONFIG: Record<
     color: "var(--color-success)",
     cta: "Registrar",
   },
+  // Abreviado porque com quatro opções o rótulo completo não cabe no controle
+  // segmentado em telas estreitas.
   transfer: {
-    label: "Transferência",
+    label: "Transf.",
     color: "var(--color-info)",
     cta: "Transferir",
   },
+  // O modo import não usa o formulário nem o CTA — renderiza a própria tela.
+  import: {
+    label: "Importar",
+    color: "var(--color-accent)",
+    cta: "Importar",
+  },
 };
 
-const MODES: InputMode[] = ["expense", "income", "transfer"];
+const MODES: InputMode[] = ["expense", "income", "transfer", "import"];
 
 // ── Expense Subtype Selector ──
 
@@ -709,10 +718,12 @@ export function InputTab() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 3-option segmented control */}
+      {/* Segmented control: despesa · receita · transferência · importar */}
       <div className="mb-5">
         <ModeSelector value={mode} onChange={handleModeChange} />
       </div>
+
+      {mode === "import" && <ImportExtrato />}
 
       {mode === "expense" && allAllocations.length > 0 && (
         <div className="mb-5">
@@ -723,6 +734,7 @@ export function InputTab() {
         </div>
       )}
 
+      {mode !== "import" && (
       <form onSubmit={handleSubmit}>
         {/* Hero amount — generous spacing establishes visual hierarchy */}
         <div className="flex flex-col items-center pt-2 pb-6">
@@ -884,8 +896,9 @@ export function InputTab() {
           </Button>
         </div>
       </form>
+      )}
 
-      <RastroRecente />
+      {mode !== "import" && <RastroRecente />}
     </div>
   );
 }

@@ -141,7 +141,7 @@ export function ImportExtrato() {
     return (
       <section className="duna-surface rounded-lg p-4 flex flex-col gap-3">
         <div>
-          <h2 className="font-display text-lg">Importar extrato</h2>
+          {/* Sem título aqui: a aba do controle segmentado já diz "Importar". */}
           <p className="text-sm text-muted-foreground leading-relaxed">
             Envie o arquivo OFX do seu banco. Nada entra sem você confirmar, e reenviar o
             mesmo período não duplica lançamentos.
