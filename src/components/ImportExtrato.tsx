@@ -56,6 +56,7 @@ export function ImportExtrato() {
 
   const [batchId, setBatchId] = useState<string | null>(null);
   const [boxId, setBoxId] = useState("");
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -81,6 +82,8 @@ export function ImportExtrato() {
         contentBase64: await fileToBase64(file),
         fileName: file.name,
         boxId: boxId || undefined,
+        // Data pura: o corte é por dia, sem hora nem fuso.
+        fromDate: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
       });
 
       if (result.error || !result.batches?.length) {
@@ -157,6 +160,20 @@ export function ImportExtrato() {
           />
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <Label>A partir de</Label>
+          <DatePicker
+            date={fromDate}
+            onDateChange={setFromDate}
+            placeholder="Todo o extrato"
+          />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {fromDate
+              ? "Lançamentos anteriores a essa data ficam de fora. Você pode trazê-los depois reenviando o arquivo sem data."
+              : "Opcional. Sem data, o extrato inteiro é importado."}
+          </p>
+        </div>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -207,6 +224,8 @@ export function ImportExtrato() {
           onClick={() => {
             setBatchId(null);
             setExpandedId(null);
+            // O próximo import começa do zero: o corte é escolha por arquivo.
+            setFromDate(undefined);
           }}
         >
           Concluir
@@ -230,6 +249,14 @@ export function ImportExtrato() {
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Já importadas antes</dt>
             <dd className="font-mono">{review.duplicateCount}</dd>
+          </div>
+        )}
+        {!!review?.outOfRangeCount && (
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">
+              Antes de {batch?.fromDate ? formatDay(batch.fromDate) : "a data escolhida"}
+            </dt>
+            <dd className="font-mono">{review.outOfRangeCount}</dd>
           </div>
         )}
       </dl>

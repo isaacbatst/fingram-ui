@@ -217,6 +217,10 @@ export interface ImportBatchDTO {
   status: "reviewing" | "done";
   /** Lançamentos do arquivo que esta conta já tinha visto. */
   duplicateCount: number;
+  /** Corte opcional escolhido no upload. Null = arquivo inteiro. */
+  fromDate: string | null;
+  /** Lançamentos descartados por serem anteriores ao corte. */
+  outOfRangeCount: number;
   createdAt: string;
 }
 
@@ -244,6 +248,8 @@ export interface UploadImportRequest {
   contentBase64: string;
   fileName?: string;
   boxId?: string;
+  /** Data inicial opcional, no formato YYYY-MM-DD. */
+  fromDate?: string;
 }
 
 export interface UploadImportResponse {
@@ -261,6 +267,7 @@ export interface ImportReviewData {
   batch: ImportBatchDTO;
   counts: Record<ImportEntryStatus, number>;
   duplicateCount: number;
+  outOfRangeCount: number;
   entries: Paginated<ImportEntryDTO>;
 }
 
