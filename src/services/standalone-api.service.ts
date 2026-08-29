@@ -30,6 +30,7 @@ import type {
   ImportReviewData,
   EditImportEntryRequest,
   ImportEntryDTO,
+  ImportGroupDTO,
   ConfirmImportResponse,
 } from "./api.interface";
 
@@ -407,6 +408,27 @@ export class StandaloneApiService implements ApiService {
     const query = search.toString();
     const response = await this.makeImportRequest(`/batch/${batchId}${query ? `?${query}` : ""}`);
     return response.json();
+  }
+
+  async getImportGroups(batchId: string): Promise<{ groups: ImportGroupDTO[] }> {
+    const response = await this.makeImportRequest(`/batch/${batchId}/groups`);
+    return response.json();
+  }
+
+  async categorizeImportEntries(
+    entryIds: string[],
+    categoryId: string | null,
+  ): Promise<{ updated?: number; error?: string }> {
+    try {
+      const response = await this.makeImportRequest('/entries/categorize', {
+        method: 'POST',
+        body: JSON.stringify({ entryIds, categoryId }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao categorizar lançamentos:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao categorizar" };
+    }
   }
 
   async editImportEntry(

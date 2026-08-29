@@ -194,6 +194,11 @@ export interface ApiService {
   // Import de extrato (OFX)
   uploadImport(request: UploadImportRequest): Promise<UploadImportResponse>;
   getImportReview(batchId: string, params?: ImportReviewParams): Promise<ImportReviewData>;
+  getImportGroups(batchId: string): Promise<{ groups: ImportGroupDTO[] }>;
+  categorizeImportEntries(
+    entryIds: string[],
+    categoryId: string | null,
+  ): Promise<{ updated?: number; error?: string }>;
   editImportEntry(request: EditImportEntryRequest): Promise<{ entry?: ImportEntryDTO; error?: string }>;
   dismissImportEntry(entryId: string): Promise<{ entry?: ImportEntryDTO; error?: string }>;
   confirmImportEntries(entryIds: string[]): Promise<ConfirmImportResponse>;
@@ -242,6 +247,18 @@ export interface ImportEntryDTO {
   rawDescription: string | null;
   rawAmount: number;
   rawDate: string;
+}
+
+/** Lançamentos pendentes de um mesmo estabelecimento — a unidade de decisão. */
+export interface ImportGroupDTO {
+  key: string;
+  description: string;
+  type: "income" | "expense";
+  count: number;
+  totalAmount: number;
+  firstDate: string;
+  lastDate: string;
+  entryIds: string[];
 }
 
 export interface UploadImportRequest {

@@ -13,6 +13,7 @@ import { DatePicker } from "@/components/DatePicker";
 import { useApi } from "@/hooks/useApi";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useImportReview } from "@/hooks/useImportReview";
+import { ImportTriagem } from "@/components/ImportTriagem";
 import { cn } from "@/lib/utils";
 import type { ImportBatchDTO, ImportEntryDTO } from "@/services/api.interface";
 
@@ -58,6 +59,7 @@ export function ImportExtrato() {
   const [boxId, setBoxId] = useState("");
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [page, setPage] = useState(1);
+  const [view, setView] = useState<"triagem" | "lista">("triagem");
   const [isUploading, setIsUploading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -93,6 +95,7 @@ export function ImportExtrato() {
 
       setBatchId(result.batches[0].id);
       setPage(1);
+      setView("triagem");
       if (result.batches.length > 1) {
         toast.info(
           `O arquivo tem ${result.batches.length} contas. Revisando a primeira; as demais ficam salvas.`,
@@ -206,6 +209,47 @@ export function ImportExtrato() {
   const entries = review?.entries.items ?? [];
   const totalPages = review?.entries.totalPages ?? 1;
 
+  const finish = () => {
+    setBatchId(null);
+    setExpandedId(null);
+    setFromDate(undefined);
+    setView("triagem");
+    refreshVault();
+  };
+
+  // A triagem é a tela padrão depois do upload: classificar um extrato linha a
+  // linha é a unidade errada de trabalho. A lista continua acessível para conferir.
+  if (view === "triagem") {
+    return (
+      <section className="duna-surface rounded-lg p-4 flex flex-col gap-2">
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg truncate">
+              {batch?.accountLabel ?? "Extrato"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {batch && formatPeriod(batch)}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 shrink-0"
+            onClick={finish}
+          >
+            Sair
+          </Button>
+        </header>
+
+        <ImportTriagem
+          batchId={batchId}
+          onSwitchToList={() => setView("lista")}
+          onFinished={finish}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="duna-surface rounded-lg p-4 flex flex-col gap-4">
       <header className="flex items-start justify-between gap-3">
@@ -217,19 +261,26 @@ export function ImportExtrato() {
             {batch && formatPeriod(batch)}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          className="min-h-11 shrink-0"
-          onClick={() => {
-            setBatchId(null);
-            setExpandedId(null);
-            // O próximo import começa do zero: o corte é escolha por arquivo.
-            setFromDate(undefined);
-          }}
-        >
-          Concluir
-        </Button>
+        <div className="flex gap-1 shrink-0">
+          {pending > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11"
+              onClick={() => setView("triagem")}
+            >
+              Triagem
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={finish}
+          >
+            Concluir
+          </Button>
+        </div>
       </header>
 
       <dl className="text-sm flex flex-col gap-1">
