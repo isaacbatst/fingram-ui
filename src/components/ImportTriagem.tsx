@@ -39,10 +39,10 @@ export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
   const { apiService } = useApi();
   const { data: categories } = useCategories();
 
-  const { data, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     ["import-groups", batchId],
     () => apiService.getImportGroups(batchId),
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: false, shouldRetryOnError: false },
   );
 
   const groups = useMemo(() => data?.groups ?? [], [data]);
@@ -70,13 +70,60 @@ export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
     );
   }
 
+  // Falha de rede ou endpoint ausente não pode ser apresentada como extrato vazio:
+  // é a diferença entre "não há nada a fazer" e "não consegui perguntar".
+  if (error) {
+    return (
+      <div className="flex flex-col gap-3 py-8 text-center">
+        <p className="text-sm text-muted-foreground leading-relaxed px-4">
+          Não foi possível carregar a triagem.
+          {error instanceof Error && error.message ? ` ${error.message}` : ""}
+        </p>
+        <p className="text-xs text-muted-foreground px-4">
+          Os lançamentos continuam salvos — abra a lista para revisá-los.
+        </p>
+        <div className="flex justify-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => void mutate()}
+          >
+            Tentar de novo
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={onSwitchToList}
+          >
+            Ver lista
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (groups.length === 0) {
     return (
       <div className="flex flex-col gap-3 py-8 text-center">
-        <p className="text-sm text-muted-foreground">Nada pendente neste extrato.</p>
-        <Button type="button" variant="ghost" className="min-h-11" onClick={onFinished}>
-          Concluir
-        </Button>
+        <p className="text-sm text-muted-foreground leading-relaxed px-4">
+          Nenhum lançamento novo para revisar. Se você já tinha importado este
+          extrato, os lançamentos dele foram reconhecidos e não entram de novo.
+        </p>
+        <div className="flex justify-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={onSwitchToList}
+          >
+            Ver lista
+          </Button>
+          <Button type="button" variant="ghost" className="min-h-11" onClick={onFinished}>
+            Concluir
+          </Button>
+        </div>
       </div>
     );
   }
