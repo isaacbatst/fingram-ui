@@ -204,6 +204,11 @@ export interface ApiService {
   editImportEntry(request: EditImportEntryRequest): Promise<{ entry?: ImportEntryDTO; error?: string }>;
   dismissImportEntry(entryId: string): Promise<{ entry?: ImportEntryDTO; error?: string }>;
   confirmImportEntries(entryIds: string[]): Promise<ConfirmImportResponse>;
+  /** Confirma como transferência entre estratos: cria o par, não uma transação solta. */
+  confirmImportTransfer(
+    entryIds: string[],
+    boxId: string,
+  ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
 }
 

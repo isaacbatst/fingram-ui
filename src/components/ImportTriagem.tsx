@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ChevronLeft, Loader2, SkipForward, X } from "lucide-react";
+import { ArrowLeftRight, ChevronLeft, Loader2, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
+import { useBoxes } from "@/hooks/useBoxes";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import type { ImportGroupDTO } from "@/services/api.interface";
 
 type Props = {
   batchId: string;
+  /** Estrato da conta do extrato — origem (ou destino) do par de transferência. */
+  accountBoxId: string | null;
   onSwitchToList: () => void;
   onFinished: () => void;
 };
@@ -35,9 +38,15 @@ const formatDay = (iso: string) => {
  * Categorizar aqui não confirma nada — os lançamentos seguem pendentes até o
  * confirmar final. É isso que deixa voltar e mudar de ideia sair de graça.
  */
-export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
+export function ImportTriagem({
+  batchId,
+  accountBoxId,
+  onSwitchToList,
+  onFinished,
+}: Props) {
   const { apiService } = useApi();
   const { data: categories } = useCategories();
+  const { boxes } = useBoxes();
 
   const { data, error, isLoading, mutate } = useSWR(
     ["import-groups", batchId],
@@ -51,6 +60,7 @@ export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
   const [ignored, setIgnored] = useState<Record<string, true>>({});
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [choosingTransfer, setChoosingTransfer] = useState(false);
 
   const group: ImportGroupDTO | undefined = groups[index];
 
@@ -210,6 +220,25 @@ export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
       return;
     }
     setDecisions((current) => ({ ...current, [group.key]: categoryId }));
+    setChoosingTransfer(false);
+    setIndex((current) => current + 1);
+  };
+
+  /**
+   * Confirma o grupo como transferência entre estratos, criando o par.
+   *
+   * Diferente das categorias, isto confirma na hora: não existe "transferência
+   * pendente" no modelo — o par ou existe ou não existe.
+   */
+  const handleTransfer = async (boxId: string) => {
+    setIsBusy(true);
+    const result = await apiService.confirmImportTransfer(group.entryIds, boxId);
+    setIsBusy(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setChoosingTransfer(false);
     setIndex((current) => current + 1);
   };
 
@@ -276,24 +305,73 @@ export function ImportTriagem({ batchId, onSwitchToList, onFinished }: Props) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((category) => (
-          <button
-            key={category.id}
+      {choosingTransfer ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
+            {group.type === "expense"
+              ? "Para qual estrato esse dinheiro foi?"
+              : "De qual estrato esse dinheiro veio?"}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {(boxes ?? [])
+              // A conta de origem não pode ser o outro lado dela mesma.
+              .filter((estrato) => estrato.id !== accountBoxId)
+              .map((estrato) => (
+                <button
+                  key={estrato.id}
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void handleTransfer(estrato.id)}
+                  className="min-h-11 px-3 py-2 rounded-md text-sm text-left truncate border border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)] transition-colors"
+                >
+                  {estrato.name}
+                </button>
+              ))}
+          </div>
+          <Button
             type="button"
-            disabled={isBusy}
-            onClick={() => void handleChoose(category.id)}
-            className={cn(
-              "min-h-11 px-3 py-2 rounded-md text-sm text-left truncate border transition-colors",
-              chosen === category.id
-                ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
-                : "border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)]",
-            )}
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => setChoosingTransfer(false)}
           >
-            {category.name}
-          </button>
-        ))}
-      </div>
+            Cancelar
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            {options.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                disabled={isBusy}
+                onClick={() => void handleChoose(category.id)}
+                className={cn(
+                  "min-h-11 px-3 py-2 rounded-md text-sm text-left truncate border transition-colors",
+                  chosen === category.id
+                    ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
+                    : "border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)]",
+                )}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Dinheiro que continua seu não é despesa: vira par entre estratos e
+              não consome orçamento. */}
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 w-full border border-dashed border-[var(--color-border)]"
+            disabled={isBusy}
+            onClick={() => setChoosingTransfer(true)}
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            É transferência entre meus estratos
+          </Button>
+        </>
+      )}
 
       <div className="flex justify-between items-center">
         <Button

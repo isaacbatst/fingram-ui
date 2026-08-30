@@ -491,6 +491,22 @@ export class StandaloneApiService implements ApiService {
     }
   }
 
+  async confirmImportTransfer(
+    entryIds: string[],
+    boxId: string,
+  ): Promise<ConfirmImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/confirm-transfer', {
+        method: 'POST',
+        body: JSON.stringify({ entryIds, boxId }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao confirmar transferência:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao confirmar transferência" };
+    }
+  }
+
   async confirmImportBatch(batchId: string): Promise<ConfirmImportResponse> {
     try {
       const response = await this.makeImportRequest('/batch/confirm', {

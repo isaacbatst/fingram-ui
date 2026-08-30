@@ -292,6 +292,7 @@ export function ImportExtrato() {
 
         <ImportTriagem
           batchId={batchId}
+          accountBoxId={batch?.boxId ?? null}
           onSwitchToList={() => setView("lista")}
           onFinished={finish}
         />
