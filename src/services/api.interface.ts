@@ -194,7 +194,9 @@ export interface ApiService {
   // Import de extrato (OFX)
   uploadImport(request: UploadImportRequest): Promise<UploadImportResponse>;
   getImportReview(batchId: string, params?: ImportReviewParams): Promise<ImportReviewData>;
+  getImportBatches(): Promise<{ batches: ImportBatchListItem[] }>;
   getImportGroups(batchId: string): Promise<{ groups: ImportGroupDTO[] }>;
+  closeImportBatch(batchId: string): Promise<{ error?: string }>;
   categorizeImportEntries(
     entryIds: string[],
     categoryId: string | null,
@@ -247,6 +249,11 @@ export interface ImportEntryDTO {
   rawDescription: string | null;
   rawAmount: number;
   rawDate: string;
+}
+
+/** Um import da lista, com quantos lançamentos ainda esperam decisão. */
+export interface ImportBatchListItem extends ImportBatchDTO {
+  pendingCount: number;
 }
 
 /** Lançamentos pendentes de um mesmo estabelecimento — a unidade de decisão. */

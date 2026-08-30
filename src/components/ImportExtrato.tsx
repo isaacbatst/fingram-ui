@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { mutate as globalMutate } from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Check, ChevronDown, FileUp, Loader2, X } from "lucide-react";
@@ -16,6 +16,7 @@ import { useImportReview } from "@/hooks/useImportReview";
 import { ImportTriagem } from "@/components/ImportTriagem";
 import { cn } from "@/lib/utils";
 import type { ImportBatchDTO, ImportEntryDTO } from "@/services/api.interface";
+import { RotateCcw } from "lucide-react";
 
 const PAGE_SIZE = 25;
 
@@ -63,6 +64,17 @@ export function ImportExtrato() {
   const [isUploading, setIsUploading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Imports com revisão pela metade. Sem esta lista o lote fica inalcançável:
+  // reenviar o arquivo não recupera nada, porque a deduplicação recusa recriar
+  // linhas já vistas.
+  const { data: batchList, mutate: mutateBatches } = useSWR(
+    "import-batches",
+    () => apiService.getImportBatches(),
+    { revalidateOnFocus: false, shouldRetryOnError: false },
+  );
+
+  const unfinished = (batchList?.batches ?? []).filter((b) => b.pendingCount > 0);
 
   const { review, isLoading, mutate } = useImportReview(batchId, {
     status: "pending",
@@ -146,6 +158,37 @@ export function ImportExtrato() {
   if (!batchId) {
     return (
       <section className="duna-surface rounded-lg p-4 flex flex-col gap-3">
+        {unfinished.length > 0 && (
+          <div className="flex flex-col gap-2 pb-3 border-b border-[var(--color-border)]">
+            <p className="text-sm">Revisões em aberto</p>
+            {unfinished.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setBatchId(item.id);
+                  setPage(1);
+                  setView("triagem");
+                }}
+                className="flex items-center justify-between gap-3 min-h-11 px-3 py-2 rounded-md border border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)] text-left"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm">
+                    {item.accountLabel ?? "Extrato"}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {formatPeriod(item) ?? formatDay(item.createdAt)}
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 shrink-0 text-[var(--color-accent)]">
+                  <span className="font-mono text-sm">{item.pendingCount}</span>
+                  <RotateCcw className="w-4 h-4" />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div>
           {/* Sem título aqui: a aba do controle segmentado já diz "Importar". */}
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -210,10 +253,16 @@ export function ImportExtrato() {
   const totalPages = review?.entries.totalPages ?? 1;
 
   const finish = () => {
+    // Fecha o lote só quando não sobrou nada a decidir. Com pendências ele
+    // continua aberto de propósito, para reaparecer na lista de revisões em aberto.
+    if (batchId && pending === 0) {
+      void apiService.closeImportBatch(batchId);
+    }
     setBatchId(null);
     setExpandedId(null);
     setFromDate(undefined);
     setView("triagem");
+    void mutateBatches();
     refreshVault();
   };
 

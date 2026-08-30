@@ -31,6 +31,7 @@ import type {
   EditImportEntryRequest,
   ImportEntryDTO,
   ImportGroupDTO,
+  ImportBatchListItem,
   ConfirmImportResponse,
 } from "./api.interface";
 
@@ -408,6 +409,24 @@ export class StandaloneApiService implements ApiService {
     const query = search.toString();
     const response = await this.makeImportRequest(`/batch/${batchId}${query ? `?${query}` : ""}`);
     return response.json();
+  }
+
+  async getImportBatches(): Promise<{ batches: ImportBatchListItem[] }> {
+    const response = await this.makeImportRequest('/batches');
+    return response.json();
+  }
+
+  async closeImportBatch(batchId: string): Promise<{ error?: string }> {
+    try {
+      await this.makeImportRequest('/batch/close', {
+        method: 'POST',
+        body: JSON.stringify({ batchId }),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao concluir importação:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao concluir" };
+    }
   }
 
   async getImportGroups(batchId: string): Promise<{ groups: ImportGroupDTO[] }> {
