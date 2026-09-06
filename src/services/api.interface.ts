@@ -157,6 +157,9 @@ export interface ApiService {
   // Categories
   getCategories(): Promise<Category[]>;
 
+  // Atividade diária (grid da tela inicial)
+  getActivity(weeks?: number): Promise<ActivityData>;
+
   // Transactions
   getTransactions(params?: TransactionsParams): Promise<Paginated<TransactionDTO>>;
   createTransaction(request: CreateTransactionRequest): Promise<CreateTransactionResponse>;
@@ -210,6 +213,19 @@ export interface ApiService {
     boxId: string,
   ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
+}
+
+export interface DailyActivity {
+  /** Dia em UTC, no formato YYYY-MM-DD. */
+  date: string;
+  count: number;
+  expenseTotal: number;
+}
+
+export interface ActivityData {
+  startDate: string;
+  endDate: string;
+  days: DailyActivity[];
 }
 
 export type ImportEntryStatus = "pending" | "confirmed" | "dismissed";

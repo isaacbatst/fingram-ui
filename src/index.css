@@ -33,6 +33,13 @@
   --color-accent-bg:       rgba(217, 175, 120, 0.06);
   --color-accent-border:   rgba(217, 175, 120, 0.15);
 
+  /* Intensidade do grid de atividade — escala do accent, do dia vazio ao mais cheio */
+  --color-heat-0:          rgba(217, 175, 120, 0.05);
+  --color-heat-1:          rgba(217, 175, 120, 0.25);
+  --color-heat-2:          rgba(217, 175, 120, 0.45);
+  --color-heat-3:          rgba(217, 175, 120, 0.70);
+  --color-heat-4:          #d9af78;
+
   /* Semantic */
   --color-success:         #7bad6e;
   --color-success-bg:      rgba(122, 173, 110, 0.08);

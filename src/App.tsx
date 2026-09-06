@@ -4,6 +4,7 @@ import { DunaLogo } from "@/components/DunaLogo";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { GastosTab } from "@/components/GastosTab";
 import { GrainOverlay } from "@/components/GrainOverlay";
+import { AtividadeDiaria } from "@/components/AtividadeDiaria";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { SaldoResumo } from "@/components/SaldoResumo";
@@ -165,12 +166,13 @@ function AppContent() {
           {/* Tab content area */}
           <div className="sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
             {currentTab === "input" && (
-              <div className="px-4">
+              <div className="px-4 flex flex-col gap-4">
                 <SaldoResumo
                   saldo={vault.balance}
                   receitas={vault.totalIncomeAmount}
                   despesas={vault.totalSpentAmount}
                 />
+                <AtividadeDiaria />
               </div>
             )}
             <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0">

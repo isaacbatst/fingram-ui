@@ -33,6 +33,7 @@ import type {
   ImportGroupDTO,
   ImportBatchListItem,
   ConfirmImportResponse,
+  ActivityData,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -110,6 +111,12 @@ export class StandaloneApiService implements ApiService {
     }
 
     const response = await this.makeRequest(`/summary?${url.searchParams.toString()}`);
+    return response.json();
+  }
+
+  async getActivity(weeks?: number): Promise<ActivityData> {
+    const query = weeks ? `?weeks=${weeks}` : "";
+    const response = await this.makeRequest(`/activity${query}`);
     return response.json();
   }
 
