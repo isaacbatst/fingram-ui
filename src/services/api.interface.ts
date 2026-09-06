@@ -271,6 +271,8 @@ export interface ImportGroupDTO {
   firstDate: string;
   lastDate: string;
   entryIds: string[];
+  /** Parece quitação de fatura — não é gasto novo, e sim o pagamento dela. */
+  looksLikeSettlement: boolean;
 }
 
 export interface UploadImportRequest {

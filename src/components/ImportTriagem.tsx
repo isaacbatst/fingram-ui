@@ -61,6 +61,8 @@ export function ImportTriagem({
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [choosingTransfer, setChoosingTransfer] = useState(false);
+  // Sugestão, nunca imposição: o usuário pode dizer que aquela linha é gasto real.
+  const [overrideSettlement, setOverrideSettlement] = useState(false);
 
   const group: ImportGroupDTO | undefined = groups[index];
 
@@ -211,6 +213,14 @@ export function ImportTriagem({
 
   const chosen = decisions[group.key];
 
+  /** Avança limpando o que era escolha daquele grupo, não da tela. */
+  const goTo = (next: number) => {
+    setChoosingTransfer(false);
+    setOverrideSettlement(false);
+    setIndex(next);
+  };
+  const goToNext = () => goTo(index + 1);
+
   const handleChoose = async (categoryId: string) => {
     setIsBusy(true);
     const result = await apiService.categorizeImportEntries(group.entryIds, categoryId);
@@ -220,8 +230,7 @@ export function ImportTriagem({
       return;
     }
     setDecisions((current) => ({ ...current, [group.key]: categoryId }));
-    setChoosingTransfer(false);
-    setIndex((current) => current + 1);
+    goToNext();
   };
 
   /**
@@ -238,8 +247,7 @@ export function ImportTriagem({
       toast.error(result.error);
       return;
     }
-    setChoosingTransfer(false);
-    setIndex((current) => current + 1);
+    goToNext();
   };
 
   const handleIgnore = async () => {
@@ -254,7 +262,7 @@ export function ImportTriagem({
       return;
     }
     setIgnored((current) => ({ ...current, [group.key]: true }));
-    setIndex((current) => current + 1);
+    goToNext();
   };
 
   return (
@@ -266,7 +274,7 @@ export function ImportTriagem({
           size="sm"
           className="min-h-11"
           disabled={index === 0}
-          onClick={() => setIndex((current) => current - 1)}
+          onClick={() => goTo(index - 1)}
         >
           <ChevronLeft className="w-4 h-4" />
           Voltar
@@ -279,7 +287,7 @@ export function ImportTriagem({
           variant="ghost"
           size="sm"
           className="min-h-11"
-          onClick={() => setIndex((current) => current + 1)}
+          onClick={goToNext}
         >
           Pular
           <SkipForward className="w-4 h-4" />
@@ -305,7 +313,34 @@ export function ImportTriagem({
         </p>
       </div>
 
-      {choosingTransfer ? (
+      {group.looksLikeSettlement && !choosingTransfer && !overrideSettlement ? (
+        /* A quitação aparece dos dois lados — como débito na conta corrente e como
+           crédito no cartão. Nenhum dos dois é gasto novo: as compras da fatura já
+           foram contadas pelo extrato do cartão. */
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground leading-relaxed text-center px-2">
+            Isto parece a quitação de uma fatura, não um gasto novo. As compras
+            dela entram pelo extrato do cartão, com as categorias certas.
+          </p>
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={() => void handleIgnore()}
+            className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+          >
+            {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Ignorar esta linha
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => setOverrideSettlement(true)}
+          >
+            É um gasto normal
+          </Button>
+        </div>
+      ) : choosingTransfer ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
             {group.type === "expense"
