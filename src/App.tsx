@@ -4,7 +4,6 @@ import { DunaLogo } from "@/components/DunaLogo";
 import { ErrorDisplay } from "@/components/ErrorDisplay";
 import { GastosTab } from "@/components/GastosTab";
 import { GrainOverlay } from "@/components/GrainOverlay";
-import { AtividadeDiaria } from "@/components/AtividadeDiaria";
 import { InputTab } from "@/components/InputTab";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { SaldoResumo } from "@/components/SaldoResumo";
@@ -164,15 +163,19 @@ function AppContent() {
           </div>
 
           {/* Tab content area */}
-          <div className="sm:p-5 w-full flex flex-col flex-1 max-w-3xl mx-auto">
+          <div
+            className={`sm:p-5 w-full flex flex-col flex-1 mx-auto ${
+              // A Entrada tem duas colunas no desktop e precisa de mais largura.
+              currentTab === "input" ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl"
+            }`}
+          >
             {currentTab === "input" && (
-              <div className="px-4 flex flex-col gap-4">
+              <div className="px-4">
                 <SaldoResumo
                   saldo={vault.balance}
                   receitas={vault.totalIncomeAmount}
                   despesas={vault.totalSpentAmount}
                 />
-                <AtividadeDiaria />
               </div>
             )}
             <TabsContent value="input" className="px-4 flex flex-col flex-1 min-h-0">

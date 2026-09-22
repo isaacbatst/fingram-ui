@@ -2,6 +2,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { DatePicker, type DatePickerHandle } from "@/components/DatePicker";
 import { EstratoSelect } from "@/components/EstratoSelect";
 import { MoneyInput } from "@/components/MoneyInput";
+import { AtividadeDiaria } from "@/components/AtividadeDiaria";
 import { ImportExtrato } from "@/components/ImportExtrato";
 import { RastroRecente } from "@/components/RastroRecente";
 import {
@@ -553,7 +554,10 @@ export function InputTab() {
   }, []);
 
   return (
-    <div>
+    // Duas colunas no desktop: agir (form) à esquerda, contexto (histórico) à
+    // direita. No mobile empilha na mesma ordem — o form vem primeiro porque é
+    // o que se veio fazer na tela.
+    <div className="lg:grid lg:grid-cols-2 lg:gap-10 lg:items-start">
       {/* Allocation suggestion dialog */}
       <AlertDialog
         open={!!suggestion}
@@ -718,6 +722,7 @@ export function InputTab() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <div className="min-w-0">
       {/* Segmented control: despesa · receita · transferência · importar */}
       <div className="mb-5">
         <ModeSelector value={mode} onChange={handleModeChange} />
@@ -897,8 +902,14 @@ export function InputTab() {
         </div>
       </form>
       )}
+      </div>
 
-      {mode !== "import" && <RastroRecente />}
+      {/* Histórico: o grid de dias e a lista recente. No desktop fica ao lado do
+          form e acompanha a rolagem; no mobile vem depois dele. */}
+      <aside className="min-w-0 flex flex-col gap-6 mt-8 lg:mt-0 lg:sticky lg:top-5">
+        <AtividadeDiaria />
+        {mode !== "import" && <RastroRecente />}
+      </aside>
     </div>
   );
 }

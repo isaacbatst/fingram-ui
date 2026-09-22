@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import useSWR from "swr";
 import { useApi } from "@/hooks/useApi";
 import type { ActivityData } from "@/services/api.interface";
@@ -109,65 +109,59 @@ export function AtividadeDiaria() {
     return mes !== anterior ? MESES[mes] : null;
   });
 
+  // Um único CSS grid: coluna de rótulos + uma coluna por semana. Linhas de dia
+  // e rótulos alinham por construção, e as células são quadradas em qualquer
+  // largura — com altura fixa elas viravam retângulos na coluna do desktop.
+  const gridStyle = {
+    gridTemplateColumns: `1.5rem repeat(${semanas.length}, minmax(0, 1fr))`,
+  };
+
+  const tooltip = (dia: Dia) =>
+    dia.isFuture
+      ? ""
+      : `${dia.count} ${dia.count === 1 ? "lançamento" : "lançamentos"}${
+          dia.expenseTotal > 0 ? ` · ${formatMoney(dia.expenseTotal)}` : ""
+        } em ${dia.date.getUTCDate()} ${MESES[dia.date.getUTCMonth()]}`;
+
   return (
     <section className="flex flex-col gap-1.5" aria-label="Dias com lançamento">
-      <div className="flex gap-1">
-        {/* Coluna de rótulos de dia, alinhada com as linhas do grid */}
-        <div className="flex flex-col gap-[3px] pt-[14px] shrink-0">
-          {DIAS_SEMANA.map((dia, linha) => (
-            <span
-              key={dia}
-              className="h-3 text-[9px] leading-3 text-muted-foreground w-6 text-right pr-0.5"
-            >
-              {LINHAS_COM_ROTULO.has(linha) ? dia : ""}
+      <div className="grid gap-[3px]" style={gridStyle}>
+        <span />
+        {rotulosDeMes.map((rotulo, index) => (
+          <span
+            key={`mes-${semanas[index][0].key}`}
+            // min-w-0 + overflow visível: o texto passa por cima da coluna
+            // seguinte sem alargar a sua, mantendo a régua alinhada.
+            className="min-w-0 text-[9px] leading-[14px] text-muted-foreground overflow-visible whitespace-nowrap"
+          >
+            {rotulo}
+          </span>
+        ))}
+
+        {DIAS_SEMANA.map((nomeDia, linha) => (
+          <Fragment key={nomeDia}>
+            <span className="text-[9px] text-muted-foreground text-right pr-1 self-center">
+              {LINHAS_COM_ROTULO.has(linha) ? nomeDia : ""}
             </span>
-          ))}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* Rótulos de mês.
-              `min-w-0` é o que mantém a régua alinhada: sem ele o min-width do
-              flex é o conteúdo, e o rótulo com texto rouba largura dos vizinhos —
-              medido em ±2px de deriva, quase 20% de uma coluna. Com min-w-0 as
-              colunas ficam idênticas e o texto transborda por cima da seguinte. */}
-          <div className="flex gap-[3px] h-[14px]">
-            {rotulosDeMes.map((rotulo, index) => (
-              <span
-                key={semanas[index][0].key}
-                className="flex-1 min-w-0 text-[9px] leading-[14px] text-muted-foreground overflow-visible whitespace-nowrap"
-              >
-                {rotulo}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex gap-[3px]">
-            {semanas.map((semana) => (
-              <div key={semana[0].key} className="flex-1 flex flex-col gap-[3px]">
-                {semana.map((dia) => (
-                  <div
-                    key={dia.key}
-                    title={
-                      dia.isFuture
-                        ? ""
-                        : `${dia.count} ${dia.count === 1 ? "lançamento" : "lançamentos"}${
-                            dia.expenseTotal > 0
-                              ? ` · ${formatMoney(dia.expenseTotal)}`
-                              : ""
-                          } em ${dia.date.getUTCDate()} ${MESES[dia.date.getUTCMonth()]}`
-                    }
-                    className="h-3 rounded-[2px]"
-                    style={{
-                      backgroundColor: dia.isFuture
-                        ? "transparent"
-                        : `var(--color-heat-${level(dia.count)})`,
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+            {semanas.map((semana) => {
+              const dia = semana[linha];
+              // A última semana termina hoje e costuma vir incompleta.
+              if (!dia) return <span key={`vazio-${semana[0].key}-${linha}`} />;
+              return (
+                <div
+                  key={dia.key}
+                  title={tooltip(dia)}
+                  className="aspect-square rounded-[2px]"
+                  style={{
+                    backgroundColor: dia.isFuture
+                      ? "transparent"
+                      : `var(--color-heat-${level(dia.count)})`,
+                  }}
+                />
+              );
+            })}
+          </Fragment>
+        ))}
       </div>
 
       <div className="flex items-center justify-end gap-1 text-[9px] text-muted-foreground">
