@@ -444,11 +444,12 @@ export class StandaloneApiService implements ApiService {
   async categorizeImportEntries(
     entryIds: string[],
     categoryId: string | null,
+    allocationId?: string | null,
   ): Promise<{ updated?: number; error?: string }> {
     try {
       const response = await this.makeImportRequest('/entries/categorize', {
         method: 'POST',
-        body: JSON.stringify({ entryIds, categoryId }),
+        body: JSON.stringify({ entryIds, categoryId, allocationId }),
       });
       return await response.json();
     } catch (error) {

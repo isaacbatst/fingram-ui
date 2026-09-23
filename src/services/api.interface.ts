@@ -200,9 +200,11 @@ export interface ApiService {
   getImportBatches(): Promise<{ batches: ImportBatchListItem[] }>;
   getImportGroups(batchId: string): Promise<{ groups: ImportGroupDTO[] }>;
   closeImportBatch(batchId: string): Promise<{ error?: string }>;
+  /** Define categoria OU pagamento planejado — exclusivos, como no formulário. */
   categorizeImportEntries(
     entryIds: string[],
     categoryId: string | null,
+    allocationId?: string | null,
   ): Promise<{ updated?: number; error?: string }>;
   editImportEntry(request: EditImportEntryRequest): Promise<{ entry?: ImportEntryDTO; error?: string }>;
   dismissImportEntry(entryId: string): Promise<{ entry?: ImportEntryDTO; error?: string }>;
@@ -289,6 +291,8 @@ export interface ImportGroupDTO {
   entryIds: string[];
   /** Parece quitação de fatura — não é gasto novo, e sim o pagamento dela. */
   looksLikeSettlement: boolean;
+  /** Pagamento planejado cuja parcela prevista bate com valor e mês do grupo. */
+  suggestedAllocation: { allocationId: string; label: string } | null;
 }
 
 export interface UploadImportRequest {

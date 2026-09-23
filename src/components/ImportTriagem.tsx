@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeftRight, ChevronLeft, Loader2, SkipForward, X } from "lucide-react";
+import { ArrowLeftRight, CalendarClock, ChevronLeft, Loader2, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
 import { useBoxes } from "@/hooks/useBoxes";
+import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import type { ImportGroupDTO } from "@/services/api.interface";
@@ -61,6 +62,8 @@ export function ImportTriagem({
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [choosingTransfer, setChoosingTransfer] = useState(false);
+  const [choosingPlanned, setChoosingPlanned] = useState(false);
+  const { allocations: paymentAllocations } = usePaymentAllocations();
   // Sugestão, nunca imposição: o usuário pode dizer que aquela linha é gasto real.
   const [overrideSettlement, setOverrideSettlement] = useState(false);
 
@@ -216,6 +219,7 @@ export function ImportTriagem({
   /** Avança limpando o que era escolha daquele grupo, não da tela. */
   const goTo = (next: number) => {
     setChoosingTransfer(false);
+    setChoosingPlanned(false);
     setOverrideSettlement(false);
     setIndex(next);
   };
@@ -230,6 +234,27 @@ export function ImportTriagem({
       return;
     }
     setDecisions((current) => ({ ...current, [group.key]: categoryId }));
+    goToNext();
+  };
+
+  /**
+   * Liga o grupo a uma alocação de Pagamento do plano (financiamento, parcela).
+   * Como a categoria, não confirma: só decide para onde o gasto conta — o plano,
+   * não o orçamento do dia a dia.
+   */
+  const handlePlanned = async (allocationId: string) => {
+    setIsBusy(true);
+    const result = await apiService.categorizeImportEntries(
+      group.entryIds,
+      null,
+      allocationId,
+    );
+    setIsBusy(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setDecisions((current) => ({ ...current, [group.key]: `plano:${allocationId}` }));
     goToNext();
   };
 
@@ -340,6 +365,38 @@ export function ImportTriagem({
             É um gasto normal
           </Button>
         </div>
+      ) : choosingPlanned ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
+            Qual pagamento do plano é este?
+          </p>
+          <div className="grid grid-cols-1 gap-2">
+            {paymentAllocations.map((allocation) => (
+              <button
+                key={allocation.id}
+                type="button"
+                disabled={isBusy}
+                onClick={() => void handlePlanned(allocation.id)}
+                className={cn(
+                  "min-h-11 px-3 py-2 rounded-md text-sm text-left truncate border transition-colors",
+                  chosen === `plano:${allocation.id}`
+                    ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
+                    : "border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)]",
+                )}
+              >
+                {allocation.label}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => setChoosingPlanned(false)}
+          >
+            Cancelar
+          </Button>
+        </div>
       ) : choosingTransfer ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
@@ -374,6 +431,29 @@ export function ImportTriagem({
         </div>
       ) : (
         <>
+          {/* Sugestão: valor e mês batem com uma parcela prevista no plano. É o
+              caso comum de financiamento — vira um toque de confirmação. */}
+          {group.type === "expense" && group.suggestedAllocation && (
+            <div className="flex flex-col gap-2 rounded-md border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] p-3">
+              <p className="text-sm leading-relaxed">
+                Parece a parcela de{" "}
+                <span className="text-[var(--color-accent)]">
+                  {group.suggestedAllocation.label}
+                </span>
+                , prevista no seu plano.
+              </p>
+              <Button
+                type="button"
+                disabled={isBusy}
+                onClick={() => void handlePlanned(group.suggestedAllocation!.allocationId)}
+                className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+              >
+                <CalendarClock className="w-4 h-4" />
+                Lançar como pagamento planejado
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             {options.map((category) => (
               <button
@@ -405,6 +485,20 @@ export function ImportTriagem({
             <ArrowLeftRight className="w-4 h-4" />
             É transferência entre meus estratos
           </Button>
+
+          {/* Parcela, financiamento: conta para o plano, não para o dia a dia. */}
+          {group.type === "expense" && paymentAllocations.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 w-full border border-dashed border-[var(--color-border)]"
+              disabled={isBusy}
+              onClick={() => setChoosingPlanned(true)}
+            >
+              <CalendarClock className="w-4 h-4" />
+              É pagamento planejado
+            </Button>
+          )}
         </>
       )}
 
