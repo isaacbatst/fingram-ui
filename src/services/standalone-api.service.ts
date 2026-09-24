@@ -502,6 +502,24 @@ export class StandaloneApiService implements ApiService {
     }
   }
 
+  async confirmImportReserveWithdrawal(
+    entryIds: string[],
+    allocationId: string,
+    withdrawalType: "withdrawal" | "realization",
+    fromEstrato: boolean,
+  ): Promise<ConfirmImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/confirm-reserve-withdrawal', {
+        method: 'POST',
+        body: JSON.stringify({ entryIds, allocationId, withdrawalType, fromEstrato }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao confirmar uso da Reserva:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao confirmar uso da Reserva" };
+    }
+  }
+
   async confirmImportTransfer(
     entryIds: string[],
     boxId: string,

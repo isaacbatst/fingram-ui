@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeftRight, CalendarClock, ChevronLeft, Loader2, SkipForward, X } from "lucide-react";
+import { ArrowLeftRight, CalendarClock, ChevronLeft, Loader2, PiggyBank, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
 import { useBoxes } from "@/hooks/useBoxes";
 import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
+import { useAllocations } from "@/hooks/useAllocations";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import type { ImportGroupDTO } from "@/services/api.interface";
@@ -59,11 +60,25 @@ export function ImportTriagem({
   const [index, setIndex] = useState(0);
   const [decisions, setDecisions] = useState<Record<string, string | null>>({});
   const [ignored, setIgnored] = useState<Record<string, true>>({});
+  // Transferência e uso de Reserva confirmam na hora: não voltam ao confirmar final.
+  const [confirmedNow, setConfirmedNow] = useState<Record<string, true>>({});
   const [isBusy, setIsBusy] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [choosingTransfer, setChoosingTransfer] = useState(false);
   const [choosingPlanned, setChoosingPlanned] = useState(false);
   const { allocations: paymentAllocations } = usePaymentAllocations();
+  const { allocations: allAllocations } = useAllocations();
+  const reserveAllocations = useMemo(
+    () => allAllocations.filter((a) => a.realizationMode !== "immediate"),
+    [allAllocations],
+  );
+  // Uso de Reserva: escolhe a Reserva, depois realização ou saque.
+  const [choosingReserve, setChoosingReserve] = useState(false);
+  const [reserveId, setReserveId] = useState<string | null>(null);
+  const [withdrawalType, setWithdrawalType] = useState<"realization" | "withdrawal">(
+    "realization",
+  );
+  const [fromEstrato, setFromEstrato] = useState(true);
   // Sugestão, nunca imposição: o usuário pode dizer que aquela linha é gasto real.
   const [overrideSettlement, setOverrideSettlement] = useState(false);
 
@@ -145,10 +160,13 @@ export function ImportTriagem({
 
   // Passou do último grupo: hora de confirmar o que foi decidido.
   if (!group) {
-    const decided = Object.keys(decisions).length;
-    const skipped = groups.length - decided - Object.keys(ignored).length;
+    const settled = (key: string) => ignored[key] || confirmedNow[key];
+    const decided = Object.keys(decisions).filter((key) => !settled(key)).length;
+    const confirmedCount = Object.keys(confirmedNow).length;
+    const skipped =
+      groups.length - decided - Object.keys(ignored).length - confirmedCount;
     const pendingLines = groups
-      .filter((g) => !ignored[g.key])
+      .filter((g) => !settled(g.key))
       .reduce((sum, g) => sum + g.count, 0);
 
     const handleConfirmAll = async () => {
@@ -179,6 +197,12 @@ export function ImportTriagem({
               <dd className="font-mono">{skipped}</dd>
             </div>
           )}
+          {confirmedCount > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Confirmados na hora</dt>
+              <dd className="font-mono">{confirmedCount}</dd>
+            </div>
+          )}
           {Object.keys(ignored).length > 0 && (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Ignorados</dt>
@@ -190,11 +214,13 @@ export function ImportTriagem({
         <Button
           type="button"
           disabled={isConfirming}
-          onClick={() => void handleConfirmAll()}
+          onClick={() => (pendingLines > 0 ? void handleConfirmAll() : onFinished())}
           className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
         >
           {isConfirming && <Loader2 className="w-4 h-4 animate-spin" />}
-          Confirmar {pendingLines} lançamentos
+          {pendingLines > 0
+            ? `Confirmar ${pendingLines} ${pendingLines === 1 ? "lançamento" : "lançamentos"}`
+            : "Concluir"}
         </Button>
 
         <div className="flex justify-between">
@@ -220,6 +246,8 @@ export function ImportTriagem({
   const goTo = (next: number) => {
     setChoosingTransfer(false);
     setChoosingPlanned(false);
+    setChoosingReserve(false);
+    setReserveId(null);
     setOverrideSettlement(false);
     setIndex(next);
   };
@@ -272,6 +300,37 @@ export function ImportTriagem({
       toast.error(result.error);
       return;
     }
+    setConfirmedNow((current) => ({ ...current, [group.key]: true }));
+    goToNext();
+  };
+
+  /**
+   * Confirma o grupo como despesa paga com dinheiro de uma Reserva. Como a
+   * transferência, confirma na hora: lança a despesa vinculada a ela, com o
+   * tipo de saída, no estrato da Reserva (ou na conta, se o dinheiro já tinha
+   * sido transferido para lá).
+   */
+  const handleReserve = async () => {
+    const reserve = reserveAllocations.find((a) => a.id === reserveId);
+    if (!reserve) return;
+    setIsBusy(true);
+    const result = await apiService.confirmImportReserveWithdrawal(
+      group.entryIds,
+      reserve.id,
+      reserve.realizationMode === "never" ? "withdrawal" : withdrawalType,
+      reserve.estratoId !== null && fromEstrato,
+    );
+    setIsBusy(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.skipped?.length) {
+      toast.error(
+        `${result.skipped.length} lançamento(s) não puderam ser confirmados.`,
+      );
+    }
+    setConfirmedNow((current) => ({ ...current, [group.key]: true }));
     goToNext();
   };
 
@@ -397,6 +456,27 @@ export function ImportTriagem({
             Cancelar
           </Button>
         </div>
+      ) : choosingReserve ? (
+        <ReserveChooser
+          reserves={reserveAllocations}
+          estratoName={(id) => boxes?.find((b) => b.id === id)?.name ?? null}
+          reserveId={reserveId}
+          onSelectReserve={(id) => {
+            setReserveId(id);
+            setWithdrawalType("realization");
+            setFromEstrato(true);
+          }}
+          withdrawalType={withdrawalType}
+          onWithdrawalType={setWithdrawalType}
+          fromEstrato={fromEstrato}
+          onFromEstrato={setFromEstrato}
+          isBusy={isBusy}
+          onConfirm={() => void handleReserve()}
+          onCancel={() => {
+            setChoosingReserve(false);
+            setReserveId(null);
+          }}
+        />
       ) : choosingTransfer ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
@@ -499,6 +579,21 @@ export function ImportTriagem({
               É pagamento planejado
             </Button>
           )}
+
+          {/* Gasto pago com o dinheiro guardado numa Reserva: sai do estrato
+              dela, e o plano registra a realização (ou o saque). */}
+          {group.type === "expense" && reserveAllocations.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 w-full border border-dashed border-[var(--color-border)]"
+              disabled={isBusy}
+              onClick={() => setChoosingReserve(true)}
+            >
+              <PiggyBank className="w-4 h-4" />
+              É uso de uma Reserva
+            </Button>
+          )}
         </>
       )}
 
@@ -517,6 +612,141 @@ export function ImportTriagem({
           Ver lista
         </Button>
       </div>
+    </div>
+  );
+}
+
+type ReserveOption = {
+  id: string;
+  label: string;
+  realizationMode: "immediate" | "manual" | "onCompletion" | "never";
+  estratoId: string | null;
+};
+
+function ReserveChooser({
+  reserves,
+  estratoName,
+  reserveId,
+  onSelectReserve,
+  withdrawalType,
+  onWithdrawalType,
+  fromEstrato,
+  onFromEstrato,
+  isBusy,
+  onConfirm,
+  onCancel,
+}: {
+  reserves: ReserveOption[];
+  estratoName: (id: string) => string | null;
+  reserveId: string | null;
+  onSelectReserve: (id: string) => void;
+  withdrawalType: "realization" | "withdrawal";
+  onWithdrawalType: (type: "realization" | "withdrawal") => void;
+  fromEstrato: boolean;
+  onFromEstrato: (value: boolean) => void;
+  isBusy: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const reserve = reserves.find((r) => r.id === reserveId);
+  const canRealize = reserve?.realizationMode !== "never";
+  const linkedName = reserve?.estratoId ? estratoName(reserve.estratoId) : null;
+
+  const optionClass = (active: boolean) =>
+    cn(
+      "min-h-11 px-3 py-2 rounded-md text-sm text-left border transition-colors",
+      active
+        ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[var(--color-accent-border)]"
+        : "border-[var(--color-border)] hover:bg-[var(--color-bg-surface-hover)]",
+    );
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
+        De qual Reserva saiu esse dinheiro?
+      </p>
+      <div className="grid grid-cols-1 gap-2">
+        {reserves.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            disabled={isBusy}
+            onClick={() => onSelectReserve(r.id)}
+            className={cn(optionClass(r.id === reserveId), "truncate")}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {reserve && (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            {canRealize && (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => onWithdrawalType("realization")}
+                className={optionClass(withdrawalType === "realization")}
+              >
+                Realização
+                <span className="block text-xs text-muted-foreground">
+                  o gasto para o qual guardou
+                </span>
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => onWithdrawalType("withdrawal")}
+              className={optionClass(!canRealize || withdrawalType === "withdrawal")}
+            >
+              Saque
+              <span className="block text-xs text-muted-foreground">
+                uso fora do objetivo
+              </span>
+            </button>
+          </div>
+
+          {linkedName ? (
+            <label className="flex items-start gap-2.5 text-sm leading-relaxed px-1 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-[var(--color-accent)]"
+                checked={fromEstrato}
+                disabled={isBusy}
+                onChange={(e) => onFromEstrato(e.target.checked)}
+              />
+              <span>
+                Tirar o valor do estrato{" "}
+                <span className="text-[var(--color-accent)]">{linkedName}</span>
+                <span className="block text-xs text-muted-foreground">
+                  Desmarque se você já transferiu esse dinheiro para a conta antes.
+                </span>
+              </span>
+            </label>
+          ) : (
+            <p className="text-xs text-muted-foreground leading-relaxed px-1">
+              Esta Reserva não está vinculada a um estrato: a despesa fica na
+              conta, e o plano registra o uso da Reserva.
+            </p>
+          )}
+
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={onConfirm}
+            className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+          >
+            {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Confirmar
+          </Button>
+        </>
+      )}
+
+      <Button type="button" variant="ghost" className="min-h-11" onClick={onCancel}>
+        Cancelar
+      </Button>
     </div>
   );
 }

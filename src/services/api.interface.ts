@@ -214,6 +214,16 @@ export interface ApiService {
     entryIds: string[],
     boxId: string,
   ): Promise<ConfirmImportResponse>;
+  /**
+   * Confirma despesas pagas com dinheiro de uma Reserva (realização ou saque):
+   * lança a despesa vinculada a ela, no estrato da Reserva.
+   */
+  confirmImportReserveWithdrawal(
+    entryIds: string[],
+    allocationId: string,
+    withdrawalType: "withdrawal" | "realization",
+    fromEstrato: boolean,
+  ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
 
   // MCP (conexões com clientes de IA)
