@@ -15,10 +15,12 @@ import { StorageProvider } from "@/contexts/StorageContext/provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { LucideIcon } from "lucide-react";
-import { BotMessageSquare, ChartPie, DollarSign, Layers, TrendingUp } from "lucide-react";
+import { BotMessageSquare, ChartPie, DollarSign, Layers, PlugZap, TrendingUp } from "lucide-react";
 import { useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { ConexoesTab } from "./components/ConexoesTab";
 import { EstratosTab } from "./components/EstratosTab";
+import { OAUTH_REQUEST_PARAM, OAuthConsent } from "./components/OAuthConsent";
 import { IaTab } from "./components/IaTab";
 import { PlanoTab } from "./components/PlanoTab";
 import { Toaster } from "./components/ui/sonner";
@@ -32,6 +34,7 @@ const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
   { value: "gastos", icon: ChartPie, label: "Gastos" },
   { value: "plano", icon: TrendingUp, label: "Plano" },
   { value: "ia", icon: BotMessageSquare, label: "IA" },
+  { value: "conexoes", icon: PlugZap, label: "Conexões" },
 ];
 
 function AppContent() {
@@ -39,6 +42,7 @@ function AppContent() {
   const summary = useSummary();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("aba") || "input";
+  const oauthRequest = searchParams.get(OAUTH_REQUEST_PARAM);
   const setCurrentTab = (tab: string) => {
     setSearchParams({ aba: tab });
   };
@@ -70,7 +74,12 @@ function AppContent() {
     // Need authentication
     if (!auth.isAuthenticated) {
       return (
-        <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-background text-foreground">
+        <div className="min-h-dvh flex flex-col items-center justify-center gap-4 p-4 bg-background text-foreground">
+          {oauthRequest && (
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              Entre no seu Duna para concluir a conexão com o assistente de IA.
+            </p>
+          )}
           <VaultAccessTokenInput />
         </div>
       );
@@ -86,6 +95,12 @@ function AppContent() {
         />
       );
     }
+  }
+
+  // Pedido de autorização de um cliente MCP (Claude, ChatGPT…), vindo do
+  // /authorize do backend. Tem precedência sobre o app: é um passo de login.
+  if (oauthRequest) {
+    return <OAuthConsent request={oauthRequest} />;
   }
 
   const vault = summary.data?.vault;
@@ -195,6 +210,9 @@ function AppContent() {
             </TabsContent>
             <TabsContent value="ia" className="flex flex-col flex-1 min-h-0">
               <IaTab />
+            </TabsContent>
+            <TabsContent value="conexoes" className="px-4 flex flex-col flex-1 min-h-0">
+              <ConexoesTab />
             </TabsContent>
           </div>
 

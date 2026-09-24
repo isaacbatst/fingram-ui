@@ -34,6 +34,9 @@ import type {
   ImportBatchListItem,
   ConfirmImportResponse,
   ActivityData,
+  McpConnection,
+  OAuthConsentDetails,
+  OAuthConsentResult,
 } from "./api.interface";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
@@ -526,5 +529,56 @@ export class StandaloneApiService implements ApiService {
       console.error("Erro ao confirmar importação:", error);
       return { error: error instanceof Error ? error.message : "Erro ao confirmar importação" };
     }
+  }
+
+  async getMcpConnections(): Promise<McpConnection[]> {
+    const response = await this.makeRequest('/mcp-connections');
+    return response.json();
+  }
+
+  async revokeMcpConnection(clientId: string): Promise<void> {
+    await this.makeRequest(`/mcp-connections/${encodeURIComponent(clientId)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Consentimento OAuth: fora do prefixo /vault, e os erros do servidor
+  // (pedido expirado, app desconhecido) são mostrados ao usuário.
+  private async makeConsentRequest<T>(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}/oauth/consent${path}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message =
+        body && typeof body.message === 'string'
+          ? body.message
+          : 'Não foi possível concluir a autorização.';
+      throw new Error(message);
+    }
+    return body as T;
+  }
+
+  async getOAuthConsent(request: string): Promise<OAuthConsentDetails> {
+    return this.makeConsentRequest(`?request=${encodeURIComponent(request)}`);
+  }
+
+  async approveOAuthConsent(request: string): Promise<OAuthConsentResult> {
+    return this.makeConsentRequest('/approve', {
+      method: 'POST',
+      body: JSON.stringify({ request }),
+    });
+  }
+
+  async denyOAuthConsent(request: string): Promise<OAuthConsentResult> {
+    return this.makeConsentRequest('/deny', {
+      method: 'POST',
+      body: JSON.stringify({ request }),
+    });
   }
 }

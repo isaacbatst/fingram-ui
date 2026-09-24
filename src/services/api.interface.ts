@@ -215,6 +215,30 @@ export interface ApiService {
     boxId: string,
   ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
+
+  // MCP (conexões com clientes de IA)
+  getMcpConnections(): Promise<McpConnection[]>;
+  revokeMcpConnection(clientId: string): Promise<void>;
+  getOAuthConsent(request: string): Promise<OAuthConsentDetails>;
+  approveOAuthConsent(request: string): Promise<OAuthConsentResult>;
+  denyOAuthConsent(request: string): Promise<OAuthConsentResult>;
+}
+
+export interface McpConnection {
+  clientId: string;
+  clientName: string | null;
+  connectedAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface OAuthConsentDetails {
+  clientName: string | null;
+  clientUri: string | null;
+  redirectUri: string;
+}
+
+export interface OAuthConsentResult {
+  redirectUrl: string;
 }
 
 export interface DailyActivity {
