@@ -33,7 +33,7 @@ import {
   SettingsIcon,
   Search as SearchIcon,
   ListIcon,
-  BarChart3Icon,
+  PieChartIcon,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -45,9 +45,9 @@ import {
 import { FaturasAviso } from "./FaturasAviso";
 
 import { Label } from "@/components/ui/label";
-import { BudgetComparison } from "./BudgetComparison";
+import { BudgetDistribution } from "./BudgetDistribution";
 
-type ViewMode = "lista" | "comparar";
+type ViewMode = "lista" | "distribuicao";
 
 const months = [
   { value: 1, label: "Janeiro" },
@@ -489,7 +489,7 @@ export function GastosOverview({
               <div className="flex items-center justify-center gap-1 mb-4">
                 {([
                   { key: "lista" as const, label: "Lista", icon: ListIcon },
-                  { key: "comparar" as const, label: "Planejado × executado", icon: BarChart3Icon },
+                  { key: "distribuicao" as const, label: "Distribuição", icon: PieChartIcon },
                 ]).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -507,8 +507,8 @@ export function GastosOverview({
                 ))}
               </div>
 
-              {viewMode === "comparar" && (
-                <BudgetComparison
+              {viewMode === "distribuicao" && (
+                <BudgetDistribution
                   items={categoriesWithBudget}
                   onDrillCategory={onDrillCategory}
                 />
