@@ -70,3 +70,8 @@ npm run lint && npm run build
 ```
 
 Rodar antes de considerar qualquer mudança pronta.
+
+## Testes (vitest)
+
+- `beforeEach`/`beforeAll` com corpo em bloco. Uma função devolvida pelo hook vira teardown: `beforeEach(() => mock.mockReset())` devolve o próprio mock, que o vitest chama após o teste. Com `mockRejectedValue`, o teste falha com o erro do mock mesmo com todas as asserções passando.
+- Hooks SWR em teste: envolver em `<SWRConfig value={{ provider: () => new Map() }}>` para isolar o cache entre testes.

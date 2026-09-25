@@ -110,7 +110,7 @@ export function RastroRecente() {
   const showEmpty = !isLoading && transactions.length === 0;
 
   return (
-    <section className="pt-8 pb-4">
+    <section className="pb-4">
       <header className="flex items-center gap-3 mb-2">
         <span
           className="h-px flex-1 bg-[var(--color-border-subtle)]"

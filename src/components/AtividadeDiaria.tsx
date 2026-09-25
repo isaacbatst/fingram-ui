@@ -2,6 +2,11 @@ import { Fragment, useMemo } from "react";
 import useSWR from "swr";
 import { useApi } from "@/hooks/useApi";
 import type { ActivityData } from "@/services/api.interface";
+import {
+  janelaDeAtividade,
+  montarSemanas,
+  type Dia,
+} from "@/components/atividade-diaria.utils";
 
 /** Quantas semanas o grid cobre. Cabe em tela estreita sem rolagem. */
 const WEEKS = 20;
@@ -29,9 +34,6 @@ const MESES = [
   "jul", "ago", "set", "out", "nov", "dez",
 ];
 
-/** Chave YYYY-MM-DD em UTC, igual à que o backend devolve. */
-const chaveUtc = (date: Date) => date.toISOString().slice(0, 10);
-
 const formatMoney = (value: number) =>
   value.toLocaleString("pt-BR", {
     style: "currency",
@@ -39,14 +41,6 @@ const formatMoney = (value: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-
-type Dia = {
-  key: string;
-  date: Date;
-  count: number;
-  expenseTotal: number;
-  isFuture: boolean;
-};
 
 /**
  * Grid de dias com lançamento, no formato do GitHub.
@@ -57,50 +51,30 @@ type Dia = {
 export function AtividadeDiaria() {
   const { apiService, isAuthenticated } = useApi();
 
-  const { data } = useSWR<ActivityData>(
+  const { data, isLoading } = useSWR<ActivityData>(
     isAuthenticated ? ["activity", WEEKS] : null,
     () => apiService.getActivity(WEEKS),
     { revalidateOnFocus: false, shouldRetryOnError: false },
   );
 
+  // Carregando, o grid é montado com a mesma janela do backend e sem contagem:
+  // mesmas colunas, mesma altura, e o rastro abaixo não pula quando os dados chegam.
+  const esqueleto = !data && isLoading;
+
   const semanas = useMemo(() => {
-    if (!data) return [];
-
-    const porDia = new Map(data.days.map((d) => [d.date, d]));
-    const inicio = new Date(data.startDate);
-    const fim = new Date(data.endDate);
-    const hojeKey = chaveUtc(new Date());
-
-    const colunas: Dia[][] = [];
-    let coluna: Dia[] = [];
-
-    for (
-      const cursor = new Date(inicio);
-      cursor < fim;
-      cursor.setUTCDate(cursor.getUTCDate() + 1)
-    ) {
-      const key = chaveUtc(cursor);
-      const registro = porDia.get(key);
-      coluna.push({
-        key,
-        date: new Date(cursor),
-        count: registro?.count ?? 0,
-        expenseTotal: registro?.expenseTotal ?? 0,
-        isFuture: key > hojeKey,
-      });
-
-      if (coluna.length === 7) {
-        colunas.push(coluna);
-        coluna = [];
-      }
+    if (data) {
+      return montarSemanas(
+        new Date(data.startDate),
+        new Date(data.endDate),
+        data.days,
+      );
     }
-    // A última semana costuma vir incompleta: hoje raramente é sábado.
-    if (coluna.length > 0) colunas.push(coluna);
+    if (!esqueleto) return [];
+    const { startDate, endDate } = janelaDeAtividade(WEEKS);
+    return montarSemanas(startDate, endDate, []);
+  }, [data, esqueleto]);
 
-    return colunas;
-  }, [data]);
-
-  // Sem dados ainda: nada a mostrar, e um esqueleto piscando aqui só faria barulho.
+  // Erro ou sem sessão: o grid some em vez de mostrar um histórico vazio falso.
   if (semanas.length === 0) return null;
 
   const rotulosDeMes = semanas.map((semana, index) => {
@@ -124,7 +98,11 @@ export function AtividadeDiaria() {
         } em ${dia.date.getUTCDate()} ${MESES[dia.date.getUTCMonth()]}`;
 
   return (
-    <section className="flex flex-col gap-1.5" aria-label="Dias com lançamento">
+    <section
+      className="flex flex-col gap-1.5"
+      aria-label="Dias com lançamento"
+      aria-busy={esqueleto}
+    >
       <div className="grid gap-[3px]" style={gridStyle}>
         <span />
         {rotulosDeMes.map((rotulo, index) => (
@@ -150,12 +128,17 @@ export function AtividadeDiaria() {
               return (
                 <div
                   key={dia.key}
-                  title={tooltip(dia)}
-                  className="aspect-square rounded-[2px]"
+                  title={esqueleto ? undefined : tooltip(dia)}
+                  className={
+                    esqueleto
+                      ? "aspect-square rounded-[2px] animate-pulse"
+                      : "aspect-square rounded-[2px]"
+                  }
                   style={{
                     backgroundColor: dia.isFuture
                       ? "transparent"
                       : `var(--color-heat-${level(dia.count)})`,
+                    ...(esqueleto && { animationDuration: "2000ms" }),
                   }}
                 />
               );
