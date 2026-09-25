@@ -12,6 +12,12 @@ export interface TransactionDTO {
   transferId: string | null;
   transferToBoxId: string | null;
   allocationId?: string | null;
+  /** Fatura de cartão a que a transação pertence. */
+  invoiceId?: string | null;
+  /** `remainder`: o que a fatura ainda não detalhou. `purchase`: compra ligada a ela. */
+  invoiceRole?: 'remainder' | 'purchase' | null;
+  /** Data da compra, quando ela conta na data de pagamento da fatura. */
+  purchaseDate?: string | null;
   category: {
     id: string;
     name: string;

@@ -225,6 +225,20 @@ export interface ApiService {
     fromEstrato: boolean,
   ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
+  /**
+   * Registra a fatura de cartão a partir do débito de pagamento na conta
+   * corrente. Confirma na hora: a fatura passa a contar como gasto.
+   */
+  confirmImportInvoice(entryIds: string[]): Promise<ConfirmImportResponse>;
+  /** Liga um extrato de cartão a uma fatura (ou desliga, com null). */
+  setImportBatchInvoice(
+    batchId: string,
+    invoiceId: string | null,
+  ): Promise<{ batch?: ImportBatchDTO; error?: string }>;
+
+  // Faturas de cartão
+  getInvoices(): Promise<InvoicesData>;
+  deleteInvoice(invoiceId: string): Promise<{ error?: string }>;
 
   // MCP (conexões com clientes de IA)
   getMcpConnections(): Promise<McpConnection[]>;
@@ -285,6 +299,8 @@ export interface ImportBatchDTO {
   fromDate: string | null;
   /** Lançamentos descartados por serem anteriores ao corte. */
   outOfRangeCount: number;
+  /** Fatura que este extrato de cartão detalha. */
+  invoiceId: string | null;
   createdAt: string;
 }
 
@@ -325,6 +341,8 @@ export interface ImportGroupDTO {
   entryIds: string[];
   /** Parece quitação de fatura — não é gasto novo, e sim o pagamento dela. */
   looksLikeSettlement: boolean;
+  /** Débito de pagamento de fatura na conta corrente: propor registrar a fatura. */
+  suggestsInvoice: boolean;
   /** Pagamento planejado cuja parcela prevista bate com valor e mês do grupo. */
   suggestedAllocation: { allocationId: string; label: string } | null;
 }
@@ -370,4 +388,39 @@ export interface ConfirmImportResponse {
   confirmed?: number;
   skipped?: string[];
   error?: string;
+}
+
+export type InvoiceStatus = "awaiting" | "partial" | "detailed" | "exceeded";
+
+/** Fatura de cartão paga, com quanto dela o extrato do cartão já detalhou. */
+export interface InvoiceDTO {
+  id: string;
+  amount: number;
+  paymentDate: string;
+  boxId: string;
+  cardLabel: string | null;
+  createdAt: string;
+  itemized: number;
+  /** O que ainda não foi detalhado: aparece como "não discriminado". */
+  remainder: number;
+  /** Quanto as compras ligadas passam do valor pago. */
+  excess: number;
+  purchaseCount: number;
+  status: InvoiceStatus;
+  statements: { batchId: string; accountLabel: string | null }[];
+}
+
+/** Extrato de cartão com compras confirmadas que ainda não estão em nenhuma fatura. */
+export interface UnlinkedStatementDTO {
+  batchId: string;
+  accountLabel: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  purchaseCount: number;
+  total: number;
+}
+
+export interface InvoicesData {
+  invoices: InvoiceDTO[];
+  unlinkedStatements: UnlinkedStatementDTO[];
 }

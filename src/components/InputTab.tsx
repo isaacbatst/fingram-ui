@@ -32,12 +32,13 @@ import { useCreateTransaction } from "@/hooks/useCreateTransaction";
 import { useAllocations } from "@/hooks/useAllocations";
 import { usePaymentAllocations } from "@/hooks/usePaymentAllocations";
 import { useTransfer } from "@/hooks/useTransfer";
+import { useSearchParams } from "@/hooks/useSearchParams";
 import type { AllocationSuggestion, ReconcileAction } from "@/services/api.interface";
 import { planService } from "@/services/plan.service";
 import { format } from "date-fns";
 import { mutate } from "swr";
 import { ArrowDown, Check } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ── Formatters ──
@@ -211,7 +212,21 @@ function ReconcileButton({
 // ── Main Component ──
 
 export function InputTab() {
-  const [mode, setMode] = useState<InputMode>("expense");
+  // `entrada=importar` abre direto no import — é para onde leva o aviso de
+  // fatura sem detalhe, em Gastos.
+  const [mode, setMode] = useState<InputMode>(() =>
+    new URLSearchParams(window.location.search).get("entrada") === "importar"
+      ? "import"
+      : "expense",
+  );
+  const [, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("entrada")) {
+      setSearchParams({ entrada: "" }, { replace: true });
+    }
+    // Só na montagem: o parâmetro escolhe o modo inicial e sai da URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [expenseSubtype, setExpenseSubtype] = useState<ExpenseSubtype>("daily");
 
   // ── Shared state ──

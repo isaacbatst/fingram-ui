@@ -19,7 +19,8 @@ type RowProps = {
 };
 
 function Row({ tx, idx, onClick }: RowProps) {
-  const { color, sign, label, isTransfer } = getRowVisual(tx);
+  const { color, sign, label, isTransfer, isInvoiceRemainder, purchaseNote } =
+    getRowVisual(tx);
   const cadastro = formatRelativeTime(tx.createdAt);
   const referencia = formatShortDate(tx.date);
 
@@ -37,6 +38,12 @@ function Row({ tx, idx, onClick }: RowProps) {
       <span className="shrink-0 flex items-center justify-center size-3 mt-[5px]" aria-hidden>
         {isTransfer ? (
           <ArrowRightLeft className="size-3 text-[var(--color-info)]" />
+        ) : isInvoiceRemainder ? (
+          // Anel em vez de ponto: gasto real, mas ainda sem detalhe.
+          <span
+            className="h-2 w-2 rounded-full border"
+            style={{ borderColor: color }}
+          />
         ) : (
           <span
             className="h-2 w-2 rounded-full"
@@ -45,9 +52,17 @@ function Row({ tx, idx, onClick }: RowProps) {
         )}
       </span>
       <span className="flex-1 min-w-0 flex flex-col">
-        <span className="text-sm text-foreground truncate">{label}</span>
+        <span
+          className={cn(
+            "text-sm truncate",
+            isInvoiceRemainder ? "italic text-muted-foreground" : "text-foreground",
+          )}
+        >
+          {label}
+        </span>
         <span className="text-[10px] font-mono text-muted-foreground tracking-wide whitespace-nowrap">
           cad. {cadastro} · ref. {referencia}
+          {purchaseNote && ` · ${purchaseNote}`}
         </span>
       </span>
       <span

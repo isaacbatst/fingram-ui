@@ -33,6 +33,8 @@ import type {
   ImportGroupDTO,
   ImportBatchListItem,
   ConfirmImportResponse,
+  ImportBatchDTO,
+  InvoicesData,
   ActivityData,
   McpConnection,
   OAuthConsentDetails,
@@ -533,6 +535,53 @@ export class StandaloneApiService implements ApiService {
     } catch (error) {
       console.error("Erro ao confirmar transferência:", error);
       return { error: error instanceof Error ? error.message : "Erro ao confirmar transferência" };
+    }
+  }
+
+  async confirmImportInvoice(entryIds: string[]): Promise<ConfirmImportResponse> {
+    try {
+      const response = await this.makeImportRequest('/confirm-invoice', {
+        method: 'POST',
+        body: JSON.stringify({ entryIds }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao registrar fatura:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao registrar fatura" };
+    }
+  }
+
+  async setImportBatchInvoice(
+    batchId: string,
+    invoiceId: string | null,
+  ): Promise<{ batch?: ImportBatchDTO; error?: string }> {
+    try {
+      const response = await this.makeImportRequest('/batch/invoice', {
+        method: 'POST',
+        body: JSON.stringify({ batchId, invoiceId }),
+      });
+      return { batch: await response.json() };
+    } catch (error) {
+      console.error("Erro ao ligar extrato à fatura:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao ligar extrato à fatura" };
+    }
+  }
+
+  async getInvoices(): Promise<InvoicesData> {
+    const response = await this.makeRequest('/invoices');
+    return response.json();
+  }
+
+  async deleteInvoice(invoiceId: string): Promise<{ error?: string }> {
+    try {
+      await this.makeRequest('/invoices/delete', {
+        method: 'POST',
+        body: JSON.stringify({ invoiceId }),
+      });
+      return {};
+    } catch (error) {
+      console.error("Erro ao excluir fatura:", error);
+      return { error: error instanceof Error ? error.message : "Erro ao excluir fatura" };
     }
   }
 

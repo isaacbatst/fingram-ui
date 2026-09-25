@@ -111,3 +111,31 @@ describe("getRowVisual", () => {
     expect(getRowVisual(tx).label).toBe("(Sem descrição)");
   });
 });
+
+describe("getRowVisual — fatura de cartão", () => {
+  it("marks the undetailed part of an invoice", () => {
+    const visual = getRowVisual(
+      buildTx({ invoiceId: "i1", invoiceRole: "remainder", purchaseDate: null }),
+    );
+    expect(visual.isInvoiceRemainder).toBe(true);
+    expect(visual.purchaseNote).toBeNull();
+  });
+
+  it("shows the purchase date of a purchase counted on the payment date", () => {
+    const visual = getRowVisual(
+      buildTx({
+        invoiceId: "i1",
+        invoiceRole: "purchase",
+        purchaseDate: "2026-08-12T03:00:00.000Z",
+      }),
+    );
+    expect(visual.isInvoiceRemainder).toBe(false);
+    expect(visual.purchaseNote).toBe("compra 12/08");
+  });
+
+  it("leaves ordinary transactions alone", () => {
+    const visual = getRowVisual(buildTx());
+    expect(visual.isInvoiceRemainder).toBe(false);
+    expect(visual.purchaseNote).toBeNull();
+  });
+});

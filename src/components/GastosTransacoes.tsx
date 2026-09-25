@@ -41,6 +41,7 @@ import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { mutate } from "swr";
 import { format } from "date-fns";
+import { formatDayMonth } from "@/lib/invoice";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -193,6 +194,9 @@ export function GastosTransacoes({
         transferId: tx.transferId,
         transferToBoxId: tx.transferToBoxId ?? undefined,
         allocationId: tx.allocationId ?? null,
+        invoiceId: tx.invoiceId ?? null,
+        invoiceRole: tx.invoiceRole ?? null,
+        purchaseDate: tx.purchaseDate ?? null,
       }))
     : [];
 
@@ -230,6 +234,8 @@ export function GastosTransacoes({
       mutateTransactions(),
       mutate("summary"),
       mutate("boxes"),
+      // Excluir ou editar uma compra da fatura muda o que falta detalhar.
+      mutate("invoices"),
     ]);
     mutate((key: unknown) =>
       typeof key === "string" ? key.startsWith("budget-summary") : false,
@@ -238,6 +244,10 @@ export function GastosTransacoes({
 
   // Helpers for selected transaction
   const isTransfer = selectedTx?.transferId != null;
+  // O não discriminado é calculado pela fatura: não se edita, e excluí-lo
+  // exclui a fatura.
+  const isInvoiceRemainder = selectedTx?.invoiceRole === "remainder";
+  const isInvoicePurchase = selectedTx?.invoiceRole === "purchase";
   const boxName = selectedTx
     ? boxes?.find((b) => b.id === selectedTx.boxId)?.name
     : undefined;
@@ -285,7 +295,9 @@ export function GastosTransacoes({
         "",
     );
     setEditBoxId(selectedTx.boxId || "");
-    setEditDate(selectedTx.date.split("T")[0]);
+    // Compra ligada a uma fatura: a data que se corrige é a da compra; ela
+    // continua contando na data de pagamento.
+    setEditDate((selectedTx.purchaseDate ?? selectedTx.date).split("T")[0]);
     setEditDescription(selectedTx.description);
     setEditFromBoxId(selectedTx.boxId || "");
     setEditToBoxId(selectedTx.transferToBoxId || "");
@@ -680,6 +692,9 @@ export function GastosTransacoes({
                       <div className="flex items-center justify-center size-4 shrink-0">
                         {txIsTransfer ? (
                           <ArrowRightLeft className="size-4 text-[var(--color-info)]" />
+                        ) : tx.invoiceRole === "remainder" ? (
+                          // Anel em vez de ponto: gasto real, ainda sem detalhe.
+                          <div className="h-2.5 w-2.5 rounded-full border-2 border-[var(--color-danger)]" />
                         ) : (
                           <div
                             className={`h-2.5 w-2.5 rounded-full ${
@@ -693,7 +708,13 @@ export function GastosTransacoes({
 
                       {/* Description + metadata */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-foreground tracking-tight truncate flex items-center gap-1">
+                        <div
+                          className={`text-sm tracking-tight truncate flex items-center gap-1 ${
+                            tx.invoiceRole === "remainder"
+                              ? "italic text-muted-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
                           {txIsTransfer ? (
                             <>
                               {getTransferLabel(tx).fromBox}
@@ -707,7 +728,15 @@ export function GastosTransacoes({
                         <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                           {txIsTransfer
                             ? "Transferência"
-                            : [getCategoryLabel(tx), getBoxName(tx)]
+                            : [
+                                tx.invoiceRole === "remainder"
+                                  ? "Sem categoria até o extrato do cartão"
+                                  : getCategoryLabel(tx),
+                                getBoxName(tx),
+                                tx.invoiceRole === "purchase" && tx.purchaseDate
+                                  ? `compra ${formatDayMonth(tx.purchaseDate)}`
+                                  : null,
+                              ]
                                 .filter(Boolean)
                                 .join(" \u00B7 ")}
                           {tx.allocationId && (
@@ -817,12 +846,31 @@ export function GastosTransacoes({
 
               <div className="px-4 space-y-3 pb-4">
                 {/* Metadata rows */}
+                {isInvoiceRemainder && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Parte da fatura do cartão que ainda não foi detalhada. Já
+                    conta no mês; diminui conforme você importa o extrato do
+                    cartão e confirma as compras.
+                  </p>
+                )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Data</span>
+                  <span className="text-muted-foreground">
+                    {isInvoicePurchase || isInvoiceRemainder
+                      ? "Fatura paga em"
+                      : "Data"}
+                  </span>
                   <span className="text-foreground">
                     {formatDateLabel(selectedTx.date.split("T")[0])}
                   </span>
                 </div>
+                {isInvoicePurchase && selectedTx.purchaseDate && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Compra em</span>
+                    <span className="text-foreground">
+                      {formatDateLabel(selectedTx.purchaseDate.split("T")[0])}
+                    </span>
+                  </div>
+                )}
                 {!isTransfer && getCategoryLabel(selectedTx) && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Categoria</span>
@@ -858,21 +906,23 @@ export function GastosTransacoes({
 
               <DrawerFooter>
                 <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    variant="outline"
-                    onClick={startEditing}
-                  >
-                    <Pencil className="h-4 w-4 mr-1" />
-                    Editar
-                  </Button>
+                  {!isInvoiceRemainder && (
+                    <Button
+                      className="flex-1"
+                      variant="outline"
+                      onClick={startEditing}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                  )}
                   <Button
                     className="flex-1"
                     variant="destructive"
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
-                    Excluir
+                    {isInvoiceRemainder ? "Excluir fatura" : "Excluir"}
                   </Button>
                 </div>
               </DrawerFooter>
@@ -1038,7 +1088,7 @@ export function GastosTransacoes({
                     )}
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">
-                        Data
+                        {isInvoicePurchase ? "Data da compra" : "Data"}
                       </label>
                       <DatePicker
                         date={editDateValue}
@@ -1098,15 +1148,20 @@ export function GastosTransacoes({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isTransfer
-                ? "Tem certeza que deseja deletar a transferência?"
-                : "Tem certeza que deseja deletar a transação?"}
+              {isInvoiceRemainder
+                ? "Excluir a fatura?"
+                : isTransfer
+                  ? "Tem certeza que deseja deletar a transferência?"
+                  : "Tem certeza que deseja deletar a transação?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita.{" "}
-              {isTransfer
-                ? "Esta transferência será deletada permanentemente."
-                : "Esta transação será deletada permanentemente."}
+              {isInvoiceRemainder
+                ? "A fatura deixa de contar no mês. As compras do cartão que estavam ligadas a ela continuam registradas e voltam a contar na data em que foram feitas."
+                : `Esta ação não pode ser desfeita. ${
+                    isTransfer
+                      ? "Esta transferência será deletada permanentemente."
+                      : "Esta transação será deletada permanentemente."
+                  }`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

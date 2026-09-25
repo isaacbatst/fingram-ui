@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeftRight, CalendarClock, ChevronLeft, Loader2, PiggyBank, SkipForward, X } from "lucide-react";
+import { ArrowLeftRight, CalendarClock, ChevronLeft, CreditCard, Loader2, PiggyBank, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
 import { useBoxes } from "@/hooks/useBoxes";
@@ -334,6 +334,23 @@ export function ImportTriagem({
     goToNext();
   };
 
+  /**
+   * Registra a fatura a partir do débito de pagamento. Confirma na hora: o
+   * valor passa a contar como gasto, e o que o extrato do cartão ainda não
+   * detalhou fica visível como "não discriminado".
+   */
+  const handleInvoice = async () => {
+    setIsBusy(true);
+    const result = await apiService.confirmImportInvoice(group.entryIds);
+    setIsBusy(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setConfirmedNow((current) => ({ ...current, [group.key]: true }));
+    goToNext();
+  };
+
   const handleIgnore = async () => {
     setIsBusy(true);
     const results = await Promise.all(
@@ -397,14 +414,46 @@ export function ImportTriagem({
         </p>
       </div>
 
-      {group.looksLikeSettlement && !choosingTransfer && !overrideSettlement ? (
-        /* A quitação aparece dos dois lados — como débito na conta corrente e como
-           crédito no cartão. Nenhum dos dois é gasto novo: as compras da fatura já
-           foram contadas pelo extrato do cartão. */
+      {group.suggestsInvoice && !choosingTransfer && !overrideSettlement ? (
+        /* Débito de pagamento de fatura na conta corrente. Ignorá-lo deixava as
+           compras da fatura sem conferência: se o extrato do cartão nunca fosse
+           importado, o gasto sumia. Registrada, a fatura conta desde já, e o
+           que falta detalhar fica à vista. */
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground leading-relaxed text-center px-2">
-            Isto parece a quitação de uma fatura, não um gasto novo. As compras
-            dela entram pelo extrato do cartão, com as categorias certas.
+            Isto parece o pagamento de uma fatura de cartão. Registre a fatura: o
+            valor conta como gasto agora, e o extrato do cartão mostra depois
+            onde ele foi.
+          </p>
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={() => void handleInvoice()}
+            className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
+          >
+            {isBusy ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CreditCard className="w-4 h-4" />
+            )}
+            Registrar fatura
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11"
+            onClick={() => setOverrideSettlement(true)}
+          >
+            É um gasto normal
+          </Button>
+        </div>
+      ) : group.looksLikeSettlement && !choosingTransfer && !overrideSettlement ? (
+        /* Quitação vista do cartão ("Pagamento recebido"). Não é receita: o
+           pagamento entra pela conta corrente. */
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground leading-relaxed text-center px-2">
+            Isto parece a quitação de uma fatura, não um gasto nem uma receita
+            nova. O pagamento entra pelo extrato da conta corrente.
           </p>
           <Button
             type="button"
@@ -421,7 +470,7 @@ export function ImportTriagem({
             className="min-h-11"
             onClick={() => setOverrideSettlement(true)}
           >
-            É um gasto normal
+            {group.type === "income" ? "É uma receita normal" : "É um gasto normal"}
           </Button>
         </div>
       ) : choosingPlanned ? (
