@@ -310,7 +310,7 @@ export function GastosTransacoes({
     setIsSaving(true);
     try {
       const result = await apiService.editTransaction({
-        transactionCode: selectedTx.code,
+        transactionId: selectedTx.id,
         newAmount: editAmount,
         newDate: editDate,
         newCategory: editCategoryCode || undefined,
@@ -363,7 +363,7 @@ export function GastosTransacoes({
           setSelectedTx(null);
         }
       } else {
-        const result = await apiService.deleteTransaction(selectedTx.code);
+        const result = await apiService.deleteTransaction(selectedTx.id);
         if (result.error) {
           toast.error(result.error);
         } else {

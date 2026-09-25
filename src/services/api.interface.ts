@@ -16,7 +16,7 @@ export interface SetBudgetsResponse {
 }
 
 export interface EditTransactionRequest {
-  transactionCode: string;
+  transactionId: string;
   newAmount?: number;
   newDate?: string;
   newCategory?: string;
@@ -167,7 +167,7 @@ export interface ApiService {
 
   // Budgets
   setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse>;
-  deleteTransaction(transactionCode: string): Promise<{
+  deleteTransaction(transactionId: string): Promise<{
     error?: string;
   }>;
 

@@ -257,7 +257,7 @@ export function InputTab() {
 
   // ── Suggestion state ──
   const [suggestion, setSuggestion] = useState<AllocationSuggestion | null>(null);
-  const [pendingTransactionCode, setPendingTransactionCode] = useState<string | null>(null);
+  const [pendingTransactionId, setPendingTransactionId] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
 
   // ── Divergence state ──
@@ -466,9 +466,9 @@ export function InputTab() {
           flashSuccess();
           resetForm();
 
-          if (result.suggestion && result.transaction?.code) {
+          if (result.suggestion && result.transaction?.id) {
             setSuggestion(result.suggestion);
-            setPendingTransactionCode(result.transaction.code);
+            setPendingTransactionId(result.transaction.id);
           }
 
           if (result.divergence) {
@@ -486,12 +486,12 @@ export function InputTab() {
 
   // ── Suggestion handlers ──
   const handleLinkSuggestion = useCallback(async () => {
-    if (!suggestion || !pendingTransactionCode) return;
+    if (!suggestion || !pendingTransactionId) return;
 
     setIsLinking(true);
     try {
       const result = await apiService.editTransaction({
-        transactionCode: pendingTransactionCode,
+        transactionId: pendingTransactionId,
         newAllocationId: suggestion.allocationId,
       });
 
@@ -505,13 +505,13 @@ export function InputTab() {
     } finally {
       setIsLinking(false);
       setSuggestion(null);
-      setPendingTransactionCode(null);
+      setPendingTransactionId(null);
     }
-  }, [suggestion, pendingTransactionCode, apiService]);
+  }, [suggestion, pendingTransactionId, apiService]);
 
   const handleDismissSuggestion = useCallback(() => {
     setSuggestion(null);
-    setPendingTransactionCode(null);
+    setPendingTransactionId(null);
   }, []);
 
   // ── Reconciliation handler ──

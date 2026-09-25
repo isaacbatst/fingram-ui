@@ -204,13 +204,13 @@ export class StandaloneApiService implements ApiService {
     }
   }
 
-  async deleteTransaction(transactionCode: string): Promise<{
+  async deleteTransaction(transactionId: string): Promise<{
     error?: string;
   }> {
     try {
       await this.makeRequest('/delete-transaction', {
         method: "POST",
-        body: JSON.stringify({ transactionCode }),
+        body: JSON.stringify({ transactionId }),
       });
       return {};
     } catch (error) {
