@@ -9,7 +9,9 @@ const swrOptions = { revalidateOnFocus: false, revalidateOnReconnect: true };
  * uma vez. Tudo que foi carregado precisa ser relido.
  */
 export function refreshAfterCardChange() {
-  return globalMutate(() => true, undefined, { revalidate: true });
+  // Só o filtro: revalida mantendo o que está na tela. Passar `undefined` como
+  // dado apagaria o cache (o resumo some e o app volta ao carregando).
+  return globalMutate(() => true);
 }
 
 /** Cartões cadastrados, com o "a pagar" de cada um. */

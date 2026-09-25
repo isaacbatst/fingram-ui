@@ -106,7 +106,7 @@ export function PaymentDialog({ open, onOpenChange, target, defaultBoxId, paymen
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-      <DialogContent>
+      <DialogContent className="bg-background">
         <DialogHeader>
           <DialogTitle>{payment ? "Pagamento da fatura" : "Novo pagamento"}</DialogTitle>
           <DialogDescription>

@@ -140,14 +140,15 @@ function PaymentRow({
   boxName?: string;
   onEdit: () => void;
 }) {
-  const coversPrevious = payment.parts.some((p) => p.purchaseInvoiceId !== invoiceId);
+  // A fila é do cartão inteiro: o pagamento pode cobrir compras de outra fatura.
+  const coversOther = payment.parts.some((p) => p.purchaseInvoiceId !== invoiceId);
   const notes = [
     boxName,
     payment.imported ? "do extrato" : "lançado à mão",
     payment.parts.length > 0
       ? `cobre ${payment.parts.length} ${payment.parts.length === 1 ? "compra" : "compras"}`
       : null,
-    coversPrevious ? "inclui saldo de fatura anterior" : null,
+    coversOther ? "inclui compras de outra fatura" : null,
   ].filter(Boolean);
 
   return (
@@ -322,7 +323,7 @@ function InvoiceDatesDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-background">
         <DialogHeader>
           <DialogTitle>Datas da fatura</DialogTitle>
           <DialogDescription>
@@ -443,7 +444,8 @@ function InvoiceBody({ detail }: { detail: InvoiceDetail }) {
               tone={invoice.status === "overdue" && invoice.carriedOut === 0 ? "danger" : "warning"}
             />
           )}
-          {invoice.overpaid > 0 && (
+          {/* Em aberto, pagar mais que as compras até agora é antecipação, não excesso. */}
+          {invoice.overpaid > 0 && invoice.status !== "open" && (
             <FigureRow label="Pago a mais" value={formatBRL(invoice.overpaid)} tone="warning" />
           )}
           {invoice.unpaidPurchases > 0 && (
@@ -542,7 +544,7 @@ function InvoiceBody({ detail }: { detail: InvoiceDetail }) {
       {editingDates && <InvoiceDatesDialog invoice={invoice} onOpenChange={setEditingDates} />}
 
       <Dialog open={confirmClose} onOpenChange={setConfirmClose}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Fechar a fatura agora?</DialogTitle>
             <DialogDescription>

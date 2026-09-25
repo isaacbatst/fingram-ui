@@ -176,6 +176,14 @@ describe("buildCardNotices", () => {
     });
   });
 
+  it("should not repeat an excess that already shows as not itemized", () => {
+    const notices = buildCardNotices({
+      ...base,
+      invoices: [invoice({ status: "overpaid", overpaid: 850, notItemized: 850 })],
+    });
+    expect(notices.map((n) => n.kind)).toEqual(["notItemized"]);
+  });
+
   it("should not warn about a balance already carried to the next invoice", () => {
     const notices = buildCardNotices({
       ...base,

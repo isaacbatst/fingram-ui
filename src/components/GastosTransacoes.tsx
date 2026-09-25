@@ -750,7 +750,6 @@ export function GastosTransacoes({
                                   ? "Sem categoria até chegar o extrato do cartão"
                                   : getCategoryLabel(tx),
                                 getBoxName(tx),
-                                partNote(tx),
                               ]
                                 .filter(Boolean)
                                 .join(" \u00B7 ")}
@@ -760,6 +759,13 @@ export function GastosTransacoes({
                             </span>
                           )}
                         </div>
+                        {/* Parte de compra de cartão: numa linha própria, para
+                            não ser cortada — é o que explica o valor. */}
+                        {partNote(tx) && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {partNote(tx)}
+                          </div>
+                        )}
                       </div>
 
                       {/* Amount */}

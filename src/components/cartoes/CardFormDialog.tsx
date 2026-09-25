@@ -87,9 +87,11 @@ export function CardFormDialog({ open, onOpenChange, card, canDelete, onCreated,
       toast.error(result.error);
       return;
     }
-    await refreshAfterCardChange();
+    // Sai da tela do cartão antes de revalidar: ela pediria as faturas de um
+    // cartão que já não existe.
     onOpenChange(false);
     onDeleted?.();
+    await refreshAfterCardChange();
   };
 
   const boxChanged = card && boxId && boxId !== card.boxId;
@@ -98,7 +100,7 @@ export function CardFormDialog({ open, onOpenChange, card, canDelete, onCreated,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-background">
         <DialogHeader>
           <DialogTitle>{card ? "Editar cartão" : "Novo cartão"}</DialogTitle>
           <DialogDescription>

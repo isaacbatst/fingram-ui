@@ -177,7 +177,14 @@ export function buildCardNotices(input: {
     if (invoice.notItemized > 0) notices.push({ kind: "notItemized", invoice });
   }
   for (const invoice of invoices) {
-    if (invoice.status === "overpaid" && invoice.carriedOut === 0 && invoice.overpaid > 0) {
+    // Com não discriminado, o excesso já aparece nele (é o mesmo dinheiro sem
+    // compra conhecida): um segundo aviso só repetiria.
+    if (
+      invoice.status === "overpaid" &&
+      invoice.carriedOut === 0 &&
+      invoice.overpaid > 0 &&
+      invoice.notItemized === 0
+    ) {
       notices.push({ kind: "overpaid", invoice });
     }
   }

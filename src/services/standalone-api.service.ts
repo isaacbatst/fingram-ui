@@ -589,7 +589,9 @@ export class StandaloneApiService implements ApiService {
         method: 'POST',
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      return { data: (await response.json()) as T };
+      // Algumas rotas (ex.: delete-transaction) respondem sem corpo.
+      const text = await response.text();
+      return { data: (text ? JSON.parse(text) : undefined) as T };
     } catch (error) {
       console.error(`Erro em ${endpoint}:`, error);
       return {

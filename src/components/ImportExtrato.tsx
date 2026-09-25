@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import useSWR, { mutate as globalMutate } from "swr";
+import useSWR from "swr";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Check, ChevronDown, FileUp, Loader2, X } from "lucide-react";
@@ -15,6 +15,7 @@ import { useCategories, type Category } from "@/hooks/useCategories";
 import { useImportReview } from "@/hooks/useImportReview";
 import { ImportTriagem } from "@/components/ImportTriagem";
 import { StatementInvoice } from "@/components/cartoes/StatementInvoice";
+import { refreshAfterCardChange } from "@/hooks/useCards";
 import { cn } from "@/lib/utils";
 import type { ImportBatchDTO, ImportEntryDTO } from "@/services/api.interface";
 import { RotateCcw } from "lucide-react";
@@ -85,10 +86,11 @@ export function ImportExtrato() {
 
   /** O saldo e os orçamentos mudam assim que um lançamento vira transação. */
   const refreshVault = () => {
-    void globalMutate((key) => typeof key === "string" && key !== "boxes", undefined, {
-      revalidate: true,
-    });
+    // Confirmar linhas de cartão mexe em faturas e "a pagar"; revalida tudo,
+    // sem apagar o que está na tela.
+    void refreshAfterCardChange();
   };
+
 
   const handleFile = async (file: File) => {
     setIsUploading(true);
