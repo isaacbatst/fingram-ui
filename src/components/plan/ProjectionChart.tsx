@@ -21,8 +21,6 @@ import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
 
 type ChartView = "trajectory" | "flow";
 
-// Kept apart from DATA_COLORS so a Pagamento never shares a color with a Reserva.
-const OWED_COLORS = ["var(--color-flow-surplus)", "var(--color-info)", "var(--color-warning)"];
 const DEFICIT_COLOR = "var(--color-danger)";
 const BALANCE_COLOR = "var(--color-text)";
 
@@ -152,7 +150,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
     }
     allocations
       .filter((a) => !holdsPhysicalFunds(a) && mirrorRows.some((r) => (r.owed[a.id] ?? 0) > 0))
-      .forEach((a, i) => owedSeries.push({ key: `o_${a.id}`, label: a.label, color: OWED_COLORS[i % OWED_COLORS.length] }));
+      .forEach((a) => owedSeries.push({ key: `o_${a.id}`, label: a.label, color: getBoxColor(allocations, a.id) }));
     return { heldSeries, owedSeries };
   }, [allocations, holdsFundsAllocations, mirrorRows]);
 

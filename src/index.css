@@ -55,11 +55,16 @@
   --color-danger-border:   rgba(196, 92, 74, 0.20);
 
   /* Data Visualization */
-  --color-data-1:          #d9af78;
-  --color-data-2:          #4db8a4;
-  --color-data-3:          #e09572;
-  --color-data-4:          #b088c8;
-  --color-data-5:          #7b88b0;
+  --color-data-1:          #d99a1e;
+  --color-data-2:          #199e70;
+  --color-data-3:          #d55181;
+  --color-data-4:          #1f9fb8;
+  --color-data-5:          #9aa51a;
+
+  /* Pagamentos (o que falta pagar) — tons frios, nunca repetem uma Reserva */
+  --color-owed-1:          #3987e5;
+  --color-owed-2:          #9085e9;
+  --color-owed-3:          #d95926;
 
   /* Flow chart (distinct from data series to avoid confusion) */
   --color-flow-income:     #7bad6e;
