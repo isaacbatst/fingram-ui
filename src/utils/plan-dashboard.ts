@@ -224,6 +224,57 @@ export function computeComprometido(
   };
 }
 
+export interface MirrorRow {
+  month: number;
+  isReal: boolean;
+  /** Signed: negative cash is a projected deficit and sits below zero. */
+  cash: number;
+  /** Balance of each allocation that holds funds (Reserva). */
+  held: Record<string, number>;
+  /** What is still left to pay on each Pagamento allocation. */
+  owed: Record<string, number>;
+  heldTotal: number;
+  owedTotal: number;
+  /** heldTotal − owedTotal */
+  balance: number;
+}
+
+/**
+ * Remaining to pay on a Pagamento allocation in a given month.
+ * Financing: outstanding balance (none before it starts).
+ * With target: target − accumulated, once the first payment happened.
+ */
+function remainingToPay(allocation: AllocationDTO, month: MonthDataDTO): number {
+  if (allocation.financing) {
+    return Math.max(0, month.financingDetails[allocation.id]?.outstandingBalance ?? 0);
+  }
+  if (allocation.target <= 0) return 0;
+  const accumulated = month.allocationAccumulated?.[allocation.id] ?? month.allocations[allocation.id] ?? 0;
+  if (accumulated <= 0) return 0;
+  return Math.max(0, allocation.target - accumulated);
+}
+
+export function buildMirrorRows(projection: MonthDataDTO[], allocations: AllocationDTO[]): MirrorRow[] {
+  return projection.map((m) => {
+    const held: Record<string, number> = {};
+    const owed: Record<string, number> = {};
+    let heldTotal = Math.max(0, m.cash);
+    let owedTotal = Math.max(0, -m.cash);
+    for (const allocation of allocations) {
+      if (holdsPhysicalFunds(allocation)) {
+        const value = Math.max(0, m.allocations[allocation.id] ?? 0);
+        held[allocation.id] = value;
+        heldTotal += value;
+      } else {
+        const value = remainingToPay(allocation, m);
+        owed[allocation.id] = value;
+        owedTotal += value;
+      }
+    }
+    return { month: m.month, isReal: m.isReal, cash: m.cash, held, owed, heldTotal, owedTotal, balance: heldTotal - owedTotal };
+  });
+}
+
 export function formatCompactCurrency(value: number): string {
   const abs = Math.abs(value);
   if (abs < 1000) return String(Math.round(abs));

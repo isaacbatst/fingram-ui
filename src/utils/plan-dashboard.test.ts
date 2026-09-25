@@ -5,6 +5,7 @@ import {
   computeCashStats,
   formatCompactCurrency,
   getActiveMonthlyAmount,
+  buildMirrorRows,
 } from "./plan-dashboard";
 import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/plan.service";
 
@@ -198,5 +199,86 @@ describe("getActiveMonthlyAmount", () => {
     expect(getActiveMonthlyAmount(changePoints, 5)).toBe(1000);
     expect(getActiveMonthlyAmount(changePoints, 10)).toBe(2000);
     expect(getActiveMonthlyAmount(changePoints, 15)).toBe(2000);
+  });
+});
+
+describe("buildMirrorRows", () => {
+  const alloc = (overrides: Partial<AllocationDTO> & { id: string }): AllocationDTO => ({
+    label: overrides.id,
+    target: 0,
+    monthlyAmount: [],
+    realizationMode: 'never',
+    estratoId: null,
+    scheduledMovements: [],
+    ...overrides,
+  });
+
+  it("stacks cash and held funds above zero and nets the balance", () => {
+    const reserva = alloc({ id: "r1", realizationMode: 'never' });
+    const [row] = buildMirrorRows(
+      [buildMonth({ month: 0, cash: 5000, allocations: { r1: 20000 } })],
+      [reserva],
+    );
+    expect(row.cash).toBe(5000);
+    expect(row.held).toEqual({ r1: 20000 });
+    expect(row.owed).toEqual({});
+    expect(row.heldTotal).toBe(25000);
+    expect(row.owedTotal).toBe(0);
+    expect(row.balance).toBe(25000);
+  });
+
+  it("moves negative cash below zero as deficit", () => {
+    const [row] = buildMirrorRows(
+      [buildMonth({ month: 0, cash: -3000, allocations: { r1: 10000 } })],
+      [alloc({ id: "r1", realizationMode: 'manual' })],
+    );
+    expect(row.heldTotal).toBe(10000);
+    expect(row.owedTotal).toBe(3000);
+    expect(row.balance).toBe(7000);
+  });
+
+  it("owes target minus accumulated for a payment once it has started", () => {
+    const lote = alloc({ id: "p1", realizationMode: 'immediate', target: 100000 });
+    const rows = buildMirrorRows(
+      [
+        buildMonth({ month: 0, allocationAccumulated: { p1: 0 }, allocations: { p1: 0 } }),
+        buildMonth({ month: 1, allocationAccumulated: { p1: 10000 }, allocations: { p1: 10000 } }),
+        buildMonth({ month: 2, allocationAccumulated: { p1: 100000 }, allocations: { p1: 100000 } }),
+      ],
+      [lote],
+    );
+    expect(rows.map((r) => r.owed.p1)).toEqual([0, 90000, 0]);
+    expect(rows[1].held).toEqual({});
+    expect(rows[1].balance).toBe(-90000);
+  });
+
+  it("owes the outstanding balance of a financing, nothing before it starts", () => {
+    const obra = alloc({
+      id: "f1",
+      realizationMode: 'immediate',
+      target: 500000,
+      financing: { principal: 500000, annualRate: 0.12, termMonths: 360, system: "sac" },
+    });
+    const rows = buildMirrorRows(
+      [
+        buildMonth({ month: 0 }),
+        buildMonth({
+          month: 1,
+          allocationAccumulated: { f1: 1000 },
+          financingDetails: { f1: { payment: 6000, amortization: 1000, interest: 5000, outstandingBalance: 499000, phase: "amortization" } },
+        }),
+      ],
+      [obra],
+    );
+    expect(rows.map((r) => r.owed.f1)).toEqual([0, 499000]);
+  });
+
+  it("ignores payments without a target", () => {
+    const [row] = buildMirrorRows(
+      [buildMonth({ month: 0, allocationAccumulated: { p1: 500 } })],
+      [alloc({ id: "p1", realizationMode: 'immediate', target: 0 })],
+    );
+    expect(row.owed).toEqual({ p1: 0 });
+    expect(row.owedTotal).toBe(0);
   });
 });

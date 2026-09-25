@@ -1,10 +1,11 @@
 import { useState, useMemo, memo, useCallback } from "react";
 import {
   Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -14,11 +15,31 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AllocationDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
-import { formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
+import { buildMirrorRows, formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
 
 import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
 
 type ChartView = "trajectory" | "flow";
+
+// Kept apart from DATA_COLORS so a Pagamento never shares a color with a Reserva.
+const OWED_COLORS = ["var(--color-flow-surplus)", "var(--color-info)", "var(--color-warning)"];
+const DEFICIT_COLOR = "var(--color-danger)";
+const BALANCE_COLOR = "var(--color-text)";
+
+const TOOLTIP_STYLE = {
+  background: "rgba(8,9,12,0.92)",
+  border: "1px solid var(--color-border-strong)",
+  borderRadius: "var(--radius-sm)",
+  backdropFilter: "blur(16px)",
+  fontSize: 11,
+  fontFamily: "var(--font-mono-family)",
+} as const;
+
+interface MirrorSeries {
+  key: string;
+  label: string;
+  color: string;
+}
 
 interface Props {
   projection: MonthDataDTO[];
@@ -113,22 +134,42 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
     return visibleProjection[lastRealIndex].month;
   }, [visibleProjection]);
 
-  const trajectoryData = useMemo(() => visibleProjection.map((m) => {
-    const isPast = m.isReal;
-    const isBoundary = m.month === todayBoundaryMonth;
-    const row: Record<string, number | null> = {
-      month: m.month,
-      isReal: m.isReal ? 1 : 0,
-      'Disponível': isPast ? m.cash : null,
-      'Disponível (projeção)': (!isPast || isBoundary) ? m.cash : null,
+  // Mirrored trajectory: what is held stacks above zero, what is still owed
+  // (Pagamento balances + cash deficit) stacks below, on the same scale.
+  const mirrorRows = useMemo(
+    () => buildMirrorRows(visibleProjection, allocations),
+    [visibleProjection, allocations],
+  );
+
+  const { heldSeries, owedSeries } = useMemo(() => {
+    const heldSeries: MirrorSeries[] = [
+      { key: "cash", label: "Disponível", color: DATA_COLORS[0] },
+      ...holdsFundsAllocations.map((a) => ({ key: `h_${a.id}`, label: a.label, color: getBoxColor(allocations, a.id) })),
+    ];
+    const owedSeries: MirrorSeries[] = [];
+    if (mirrorRows.some((r) => r.cash < 0)) {
+      owedSeries.push({ key: "deficit", label: "Déficit", color: DEFICIT_COLOR });
+    }
+    allocations
+      .filter((a) => !holdsPhysicalFunds(a) && mirrorRows.some((r) => (r.owed[a.id] ?? 0) > 0))
+      .forEach((a, i) => owedSeries.push({ key: `o_${a.id}`, label: a.label, color: OWED_COLORS[i % OWED_COLORS.length] }));
+    return { heldSeries, owedSeries };
+  }, [allocations, holdsFundsAllocations, mirrorRows]);
+
+  const trajectoryData = useMemo(() => mirrorRows.map((r) => {
+    const row: Record<string, number> = {
+      month: r.month,
+      isReal: r.isReal ? 1 : 0,
+      cash: Math.max(0, r.cash),
+      deficit: Math.min(0, r.cash),
+      heldTotal: r.heldTotal,
+      owedTotal: r.owedTotal,
+      balance: r.balance,
     };
-    holdsFundsAllocations.forEach((allocation) => {
-      const val = m.allocations[allocation.id] ?? 0;
-      row[allocation.label] = isPast ? val : null;
-      row[`${allocation.label} (projeção)`] = (!isPast || isBoundary) ? val : null;
-    });
+    Object.entries(r.held).forEach(([id, v]) => { row[`h_${id}`] = v; });
+    Object.entries(r.owed).forEach(([id, v]) => { row[`o_${id}`] = -v; });
     return row;
-  }), [visibleProjection, holdsFundsAllocations, todayBoundaryMonth]);
+  }), [mirrorRows]);
 
   const { flowData, flowDomain } = useMemo(() => {
     const flowDataRaw = visibleProjection.map((m) => ({
@@ -230,9 +271,9 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
       {/* Chart */}
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={view === "trajectory" ? 240 : 180}>
           {view === "trajectory" ? (
-            <AreaChart data={trajectoryData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+            <ComposedChart data={trajectoryData} stackOffset="sign" margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
               <XAxis
                 dataKey="month"
@@ -242,40 +283,67 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 tickLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatCompactCurrency(v)}
+                tickFormatter={(v: number) => formatCompactCurrency(Math.abs(v))}
                 tick={{ fontSize: 9, fill: "var(--color-text-muted)", fontFamily: "var(--font-mono-family)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
-                itemSorter={(item) => String(item.name ?? '')}
-                contentStyle={{
-                  background: "rgba(8,9,12,0.92)",
-                  border: "1px solid var(--color-border-strong)",
-                  borderRadius: "var(--radius-sm)",
-                  backdropFilter: "blur(16px)",
-                  fontSize: 11,
-                  fontFamily: "var(--font-mono-family)",
+                contentStyle={TOOLTIP_STYLE}
+                content={({ active, payload, label }) => {
+                  const row = payload?.[0]?.payload as Record<string, number> | undefined;
+                  if (!active || !row) return null;
+                  const milestone = planMilestones.find((m) => m.month === label);
+                  const title = `${milestone ? `Mês ${label} — ${milestone.label}` : `Mês ${label}`} · ${row.isReal === 1 ? "Dados reais" : "Projeção"}`;
+                  const group = (series: MirrorSeries[], name: string, total: number) => (
+                    <>
+                      <div className="mt-1 font-sans text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">{name}</div>
+                      {series.filter((se) => row[se.key]).map((se) => (
+                        <div key={se.key} className="flex justify-between gap-4 text-[var(--color-text-secondary)]">
+                          <span className="flex items-center gap-1.5 font-sans"><span className="w-2 h-2 rounded-sm" style={{ background: se.color }} />{se.label}</span>
+                          <span className="text-[var(--color-text)]">{formatCurrency(Math.abs(row[se.key]))}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between gap-4 text-[var(--color-text)]"><span className="font-sans">Total</span><span>{formatCurrency(total)}</span></div>
+                    </>
+                  );
+                  return (
+                    <div style={TOOLTIP_STYLE} className="px-2.5 py-2 min-w-[180px]">
+                      <div className="text-[var(--color-text)]">{title}</div>
+                      {group(heldSeries, "Guardado", row.heldTotal)}
+                      {owedSeries.length > 0 && group(owedSeries, "A pagar", row.owedTotal)}
+                      <div className="mt-1 pt-1 border-t border-[var(--color-border-strong)] flex justify-between gap-4 text-[var(--color-text)]">
+                        <span className="font-sans">Saldo</span><span>{formatCurrency(row.balance)}</span>
+                      </div>
+                    </div>
+                  );
                 }}
-                labelFormatter={(month, payload) => {
-                  const milestone = planMilestones.find((m) => m.month === month);
-                  const isRealMonth = payload?.[0]?.payload?.isReal === 1;
-                  const dataLabel = isRealMonth ? "Dados reais" : "Projeção";
-                  const base = milestone ? `Mês ${month} — ${milestone.label}` : `Mês ${month}`;
-                  return `${base} · ${dataLabel}`;
-                }}
-                formatter={(value, name, item) => {
-                  if (value === null || value === undefined) return [null, null];
-                  const strName = String(name);
-                  if (strName.endsWith(' (projeção)')) {
-                    const realName = strName.replace(' (projeção)', '');
-                    if (item.payload[realName] !== null && item.payload[realName] !== undefined) {
-                      return [null, null];
-                    }
-                    return [formatCurrency(Number(value)), realName];
-                  }
-                  return [formatCurrency(Number(value)), name];
-                }}
+              />
+              {[...owedSeries, ...heldSeries].map((se) => (
+                <Area
+                  key={se.key}
+                  type="linear"
+                  dataKey={se.key}
+                  name={se.label}
+                  stackId="mirror"
+                  stroke="var(--color-bg)"
+                  strokeWidth={1}
+                  fill={se.color}
+                  fillOpacity={1}
+                  isAnimationActive={false}
+                />
+              ))}
+              <ReferenceLine y={0} stroke="var(--color-text-muted)" />
+              <Line
+                type="linear"
+                dataKey="balance"
+                name="Saldo"
+                stroke={BALANCE_COLOR}
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                dot={false}
+                activeDot={false}
+                isAnimationActive={false}
               />
               {planMilestones.map((m, i) => (
                 <ReferenceLine
@@ -306,56 +374,7 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                 strokeWidth={1}
                 strokeDasharray="4 4"
               />
-              <Area
-                type="monotone"
-                dataKey="Disponível"
-                stroke={DATA_COLORS[0]}
-                strokeWidth={1.5}
-                fill={DATA_COLORS[0]}
-                fillOpacity={0.15}
-                connectNulls={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="Disponível (projeção)"
-                stroke={DATA_COLORS[0]}
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-                strokeOpacity={0.5}
-                fill={DATA_COLORS[0]}
-                fillOpacity={0.05}
-                connectNulls={false}
-                legendType="none"
-              />
-              {holdsFundsAllocations.flatMap((allocation) => {
-                const color = getBoxColor(allocations, allocation.id);
-                return [
-                  <Area
-                    key={allocation.id}
-                    type="monotone"
-                    dataKey={allocation.label}
-                    stroke={color}
-                    strokeWidth={1}
-                    fill={color}
-                    fillOpacity={0.15}
-                    connectNulls={false}
-                  />,
-                  <Area
-                    key={`${allocation.id}-proj`}
-                    type="monotone"
-                    dataKey={`${allocation.label} (projeção)`}
-                    stroke={color}
-                    strokeWidth={1}
-                    strokeDasharray="4 3"
-                    strokeOpacity={0.4}
-                    fill={color}
-                    fillOpacity={0.04}
-                    connectNulls={false}
-                    legendType="none"
-                  />,
-                ];
-              })}
-            </AreaChart>
+            </ComposedChart>
           ) : (
             <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
@@ -451,20 +470,24 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
       {/* Legend */}
       {view === "trajectory" ? (
-        <div className="flex flex-wrap gap-3 pt-3">
+        <div className="flex flex-col gap-1.5 pt-3">
+          {[{ name: "↑ Guardado", series: heldSeries }, { name: "↓ A pagar", series: owedSeries }]
+            .filter((g) => g.series.length > 0)
+            .map((g) => (
+              <div key={g.name} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="font-sans text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">{g.name}</span>
+                {g.series.map((se) => (
+                  <span key={se.key} className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
+                    <span className="w-2 h-2 rounded-sm" style={{ background: se.color }} />
+                    {se.label}
+                  </span>
+                ))}
+              </div>
+            ))}
           <span className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
-            <span className="w-2 h-2 rounded-sm" style={{ background: DATA_COLORS[0] }} />
-            Disponível
+            <span className="w-3 border-t-[1.5px] border-dashed" style={{ borderColor: BALANCE_COLOR }} />
+            Saldo (guardado − a pagar)
           </span>
-          {holdsFundsAllocations.map((allocation) => (
-            <span key={allocation.id} className="flex items-center gap-1.5 font-sans text-[11px] text-[var(--color-text-secondary)]">
-              <span
-                className="w-2 h-2 rounded-sm"
-                style={{ background: getBoxColor(allocations, allocation.id) }}
-              />
-              {allocation.label}
-            </span>
-          ))}
         </div>
       ) : (
         <div className="flex flex-wrap gap-3 pt-3">
