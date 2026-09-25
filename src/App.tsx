@@ -26,6 +26,8 @@ import { Toaster } from "./components/ui/sonner";
 import { useApi } from "./hooks/useApi";
 import { useSearchParams } from "./hooks/useSearchParams";
 import { useSummary } from "./hooks/useSummary";
+import { useAvailableBalance } from "./hooks/useCards";
+import { CLEAR_CARD_PARAMS } from "./hooks/useCardNav";
 
 const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
   { value: "input", icon: DollarSign, label: "Entrada" },
@@ -38,11 +40,13 @@ const TAB_ITEMS: { value: string; icon: LucideIcon; label: string }[] = [
 function AppContent() {
   const auth = useApi();
   const summary = useSummary();
+  const { data: availableBalance } = useAvailableBalance();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("aba") || "input";
   const oauthRequest = searchParams.get(OAUTH_REQUEST_PARAM);
   const setCurrentTab = (tab: string) => {
-    setSearchParams({ aba: tab });
+    // Trocar de aba volta à lista de Estratos (cartão/fatura abertos saem da URL).
+    setSearchParams({ ...CLEAR_CARD_PARAMS, aba: tab });
   };
 
   // Retrocompatibility: redirect old tab values
@@ -192,6 +196,9 @@ function AppContent() {
                   saldo={vault.balance}
                   receitas={vault.totalIncomeAmount}
                   despesas={vault.totalSpentAmount}
+                  aPagarCartao={
+                    availableBalance?.cards.reduce((sum, card) => sum + card.payable, 0) ?? 0
+                  }
                 />
               </div>
             )}

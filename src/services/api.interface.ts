@@ -226,19 +226,49 @@ export interface ApiService {
   ): Promise<ConfirmImportResponse>;
   confirmImportBatch(batchId: string): Promise<ConfirmImportResponse>;
   /**
-   * Registra a fatura de cartão a partir do débito de pagamento na conta
-   * corrente. Confirma na hora: a fatura passa a contar como gasto.
+   * Confirma o débito "pagamento de fatura" da conta corrente como pagamento
+   * de fatura. Sem `invoiceId`, a fatura sai da data de cada lançamento no
+   * cartão; sem cartão cadastrado, o Duna cria um.
    */
-  confirmImportInvoice(entryIds: string[]): Promise<ConfirmImportResponse>;
+  confirmImportInvoicePayment(
+    entryIds: string[],
+    target: { cardId?: string; invoiceId?: string },
+  ): Promise<ConfirmInvoicePaymentResponse>;
   /** Liga um extrato de cartão a uma fatura (ou desliga, com null). */
   setImportBatchInvoice(
     batchId: string,
     invoiceId: string | null,
-  ): Promise<{ batch?: ImportBatchDTO; error?: string }>;
+  ): Promise<ApiResult<ImportBatchDTO>>;
+  /** Marca (ou desmarca) um extrato de cartão como "sem fatura". */
+  setImportBatchNoInvoice(
+    batchId: string,
+    noInvoice: boolean,
+  ): Promise<ApiResult<ImportBatchDTO>>;
 
-  // Faturas de cartão
-  getInvoices(): Promise<InvoicesData>;
-  deleteInvoice(invoiceId: string): Promise<{ error?: string }>;
+  // Cartões, faturas e pagamentos
+  getCards(): Promise<CardView[]>;
+  createCard(request: CardRequest): Promise<ApiResult<CardView>>;
+  updateCard(cardId: string, request: Partial<CardRequest>): Promise<ApiResult<CardView>>;
+  deleteCard(cardId: string): Promise<ApiResult<{ deleted: true }>>;
+  getAvailableBalance(): Promise<AvailableBalanceData>;
+  getInvoices(cardId?: string): Promise<InvoicesData>;
+  getInvoice(invoiceId: string): Promise<InvoiceDetail>;
+  getInvoiceReconcile(invoiceId: string): Promise<InvoiceReconcile>;
+  updateInvoice(
+    invoiceId: string,
+    request: UpdateInvoiceRequest,
+  ): Promise<ApiResult<InvoiceView>>;
+  /** Fecha antes da data: compras depois de `closingDate` caem na próxima. */
+  closeInvoice(invoiceId: string, closingDate: string): Promise<ApiResult<InvoiceView>>;
+  addInvoicePayment(request: AddPaymentRequest): Promise<ApiResult<PaymentResult>>;
+  updateInvoicePayment(
+    paymentId: string,
+    request: UpdatePaymentRequest,
+  ): Promise<ApiResult<PaymentResult>>;
+  deleteInvoicePayment(paymentId: string): Promise<ApiResult<{ deleted: true }>>;
+  getDuplicates(invoiceId?: string): Promise<{ pairs: DuplicatePair[] }>;
+  previewReprocess(): Promise<ReprocessReport>;
+  applyReprocess(): Promise<ApiResult<ReprocessReport>>;
 
   // MCP (conexões com clientes de IA)
   getMcpConnections(): Promise<McpConnection[]>;
@@ -299,8 +329,10 @@ export interface ImportBatchDTO {
   fromDate: string | null;
   /** Lançamentos descartados por serem anteriores ao corte. */
   outOfRangeCount: number;
-  /** Fatura que este extrato de cartão detalha. */
+  /** Fatura (ciclo do cartão) deste extrato de cartão. */
   invoiceId: string | null;
+  /** Extrato de cartão marcado "sem fatura": as compras contam na data delas. */
+  noInvoice: boolean;
   createdAt: string;
 }
 
@@ -341,8 +373,13 @@ export interface ImportGroupDTO {
   entryIds: string[];
   /** Parece quitação de fatura — não é gasto novo, e sim o pagamento dela. */
   looksLikeSettlement: boolean;
-  /** Débito de pagamento de fatura na conta corrente: propor registrar a fatura. */
+  /** Débito de pagamento de fatura na conta corrente: propor "Pagamento de fatura". */
   suggestsInvoice: boolean;
+  /**
+   * Cartão e fatura que esse pagamento pagaria. `invoiceId` null: a fatura é
+   * criada ao confirmar. Objeto null: nenhum cartão cadastrado (o Duna cria um).
+   */
+  suggestedInvoicePayment: SuggestedInvoicePayment | null;
   /** Pagamento planejado cuja parcela prevista bate com valor e mês do grupo. */
   suggestedAllocation: { allocationId: string; label: string } | null;
 }
@@ -390,37 +427,258 @@ export interface ConfirmImportResponse {
   error?: string;
 }
 
-export type InvoiceStatus = "awaiting" | "partial" | "detailed" | "exceeded";
+/** Resultado de uma ação: o dado, ou a mensagem da API pronta para mostrar. */
+export type ApiResult<T> = { data: T; error?: undefined } | { data?: undefined; error: string };
 
-/** Fatura de cartão paga, com quanto dela o extrato do cartão já detalhou. */
-export interface InvoiceDTO {
-  id: string;
-  amount: number;
-  paymentDate: string;
-  boxId: string;
-  cardLabel: string | null;
-  createdAt: string;
-  itemized: number;
-  /** O que ainda não foi detalhado: aparece como "não discriminado". */
-  remainder: number;
-  /** Quanto as compras ligadas passam do valor pago. */
-  excess: number;
-  purchaseCount: number;
-  status: InvoiceStatus;
-  statements: { batchId: string; accountLabel: string | null }[];
+export interface ConfirmInvoicePaymentResponse {
+  confirmed?: number;
+  skipped?: string[];
+  paymentIds?: string[];
+  invoiceIds?: string[];
+  error?: string;
 }
 
-/** Extrato de cartão com compras confirmadas que ainda não estão em nenhuma fatura. */
-export interface UnlinkedStatementDTO {
+export interface SuggestedInvoicePayment {
+  cardId: string;
+  cardName: string;
+  invoiceId: string | null;
+  closingDate: string;
+  dueDate: string;
+}
+
+export interface CardView {
+  id: string;
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  /** Estrato pagador: de onde saem os pagamentos. */
+  boxId: string;
+  /** Conta do OFX que liga extratos a este cartão. */
+  accountKey: string | null;
+  createdAt: string;
+  /** Compras ainda não pagas, de todas as faturas. */
+  payable: number;
+  /** Fatura em aberto que contém hoje, se existir. */
+  currentInvoiceId: string | null;
+}
+
+export interface CardRequest {
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  boxId?: string;
+}
+
+export interface AvailableBalanceData {
+  estratos: {
+    boxId: string;
+    name: string;
+    type: BoxType;
+    balance: number;
+    cardPayable: number;
+    available: number;
+  }[];
+  cards: { cardId: string; name: string; boxId: string; payable: number }[];
+  /** Só estratos de gasto. */
+  total: { balance: number; cardPayable: number; available: number };
+}
+
+export type InvoiceStatus =
+  | "open"
+  | "closed"
+  | "partial"
+  | "paid"
+  | "overpaid"
+  | "overdue";
+
+export interface StatementRef {
   batchId: string;
   accountLabel: string | null;
+  fileName: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  ledgerBalance: number | null;
+}
+
+/** Fatura = ciclo do cartão. O total sai das compras; nunca é digitado. */
+export interface InvoiceView {
+  id: string;
+  cardId: string;
+  cardName: string;
+  periodStart: string;
+  closingDate: string;
+  dueDate: string;
+  closedManually: boolean;
+  /** Compras − estornos. */
+  purchasesTotal: number;
+  /** Saldo transferido da fatura anterior vencida (negativo = crédito). */
+  carriedIn: number;
+  /** purchasesTotal + carriedIn: o valor da fatura. */
+  total: number;
+  paid: number;
+  remaining: number;
+  overpaid: number;
+  /** O que foi para a próxima fatura depois do vencimento. */
+  carriedOut: number;
+  status: InvoiceStatus;
+  /** Compras desta fatura ainda não pagas ("a pagar"). */
+  unpaidPurchases: number;
+  /** Não discriminado dos pagamentos desta fatura. */
+  notItemized: number;
+  purchaseCount: number;
+  paymentCount: number;
+  statements: StatementRef[];
+}
+
+/** Extrato de cartão antigo, com compras que ainda contam na data da compra. */
+export interface PendingStatement {
+  batchId: string;
+  accountLabel: string | null;
+  accountKey: string | null;
   periodStart: string | null;
   periodEnd: string | null;
   purchaseCount: number;
   total: number;
+  cardId: string | null;
 }
 
 export interface InvoicesData {
-  invoices: InvoiceDTO[];
-  unlinkedStatements: UnlinkedStatementDTO[];
+  invoices: InvoiceView[];
+  pendingStatements: PendingStatement[];
+}
+
+export interface InvoicePurchase {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  /** income = estorno. */
+  type: "expense" | "income";
+  categoryId: string | null;
+  allocationId: string | null;
+  paid: number;
+  unpaid: number;
+  fromStatement: boolean;
+  parts: { transactionId: string; paymentId: string; amount: number; date: string }[];
+}
+
+export interface InvoicePayment {
+  id: string;
+  invoiceId: string;
+  date: string;
+  amount: number;
+  boxId: string;
+  imported: boolean;
+  importEntryId: string | null;
+  notItemized: number;
+  notItemizedTransactionId: string | null;
+  parts: {
+    transactionId: string;
+    purchaseId: string;
+    purchaseInvoiceId: string;
+    amount: number;
+  }[];
+}
+
+export interface InvoiceDetail {
+  invoice: InvoiceView;
+  purchases: InvoicePurchase[];
+  payments: InvoicePayment[];
+}
+
+export interface UpdateInvoiceRequest {
+  periodStart?: string;
+  closingDate?: string;
+  dueDate?: string;
+  closed?: boolean;
+}
+
+export interface AddPaymentRequest {
+  invoiceId?: string;
+  cardId?: string;
+  amount: number;
+  /** AAAA-MM-DD */
+  date: string;
+  boxId?: string;
+  allowDuplicate?: boolean;
+}
+
+export interface UpdatePaymentRequest {
+  amount?: number;
+  date?: string;
+  invoiceId?: string;
+  boxId?: string;
+}
+
+export interface PaymentResult {
+  payment: InvoicePayment;
+  invoice: InvoiceView;
+}
+
+export interface DuplicateRef {
+  transactionId: string;
+  date: string;
+  amount: number;
+  description: string;
+  categoryId: string | null;
+  invoiceId: string | null;
+}
+
+/** Transação lançada à mão que parece ser a mesma compra importada do cartão. */
+export interface DuplicatePair {
+  manual: DuplicateRef;
+  imported: DuplicateRef & { entryId: string };
+  confidence: "high" | "medium";
+  dayDistance: number;
+}
+
+export interface InvoiceReconcile {
+  invoiceId: string;
+  purchasesTotal: number;
+  total: number;
+  paid: number;
+  statements: (StatementRef & {
+    statementTotal: number;
+    ledgerMatchesTotal: boolean | null;
+  })[];
+  missing: {
+    entryId: string;
+    batchId: string;
+    date: string;
+    amount: number;
+    type: "income" | "expense";
+    description: string;
+    reason: "pending" | "dismissed" | "deleted" | "elsewhere";
+    transactionId: string | null;
+  }[];
+  extra: DuplicateRef[];
+  duplicates: DuplicatePair[];
+}
+
+export interface ReprocessReport {
+  statements: {
+    batchId: string;
+    accountLabel: string | null;
+    cardId: string;
+    cardName: string;
+    newCard: boolean;
+    invoiceId: string;
+    closingDate: string;
+    purchaseCount: number;
+    total: number;
+  }[];
+  payments: {
+    entryId: string;
+    date: string;
+    amount: number;
+    boxId: string;
+    cardId: string;
+    cardName: string;
+    invoiceId: string;
+    source: "dismissed" | "expense";
+    removedTransactionId: string | null;
+  }[];
+  skipped: { entryId?: string; batchId?: string; reason: string }[];
+  /** Total de gastos do mês de orçamento, só os meses que mudam. */
+  months: { year: number; month: number; before: number; after: number }[];
 }

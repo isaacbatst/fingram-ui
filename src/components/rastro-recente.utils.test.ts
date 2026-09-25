@@ -112,25 +112,48 @@ describe("getRowVisual", () => {
   });
 });
 
-describe("getRowVisual — fatura de cartão", () => {
-  it("marks the undetailed part of an invoice", () => {
+describe("getRowVisual — cartão", () => {
+  it("marks the not itemized part of a payment", () => {
     const visual = getRowVisual(
-      buildTx({ invoiceId: "i1", invoiceRole: "remainder", purchaseDate: null }),
+      buildTx({
+        description: "Fatura Nubank · não discriminado",
+        invoiceId: "i1",
+        invoiceRole: "remainder",
+        paymentId: "p1",
+      }),
     );
     expect(visual.isInvoiceRemainder).toBe(true);
+    expect(visual.label).toBe("Fatura Nubank · não discriminado");
     expect(visual.purchaseNote).toBeNull();
   });
 
-  it("shows the purchase date of a purchase counted on the payment date", () => {
+  it("shows the purchase date of a whole purchase counted on the payment date", () => {
     const visual = getRowVisual(
       buildTx({
+        amount: 700,
         invoiceId: "i1",
-        invoiceRole: "purchase",
-        purchaseDate: "2026-08-12T03:00:00.000Z",
+        invoiceRole: "part",
+        purchaseId: "c1",
+        purchaseDate: "2026-08-05T00:00:00.000Z",
+        purchaseAmount: 700,
       }),
     );
     expect(visual.isInvoiceRemainder).toBe(false);
-    expect(visual.purchaseNote).toBe("compra 12/08");
+    expect(visual.purchaseNote).toBe("cartão · compra 05/08");
+  });
+
+  it("shows that a part is only a share of the purchase", () => {
+    const visual = getRowVisual(
+      buildTx({
+        amount: 300,
+        invoiceRole: "part",
+        purchaseDate: "2026-08-12T00:00:00.000Z",
+        purchaseAmount: 500,
+      }),
+    );
+    expect(visual.purchaseNote).toBe(
+      "parte · compra 12/08 · R$\u00a0300,00 de R$\u00a0500,00",
+    );
   });
 
   it("leaves ordinary transactions alone", () => {
