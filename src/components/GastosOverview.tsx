@@ -33,7 +33,7 @@ import {
   SettingsIcon,
   Search as SearchIcon,
   ListIcon,
-  PieChartIcon,
+  BarChart3Icon,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -45,9 +45,9 @@ import {
 import { FaturasAviso } from "./FaturasAviso";
 
 import { Label } from "@/components/ui/label";
-import { BudgetPieChart } from "./BudgetPieChart";
+import { BudgetComparison } from "./BudgetComparison";
 
-type ViewMode = "lista" | "planejado" | "executado";
+type ViewMode = "lista" | "comparar";
 
 const months = [
   { value: 1, label: "Janeiro" },
@@ -489,8 +489,7 @@ export function GastosOverview({
               <div className="flex items-center justify-center gap-1 mb-4">
                 {([
                   { key: "lista" as const, label: "Lista", icon: ListIcon },
-                  { key: "planejado" as const, label: "Planejado", icon: PieChartIcon },
-                  { key: "executado" as const, label: "Executado", icon: PieChartIcon },
+                  { key: "comparar" as const, label: "Planejado × executado", icon: BarChart3Icon },
                 ]).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -508,33 +507,19 @@ export function GastosOverview({
                 ))}
               </div>
 
-              {/* Pie chart: Planejado */}
-              {viewMode === "planejado" && (
-                <BudgetPieChart
-                  data={categoriesWithBudget.map((c) => ({
-                    name: c.categoria,
-                    value: c.valor,
-                  }))}
-                  total={totalOrcamento}
-                />
-              )}
-
-              {/* Pie chart: Executado */}
-              {viewMode === "executado" && (
-                <BudgetPieChart
-                  data={categoriesWithBudget.map((c) => ({
-                    name: c.categoria,
-                    value: c.usado,
-                    budget: c.valor,
-                  }))}
-                  total={totalGasto}
+              {viewMode === "comparar" && (
+                <BudgetComparison
+                  items={categoriesWithBudget}
+                  onDrillCategory={onDrillCategory}
                 />
               )}
 
               {/* Category list */}
               {viewMode === "lista" && (
                 <>
-                  <div className="space-y-3">
+                  {/* Compacto e em duas colunas a partir do tablet: todas as
+                      categorias cabem na tela sem rolar. */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {categoriesWithBudget.map((c) => {
                       const pct = c.valor > 0 ? Math.min(100, (c.usado / c.valor) * 100) : 0;
                       const filledColor =
@@ -547,7 +532,7 @@ export function GastosOverview({
                       return (
                         <div
                           key={c.categoryId}
-                          className="rounded-xl border border-border duna-card duna-surface cursor-pointer transition-colors active:bg-muted/50"
+                          className="rounded-lg border border-border duna-card duna-surface cursor-pointer transition-colors active:bg-muted/50"
                           role="button"
                           tabIndex={0}
                           onClick={() => onDrillCategory(c.categoryId)}
@@ -555,14 +540,17 @@ export function GastosOverview({
                             if (e.key === "Enter" || e.key === " ") onDrillCategory(c.categoryId);
                           }}
                         >
-                          <div className="p-3">
-                            <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-base font-display text-foreground">{c.categoria}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground font-mono">{formatMoney(c.usado)}</span>
+                          <div className="px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-display text-foreground truncate">{c.categoria}</span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-xs font-mono">
+                                  <span className="text-foreground">{formatMoney(c.usado)}</span>
+                                  <span className="text-muted-foreground"> / {formatMoney(c.valor)}</span>
+                                </span>
                                 <button
                                   type="button"
-                                  className="p-1 rounded-md hover:bg-muted/50 transition-colors"
+                                  className="p-1.5 -mr-1.5 rounded-md hover:bg-muted/50 transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenEdit(c.categoryId, c.categoria);
@@ -571,11 +559,9 @@ export function GastosOverview({
                                 >
                                   <PencilIcon className="h-3.5 w-3.5 text-muted-foreground" />
                                 </button>
-                                <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
                               </div>
                             </div>
-                            <Progress value={pct} filledColor={filledColor} bgColor="var(--color-border)" className="h-2.5" />
-                            <div className="mt-1 text-xs text-muted-foreground font-mono">de {formatMoney(c.valor)}</div>
+                            <Progress value={pct} filledColor={filledColor} bgColor="var(--color-border)" className="h-1.5 mt-1" />
                           </div>
                         </div>
                       );
