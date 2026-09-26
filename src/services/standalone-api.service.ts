@@ -682,6 +682,13 @@ export class StandaloneApiService implements ApiService {
     return this.read(`/invoices/duplicates${query}`);
   }
 
+  async dismissDuplicate(pair: {
+    manualTransactionId: string;
+    importedTransactionId: string;
+  }): Promise<ApiResult<{ dismissed: true }>> {
+    return this.action('/invoices/duplicates/dismiss', pair);
+  }
+
   async previewReprocess(): Promise<ReprocessReport> {
     return this.read('/invoices/reprocess/preview');
   }

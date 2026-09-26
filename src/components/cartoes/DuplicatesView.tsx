@@ -27,13 +27,28 @@ function Side({ label, item }: { label: string; item: DuplicateRef }) {
 
 function PairCard({ pair }: { pair: DuplicatePair }) {
   const { apiService } = useApi();
-  const [busy, setBusy] = useState<"manual" | "imported" | null>(null);
+  const [busy, setBusy] = useState<"manual" | "imported" | "dismiss" | null>(null);
   const [confirm, setConfirm] = useState<"manual" | "imported" | null>(null);
 
   const remove = async (which: "manual" | "imported") => {
     setBusy(which);
     const id = which === "manual" ? pair.manual.transactionId : pair.imported.transactionId;
     const result = await apiService.deleteTransaction(id);
+    setBusy(null);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    await refreshAfterCardChange();
+  };
+
+  /** Não é a mesma compra: nada é apagado, o par só deixa de ser sugerido. */
+  const dismiss = async () => {
+    setBusy("dismiss");
+    const result = await apiService.dismissDuplicate({
+      manualTransactionId: pair.manual.transactionId,
+      importedTransactionId: pair.imported.transactionId,
+    });
     setBusy(null);
     if (result.error) {
       toast.error(result.error);
@@ -94,6 +109,15 @@ function PairCard({ pair }: { pair: DuplicatePair }) {
           >
             Excluir a do extrato
           </Button>
+          <Button
+            variant="ghost"
+            className="flex-1 min-h-11 text-muted-foreground"
+            disabled={busy !== null}
+            onClick={() => void dismiss()}
+          >
+            {busy === "dismiss" && <Loader2 className="animate-spin" />}
+            Não é a mesma compra
+          </Button>
         </div>
       )}
     </div>
@@ -114,7 +138,7 @@ export function DuplicatesView() {
         backLabel="Estratos"
         onBack={nav.backToEstratos}
         title="Possíveis duplicatas"
-        subtitle="Mantidas as duas, o gasto conta duas vezes. Normalmente fica a do extrato."
+        subtitle="Mantidas as duas, o gasto conta duas vezes. Normalmente fica a do extrato. Se forem compras diferentes, marque que não é a mesma compra."
       />
       {isLoading && pairs.length === 0 ? (
         <LoadingSpinner />

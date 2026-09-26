@@ -267,6 +267,11 @@ export interface ApiService {
   ): Promise<ApiResult<PaymentResult>>;
   deleteInvoicePayment(paymentId: string): Promise<ApiResult<{ deleted: true }>>;
   getDuplicates(invoiceId?: string): Promise<{ pairs: DuplicatePair[] }>;
+  /** "Não é duplicata": o par deixa de ser sugerido; os lançamentos ficam. */
+  dismissDuplicate(pair: {
+    manualTransactionId: string;
+    importedTransactionId: string;
+  }): Promise<ApiResult<{ dismissed: true }>>;
   previewReprocess(): Promise<ReprocessReport>;
   applyReprocess(): Promise<ApiResult<ReprocessReport>>;
 
