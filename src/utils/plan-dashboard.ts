@@ -275,6 +275,44 @@ export function buildMirrorRows(projection: MonthDataDTO[], allocations: Allocat
   });
 }
 
+const NICE_MULTIPLIERS = [1, 2, 2.5, 5, 10];
+
+/** Smallest 1/2/2.5/5 × 10^k that is ≥ value. */
+function niceCeil(value: number): number {
+  const power = 10 ** Math.floor(Math.log10(value));
+  return NICE_MULTIPLIERS.find((n) => n * power >= value)! * power;
+}
+
+/** Largest 1/2/2.5/5 × 10^k that is ≤ value. */
+function niceFloor(value: number): number {
+  const power = 10 ** Math.floor(Math.log10(value));
+  return [...NICE_MULTIPLIERS].reverse().find((n) => n * power <= value)! * power;
+}
+
+/** Room past each side's peak, as a share of the whole range (keeps the in-chart labels clear). */
+const MIRROR_HEADROOM = 0.06;
+
+/**
+ * Y axis for the mirrored trajectory. Both sides share one scale, but each
+ * edge follows its own peak — a step-aligned edge would stretch the smaller
+ * side up to the next multiple of a step sized for the whole range.
+ * When the shared step leaves a side without ticks, it gets one nice value
+ * under its peak.
+ */
+export function computeMirrorAxis(maxHeld: number, maxOwed: number): { domain: [number, number]; ticks: number[] } {
+  const total = maxHeld + maxOwed;
+  if (total <= 0) return { domain: [-1, 1], ticks: [0] };
+  const pad = total * MIRROR_HEADROOM;
+  const top = maxHeld + pad;
+  const bottom = -(maxOwed + pad);
+  const step = niceCeil(total / 5);
+  const ticks: number[] = [];
+  for (let k = Math.ceil(bottom / step); k * step <= top; k++) ticks.push(k * step || 0);
+  if (maxHeld > 0 && !ticks.some((t) => t > 0)) ticks.push(niceFloor(maxHeld));
+  if (maxOwed > 0 && !ticks.some((t) => t < 0)) ticks.unshift(-niceFloor(maxOwed));
+  return { domain: [bottom, top], ticks };
+}
+
 export function formatCompactCurrency(value: number): string {
   const abs = Math.abs(value);
   if (abs < 1000) return String(Math.round(abs));

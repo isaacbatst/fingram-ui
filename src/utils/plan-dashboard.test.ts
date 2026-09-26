@@ -6,6 +6,7 @@ import {
   formatCompactCurrency,
   getActiveMonthlyAmount,
   buildMirrorRows,
+  computeMirrorAxis,
 } from "./plan-dashboard";
 import type { MonthDataDTO, AllocationDTO, ChangePointDTO } from "@/services/plan.service";
 
@@ -280,5 +281,48 @@ describe("buildMirrorRows", () => {
     );
     expect(row.owed).toEqual({ p1: 0 });
     expect(row.owedTotal).toBe(0);
+  });
+});
+
+describe("computeMirrorAxis", () => {
+  it("fits the held side to its own maximum instead of the shared tick step", () => {
+    // recharts' auto domain gives [-600k, 200k] here: the 200k step pushed the top to 200k
+    const { domain, ticks } = computeMirrorAxis(120000, 490000);
+    expect(domain[1]).toBeGreaterThanOrEqual(120000);
+    expect(domain[1]).toBeLessThan(160000);
+    expect(domain[0]).toBeLessThanOrEqual(-490000);
+    expect(domain[0]).toBeGreaterThan(-560000);
+    expect(ticks).toEqual([-400000, -200000, 0, 100000]);
+  });
+
+  it("keeps every tick inside the domain", () => {
+    for (const [held, owed] of [[120000, 490000], [60000, 490000], [300000, 20000], [7000, 1200000], [45000, 45000]]) {
+      const { domain, ticks } = computeMirrorAxis(held, owed);
+      expect(ticks.every((t) => t >= domain[0] && t <= domain[1])).toBe(true);
+      expect(ticks).toContain(0);
+      expect([...ticks].sort((a, b) => a - b)).toEqual(ticks);
+    }
+  });
+
+  it("gives the smaller side a nice tick below its maximum when the shared step skips it", () => {
+    expect(computeMirrorAxis(60000, 490000).ticks).toContain(50000);
+    expect(computeMirrorAxis(7000, 1200000).ticks).toContain(5000);
+    expect(computeMirrorAxis(300000, 20000).ticks).toContain(-20000);
+  });
+
+  it("has no ticks on a side with nothing on it", () => {
+    const held = computeMirrorAxis(80000, 0);
+    expect(held.ticks.every((t) => t >= 0)).toBe(true);
+    expect(held.domain[0]).toBeLessThan(0);
+    const owed = computeMirrorAxis(0, 80000);
+    expect(owed.ticks.every((t) => t <= 0)).toBe(true);
+    expect(owed.domain[1]).toBeGreaterThan(0);
+  });
+
+  it("falls back to a small symmetric domain when everything is zero", () => {
+    const { domain, ticks } = computeMirrorAxis(0, 0);
+    expect(domain[0]).toBeLessThan(0);
+    expect(domain[1]).toBeGreaterThan(0);
+    expect(ticks).toEqual([0]);
   });
 });
