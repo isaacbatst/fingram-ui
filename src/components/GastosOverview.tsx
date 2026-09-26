@@ -38,11 +38,10 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import {
-  getBudgetPeriod,
   getEffectiveStartDay,
   type BudgetStartDaySchedule,
 } from "@/lib/budget-period";
-import { FaturasAviso } from "./FaturasAviso";
+import { CartoesAviso } from "./cartoes/CartoesAviso";
 
 import { Label } from "@/components/ui/label";
 import { BudgetDistribution } from "./BudgetDistribution";
@@ -378,11 +377,9 @@ export function GastosOverview({
         </Button>
       </div>
 
-      {/* Faturas de cartão pagas neste período com parte ainda sem detalhe:
-          esse valor conta no mês, mas fora das categorias abaixo. */}
-      <FaturasAviso
-        period={getBudgetPeriod(schedule, selectedYear, selectedMonth)}
-      />
+      {/* Cartões: não discriminado (já conta, sem categoria), faturas vencidas
+          ou pagas a mais, duplicatas e compras a pagar (ainda não contam). */}
+      <CartoesAviso />
 
       {/* Loading */}
       {!budgetData && !error && isLoading && (

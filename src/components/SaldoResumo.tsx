@@ -2,12 +2,14 @@ type SaldoResumoProps = {
   saldo: number;
   receitas: number;
   despesas: number;
+  /** Compras no cartão ainda não pagas (de todos os cartões). */
+  aPagarCartao?: number;
 };
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
-export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
+export function SaldoResumo({ saldo, receitas, despesas, aPagarCartao = 0 }: SaldoResumoProps) {
   return (
     <div
       className="rounded-lg border border-[var(--color-accent-border)] p-4 sm:p-5 mb-4 sm:mt-3 duna-glass duna-stagger-1"
@@ -31,6 +33,14 @@ export function SaldoResumo({ saldo, receitas, despesas }: SaldoResumoProps) {
       >
         R$ {fmt(saldo)}
       </div>
+
+      {aPagarCartao > 0 && (
+        <p className="text-xs text-muted-foreground -mt-2 mb-4 leading-relaxed">
+          <span className="font-mono text-foreground">R$ {fmt(saldo - aPagarCartao)}</span>{" "}
+          disponível · saldo − <span className="font-mono">R$ {fmt(aPagarCartao)}</span> a
+          pagar no cartão
+        </p>
+      )}
 
       <div className="flex gap-4 duna-stagger-3">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-success-bg)] border border-[var(--color-success-border)]">

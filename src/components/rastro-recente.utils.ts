@@ -1,5 +1,5 @@
 import type { TransactionDTO } from "@/utils/transaction.dto,";
-import { formatDayMonth } from "@/lib/invoice";
+import { partNote } from "@/lib/invoice";
 
 export const OPACITY_FLOOR = 0.5;
 export const OPACITY_DECAY = 0.12;
@@ -18,9 +18,12 @@ export type RowVisual = {
   sign: string;
   label: string;
   isTransfer: boolean;
-  /** O que a fatura de cartão ainda não detalhou — valor real, sem categoria. */
+  /** Não discriminado de um pagamento de fatura — valor real, sem categoria. */
   isInvoiceRemainder: boolean;
-  /** "compra 12/08": a compra conta na data de pagamento da fatura. */
+  /**
+   * Parte de uma compra de cartão, que conta na data do pagamento:
+   * "cartão · compra 12/08" ou, dividida, "parte · compra 12/08 · R$ 300,00 de R$ 500,00".
+   */
   purchaseNote: string | null;
 };
 
@@ -43,9 +46,6 @@ export function getRowVisual(tx: TransactionDTO): RowVisual {
     label: tx.description || "(Sem descrição)",
     isTransfer: false,
     isInvoiceRemainder: tx.invoiceRole === "remainder",
-    purchaseNote:
-      tx.invoiceRole === "purchase" && tx.purchaseDate
-        ? `compra ${formatDayMonth(tx.purchaseDate)}`
-        : null,
+    purchaseNote: partNote(tx),
   };
 }

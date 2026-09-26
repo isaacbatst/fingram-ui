@@ -59,6 +59,13 @@ import { ErrorDisplay } from "./ErrorDisplay";
 import type { BoxDTO, BoxType } from "@/services/api.interface";
 import { useAllocationTrackingByBox } from "@/hooks/useAllocationTrackingByBox";
 import { formatCompactCurrency } from "@/utils/plan-dashboard";
+import { useCardNav } from "@/hooks/useCardNav";
+import { useAvailableBalance } from "@/hooks/useCards";
+import { CartoesSection } from "@/components/cartoes/CartoesSection";
+import { CardView } from "@/components/cartoes/CardView";
+import { InvoiceDetailView } from "@/components/cartoes/InvoiceDetailView";
+import { DuplicatesView } from "@/components/cartoes/DuplicatesView";
+import { ReprocessView } from "@/components/cartoes/ReprocessView";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -69,8 +76,35 @@ const getISODateString = (date: Date): string => {
   return format(date, "yyyy-MM-dd");
 };
 
+/**
+ * Estratos e, logo abaixo, os cartões que eles pagam. As telas de cartão
+ * (cartão, fatura, duplicatas, reprocessar) abrem no lugar da lista, pela URL.
+ */
 export function EstratosTab() {
+  const { screen } = useCardNav();
+  switch (screen.kind) {
+    case "card":
+      return <CardView cardId={screen.cardId} />;
+    case "invoice":
+      return <InvoiceDetailView invoiceId={screen.invoiceId} cardId={screen.cardId} />;
+    case "duplicates":
+      return <DuplicatesView />;
+    case "reprocess":
+      return <ReprocessView />;
+    default:
+      return <EstratosList />;
+  }
+}
+
+function EstratosList() {
   const { boxes, isLoading, error, mutate: mutateBoxes } = useBoxes();
+  const { data: availableBalance } = useAvailableBalance();
+  // Saldo disponível = saldo − "a pagar" dos cartões que o estrato paga.
+  const availableByBox = new Map(
+    (availableBalance?.estratos ?? []).map((e) => [e.boxId, e]),
+  );
+  const payableOf = (boxId: string) => availableByBox.get(boxId)?.cardPayable ?? 0;
+  const availableOf = (boxId: string) => availableByBox.get(boxId)?.available ?? 0;
   const { createBox } = useCreateBox();
   const { createTransfer } = useTransfer();
   const { apiService } = useApi();
@@ -346,6 +380,14 @@ export function EstratosTab() {
         <div className="text-sm text-muted-foreground font-mono tracking-tight">
           {formatCurrency(box.balance)}
         </div>
+        {payableOf(box.id) > 0 && (
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            <span className="font-mono text-foreground/80">
+              {formatCurrency(availableOf(box.id))}
+            </span>{" "}
+            disponível · {formatCurrency(payableOf(box.id))} a pagar no cartão
+          </div>
+        )}
 
         {tracking && (
           <div className="mt-3">
@@ -478,6 +520,7 @@ export function EstratosTab() {
                 </div>
               </div>
             )}
+            <CartoesSection />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
@@ -519,6 +562,26 @@ export function EstratosTab() {
                 <div className="text-2xl font-bold text-foreground font-mono tracking-tight mb-4">
                   {formatCurrency(selectedBox.balance)}
                 </div>
+                {payableOf(selectedBox.id) > 0 && (
+                  <div className="mb-4 rounded-lg border border-border p-3 space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">A pagar no cartão</span>
+                      <span className="font-mono">
+                        {formatCurrency(payableOf(selectedBox.id))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Disponível</span>
+                      <span className="font-mono text-foreground">
+                        {formatCurrency(availableOf(selectedBox.id))}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Saldo − compras no cartão ainda não pagas. Elas saem daqui
+                      quando a fatura for paga.
+                    </p>
+                  </div>
+                )}
 
                 {(() => {
                   const tracking = trackingByBox[selectedBox.id];

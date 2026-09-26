@@ -12,12 +12,22 @@ export interface TransactionDTO {
   transferId: string | null;
   transferToBoxId: string | null;
   allocationId?: string | null;
-  /** Fatura de cartão a que a transação pertence. */
+  /** Fatura da compra (parte) ou do pagamento (não discriminado). */
   invoiceId?: string | null;
-  /** `remainder`: o que a fatura ainda não detalhou. `purchase`: compra ligada a ela. */
-  invoiceRole?: 'remainder' | 'purchase' | null;
-  /** Data da compra, quando ela conta na data de pagamento da fatura. */
+  /**
+   * Linha derivada de cartão, mantida pelo servidor — não se edita nem exclui.
+   * `part`: parte de uma compra paga por um pagamento, na data dele.
+   * `remainder`: o que um pagamento pagou além das compras conhecidas.
+   */
+  invoiceRole?: 'part' | 'remainder' | null;
+  /** (part) Data em que a compra foi feita. `date` é a data do pagamento. */
   purchaseDate?: string | null;
+  /** (part) A compra — é ela que se edita ou exclui. */
+  purchaseId?: string | null;
+  /** (part) Valor total da compra. `amount < purchaseAmount` ⇒ compra dividida. */
+  purchaseAmount?: number | null;
+  /** (part/remainder) Pagamento que fez a linha contar. */
+  paymentId?: string | null;
   category: {
     id: string;
     name: string;

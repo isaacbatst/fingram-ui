@@ -20,8 +20,11 @@ export type Transaction = {
   transferToBoxId?: string;
   allocationId?: string | null;
   invoiceId?: string | null;
-  /** `remainder`: parte da fatura ainda sem detalhe. `purchase`: compra ligada a ela. */
-  invoiceRole?: "remainder" | "purchase" | null;
-  /** Data da compra, quando ela conta na data de pagamento da fatura. */
+  /** Linha derivada de cartão: `part` (parte de uma compra) ou `remainder` (não discriminado). */
+  invoiceRole?: "part" | "remainder" | null;
+  /** (part) Data da compra; `date` é a data do pagamento. */
   purchaseDate?: string | null;
+  purchaseId?: string | null;
+  purchaseAmount?: number | null;
+  paymentId?: string | null;
 };

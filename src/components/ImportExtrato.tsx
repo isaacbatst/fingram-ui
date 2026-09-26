@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import useSWR, { mutate as globalMutate } from "swr";
+import useSWR from "swr";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Check, ChevronDown, FileUp, Loader2, X } from "lucide-react";
@@ -14,8 +14,8 @@ import { useApi } from "@/hooks/useApi";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useImportReview } from "@/hooks/useImportReview";
 import { ImportTriagem } from "@/components/ImportTriagem";
-import { FaturasAviso, InvoiceLinkSelect } from "@/components/FaturasAviso";
-import { useInvoices } from "@/hooks/useInvoices";
+import { StatementInvoice } from "@/components/cartoes/StatementInvoice";
+import { refreshAfterCardChange } from "@/hooks/useCards";
 import { cn } from "@/lib/utils";
 import type { ImportBatchDTO, ImportEntryDTO } from "@/services/api.interface";
 import { RotateCcw } from "lucide-react";
@@ -78,8 +78,6 @@ export function ImportExtrato() {
 
   const unfinished = (batchList?.batches ?? []).filter((b) => b.pendingCount > 0);
 
-  const { invoices } = useInvoices();
-
   const { review, isLoading, mutate } = useImportReview(batchId, {
     status: "pending",
     page,
@@ -88,10 +86,11 @@ export function ImportExtrato() {
 
   /** O saldo e os orçamentos mudam assim que um lançamento vira transação. */
   const refreshVault = () => {
-    void globalMutate((key) => typeof key === "string" && key !== "boxes", undefined, {
-      revalidate: true,
-    });
+    // Confirmar linhas de cartão mexe em faturas e "a pagar"; revalida tudo,
+    // sem apagar o que está na tela.
+    void refreshAfterCardChange();
   };
+
 
   const handleFile = async (file: File) => {
     setIsUploading(true);
@@ -161,9 +160,6 @@ export function ImportExtrato() {
 
   if (!batchId) {
     return (
-      <>
-      {/* Aqui o aviso não precisa do atalho para importar: já é a tela. */}
-      <FaturasAviso showImportCta={false} />
       <section className="duna-surface rounded-lg p-4 flex flex-col gap-3">
         {unfinished.length > 0 && (
           <div className="flex flex-col gap-2 pb-3 border-b border-[var(--color-border)]">
@@ -251,7 +247,6 @@ export function ImportExtrato() {
           {isUploading ? "Lendo arquivo…" : "Escolher arquivo OFX"}
         </Button>
       </section>
-      </>
     );
   }
 
@@ -261,27 +256,9 @@ export function ImportExtrato() {
   const entries = review?.entries.items ?? [];
   const totalPages = review?.entries.totalPages ?? 1;
 
-  // Extrato de cartão: a fatura que ele detalha. As compras contam na data de
-  // pagamento dela; sem fatura, na data em que foram feitas.
+  // Extrato de cartão: o cartão e a fatura (ciclo) a que ele pertence.
   const invoiceLink =
-    batch?.kind === "creditcard" ? (
-      <div className="flex flex-col gap-1.5 pb-2">
-        <Label htmlFor="import-fatura">Fatura</Label>
-        <InvoiceLinkSelect
-          id="import-fatura"
-          batchId={batch.id}
-          invoiceId={batch.invoiceId}
-          invoices={invoices}
-        />
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          {batch.invoiceId
-            ? "As compras contam na data de pagamento da fatura e abatem o que ela tem sem detalhe."
-            : invoices.length > 0
-              ? "Sem fatura, as compras contam na data em que foram feitas. Escolha a fatura que as pagou."
-              : "Sem fatura, as compras contam na data em que foram feitas. Ao importar o pagamento dela na conta corrente, passam a contar nele."}
-        </p>
-      </div>
-    ) : null;
+    batch?.kind === "creditcard" ? <StatementInvoice batch={batch} /> : null;
 
   const finish = () => {
     // Fecha o lote só quando não sobrou nada a decidir. Com pendências ele

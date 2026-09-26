@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { ArrowLeftRight, CalendarClock, ChevronLeft, CreditCard, Loader2, PiggyBank, SkipForward, X } from "lucide-react";
+import { ArrowLeftRight, CalendarClock, ChevronLeft, Loader2, PiggyBank, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/hooks/useApi";
 import { useBoxes } from "@/hooks/useBoxes";
@@ -10,6 +10,9 @@ import { useAllocations } from "@/hooks/useAllocations";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import type { ImportGroupDTO } from "@/services/api.interface";
+import { InvoicePaymentTriage } from "@/components/cartoes/InvoicePaymentTriage";
+import { refreshAfterCardChange } from "@/hooks/useCards";
+import type { InvoicePaymentTarget } from "@/lib/invoice";
 
 type Props = {
   batchId: string;
@@ -335,18 +338,25 @@ export function ImportTriagem({
   };
 
   /**
-   * Registra a fatura a partir do débito de pagamento. Confirma na hora: o
-   * valor passa a contar como gasto, e o que o extrato do cartão ainda não
-   * detalhou fica visível como "não discriminado".
+   * Confirma o débito como pagamento de fatura, na hora. Não vira gasto: faz
+   * contar as compras que paga, na data dele; o que ele pagar além das
+   * compras conhecidas fica "não discriminado" até o extrato do cartão.
    */
-  const handleInvoice = async () => {
+  const handleInvoicePayment = async (target: InvoicePaymentTarget) => {
     setIsBusy(true);
-    const result = await apiService.confirmImportInvoice(group.entryIds);
+    const result = await apiService.confirmImportInvoicePayment(group.entryIds, target);
     setIsBusy(false);
     if (result.error) {
       toast.error(result.error);
       return;
     }
+    if (result.skipped?.length) {
+      toast.error(
+        `${result.skipped.length} lançamento(s) não puderam ser confirmados.`,
+      );
+    }
+    // Pode ter criado cartão e fatura: cartões, faturas e saldos mudam.
+    void refreshAfterCardChange();
     setConfirmedNow((current) => ({ ...current, [group.key]: true }));
     goToNext();
   };
@@ -415,38 +425,16 @@ export function ImportTriagem({
       </div>
 
       {group.suggestsInvoice && !choosingTransfer && !overrideSettlement ? (
-        /* Débito de pagamento de fatura na conta corrente. Ignorá-lo deixava as
-           compras da fatura sem conferência: se o extrato do cartão nunca fosse
-           importado, o gasto sumia. Registrada, a fatura conta desde já, e o
-           que falta detalhar fica à vista. */
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground leading-relaxed text-center px-2">
-            Isto parece o pagamento de uma fatura de cartão. Registre a fatura: o
-            valor conta como gasto agora, e o extrato do cartão mostra depois
-            onde ele foi.
-          </p>
-          <Button
-            type="button"
-            disabled={isBusy}
-            onClick={() => void handleInvoice()}
-            className="min-h-11 bg-[var(--color-accent-bg)] text-[var(--color-accent)] border border-[var(--color-accent-border)] hover:bg-[var(--color-accent-bg)]"
-          >
-            {isBusy ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CreditCard className="w-4 h-4" />
-            )}
-            Registrar fatura
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => setOverrideSettlement(true)}
-          >
-            É um gasto normal
-          </Button>
-        </div>
+        /* Débito de pagamento de fatura na conta corrente: vira pagamento do
+           cartão (não gasto). Ignorá-lo deixaria as compras do cartão sem
+           nunca contar. */
+        <InvoicePaymentTriage
+          key={group.key}
+          group={group}
+          isBusy={isBusy}
+          onConfirm={(target) => void handleInvoicePayment(target)}
+          onNotPayment={() => setOverrideSettlement(true)}
+        />
       ) : group.looksLikeSettlement && !choosingTransfer && !overrideSettlement ? (
         /* Quitação vista do cartão ("Pagamento recebido"). Não é receita: o
            pagamento entra pela conta corrente. */

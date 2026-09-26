@@ -74,4 +74,5 @@ Rodar antes de considerar qualquer mudança pronta.
 ## Testes (vitest)
 
 - `beforeEach`/`beforeAll` com corpo em bloco. Uma função devolvida pelo hook vira teardown: `beforeEach(() => mock.mockReset())` devolve o próprio mock, que o vitest chama após o teste. Com `mockRejectedValue`, o teste falha com o erro do mock mesmo com todas as asserções passando.
+- Revalidar em massa: `mutate(filtro)` só com o filtro. `mutate(filtro, undefined, { revalidate: true })` **grava `undefined`** no cache de cada chave antes de refazer a busca — o resumo some, o `App` volta ao carregando e desmonta as abas (perde estado, ex.: modo Importar). Para cartões/faturas use `refreshAfterCardChange()` (`hooks/useCards.tsx`).
 - Hooks SWR em teste: envolver em `<SWRConfig value={{ provider: () => new Map() }}>` para isolar o cache entre testes.

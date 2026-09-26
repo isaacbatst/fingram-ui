@@ -62,8 +62,12 @@ function Row({ tx, idx, onClick }: RowProps) {
         </span>
         <span className="text-[10px] font-mono text-muted-foreground tracking-wide whitespace-nowrap">
           cad. {cadastro} · ref. {referencia}
-          {purchaseNote && ` · ${purchaseNote}`}
         </span>
+        {purchaseNote && (
+          <span className="text-[10px] font-mono text-muted-foreground tracking-wide truncate">
+            {purchaseNote}
+          </span>
+        )}
       </span>
       <span
         className="shrink-0 font-mono text-sm font-semibold whitespace-nowrap mt-[1px]"

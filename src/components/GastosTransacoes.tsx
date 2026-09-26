@@ -41,12 +41,15 @@ import { ErrorDisplay } from "./ErrorDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { mutate } from "swr";
 import { format } from "date-fns";
-import { formatDayMonth } from "@/lib/invoice";
+import { formatBRL, formatDayMonth, isSplitPart, partNote } from "@/lib/invoice";
+import { useCardNav } from "@/hooks/useCardNav";
+import { PurchaseDrawer, type EditablePurchase } from "./cartoes/PurchaseDrawer";
 import { toast } from "sonner";
 import {
   ArrowRight,
   ArrowRightLeft,
   ChevronLeft,
+  CreditCard,
   ChevronRight,
   Loader2,
   Pencil,
@@ -197,6 +200,9 @@ export function GastosTransacoes({
         invoiceId: tx.invoiceId ?? null,
         invoiceRole: tx.invoiceRole ?? null,
         purchaseDate: tx.purchaseDate ?? null,
+        purchaseId: tx.purchaseId ?? null,
+        purchaseAmount: tx.purchaseAmount ?? null,
+        paymentId: tx.paymentId ?? null,
       }))
     : [];
 
@@ -234,8 +240,6 @@ export function GastosTransacoes({
       mutateTransactions(),
       mutate("summary"),
       mutate("boxes"),
-      // Excluir ou editar uma compra da fatura muda o que falta detalhar.
-      mutate("invoices"),
     ]);
     mutate((key: unknown) =>
       typeof key === "string" ? key.startsWith("budget-summary") : false,
@@ -244,10 +248,25 @@ export function GastosTransacoes({
 
   // Helpers for selected transaction
   const isTransfer = selectedTx?.transferId != null;
-  // O não discriminado é calculado pela fatura: não se edita, e excluí-lo
-  // exclui a fatura.
+  // Linhas derivadas de cartão são recalculadas pelo servidor e a API recusa
+  // editá-las ou excluí-las: a parte leva à compra, o não discriminado à
+  // fatura (onde está o pagamento).
   const isInvoiceRemainder = selectedTx?.invoiceRole === "remainder";
-  const isInvoicePurchase = selectedTx?.invoiceRole === "purchase";
+  const isInvoicePart = selectedTx?.invoiceRole === "part";
+  const nav = useCardNav();
+  const [editingPurchase, setEditingPurchase] = useState<EditablePurchase | null>(null);
+  const openPurchase = (tx: Transaction) => {
+    if (!tx.purchaseId || !tx.purchaseDate) return;
+    setEditingPurchase({
+      id: tx.purchaseId,
+      description: tx.description,
+      amount: tx.purchaseAmount ?? tx.amount,
+      date: tx.purchaseDate,
+      categoryId: typeof tx.category === "object" && tx.category ? tx.category.id : null,
+      type: tx.type,
+    });
+    setSelectedTx(null);
+  };
   const boxName = selectedTx
     ? boxes?.find((b) => b.id === selectedTx.boxId)?.name
     : undefined;
@@ -295,9 +314,7 @@ export function GastosTransacoes({
         "",
     );
     setEditBoxId(selectedTx.boxId || "");
-    // Compra ligada a uma fatura: a data que se corrige é a da compra; ela
-    // continua contando na data de pagamento.
-    setEditDate((selectedTx.purchaseDate ?? selectedTx.date).split("T")[0]);
+    setEditDate(selectedTx.date.split("T")[0]);
     setEditDescription(selectedTx.description);
     setEditFromBoxId(selectedTx.boxId || "");
     setEditToBoxId(selectedTx.transferToBoxId || "");
@@ -323,8 +340,8 @@ export function GastosTransacoes({
       }
       await invalidateAll();
       setSelectedTx(null);
-    } catch {
-      toast.error("Erro ao editar transação");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao editar transação");
     } finally {
       setIsSaving(false);
     }
@@ -730,12 +747,9 @@ export function GastosTransacoes({
                             ? "Transferência"
                             : [
                                 tx.invoiceRole === "remainder"
-                                  ? "Sem categoria até o extrato do cartão"
+                                  ? "Sem categoria até chegar o extrato do cartão"
                                   : getCategoryLabel(tx),
                                 getBoxName(tx),
-                                tx.invoiceRole === "purchase" && tx.purchaseDate
-                                  ? `compra ${formatDayMonth(tx.purchaseDate)}`
-                                  : null,
                               ]
                                 .filter(Boolean)
                                 .join(" \u00B7 ")}
@@ -745,6 +759,13 @@ export function GastosTransacoes({
                             </span>
                           )}
                         </div>
+                        {/* Parte de compra de cartão: numa linha própria, para
+                            não ser cortada — é o que explica o valor. */}
+                        {partNote(tx) && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {partNote(tx)}
+                          </div>
+                        )}
                       </div>
 
                       {/* Amount */}
@@ -848,26 +869,39 @@ export function GastosTransacoes({
                 {/* Metadata rows */}
                 {isInvoiceRemainder && (
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Parte da fatura do cartão que ainda não foi detalhada. Já
-                    conta no mês; diminui conforme você importa o extrato do
-                    cartão e confirma as compras.
+                    Parte de um pagamento de fatura sem compra conhecida. Já
+                    conta no mês, sem categoria; dá lugar às compras quando o
+                    extrato do cartão chegar.
+                  </p>
+                )}
+                {isInvoicePart && selectedTx.purchaseDate && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {isSplitPart(selectedTx)
+                      ? `Parte de ${selectedTx.description || "uma compra"} · compra ${formatDayMonth(selectedTx.purchaseDate)} · ${formatBRL(selectedTx.amount)} de ${formatBRL(selectedTx.purchaseAmount!)}. O resto conta na data de outro pagamento, ou segue a pagar.`
+                      : `Compra no cartão em ${formatDayMonth(selectedTx.purchaseDate)}. Conta nos gastos na data do pagamento da fatura.`}
                   </p>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {isInvoicePurchase || isInvoiceRemainder
-                      ? "Fatura paga em"
-                      : "Data"}
+                    {isInvoicePart || isInvoiceRemainder ? "Pago em" : "Data"}
                   </span>
                   <span className="text-foreground">
                     {formatDateLabel(selectedTx.date.split("T")[0])}
                   </span>
                 </div>
-                {isInvoicePurchase && selectedTx.purchaseDate && (
+                {isInvoicePart && selectedTx.purchaseDate && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Compra em</span>
                     <span className="text-foreground">
                       {formatDateLabel(selectedTx.purchaseDate.split("T")[0])}
+                    </span>
+                  </div>
+                )}
+                {isInvoicePart && isSplitPart(selectedTx) && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Valor da compra</span>
+                    <span className="text-foreground font-mono">
+                      {formatBRL(selectedTx.purchaseAmount!)}
                     </span>
                   </div>
                 )}
@@ -905,8 +939,35 @@ export function GastosTransacoes({
               </div>
 
               <DrawerFooter>
-                <div className="flex gap-2">
-                  {!isInvoiceRemainder && (
+                {isInvoicePart || isInvoiceRemainder ? (
+                  <div className="flex gap-2">
+                    {isInvoicePart && selectedTx.purchaseId && (
+                      <Button
+                        className="flex-1"
+                        variant="outline"
+                        onClick={() => openPurchase(selectedTx)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Editar compra
+                      </Button>
+                    )}
+                    {selectedTx.invoiceId && (
+                      <Button
+                        className="flex-1"
+                        variant="outline"
+                        onClick={() => {
+                          const invoiceId = selectedTx.invoiceId!;
+                          setSelectedTx(null);
+                          nav.openInvoice(invoiceId);
+                        }}
+                      >
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        Ver fatura
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
                     <Button
                       className="flex-1"
                       variant="outline"
@@ -915,16 +976,16 @@ export function GastosTransacoes({
                       <Pencil className="h-4 w-4 mr-1" />
                       Editar
                     </Button>
-                  )}
-                  <Button
-                    className="flex-1"
-                    variant="destructive"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    {isInvoiceRemainder ? "Excluir fatura" : "Excluir"}
-                  </Button>
-                </div>
+                    <Button
+                      className="flex-1"
+                      variant="destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </Button>
+                  </div>
+                )}
               </DrawerFooter>
             </>
           )}
@@ -1088,7 +1149,7 @@ export function GastosTransacoes({
                     )}
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">
-                        {isInvoicePurchase ? "Data da compra" : "Data"}
+                        Data
                       </label>
                       <DatePicker
                         date={editDateValue}
@@ -1148,20 +1209,16 @@ export function GastosTransacoes({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isInvoiceRemainder
-                ? "Excluir a fatura?"
-                : isTransfer
-                  ? "Tem certeza que deseja deletar a transferência?"
-                  : "Tem certeza que deseja deletar a transação?"}
+              {isTransfer
+                ? "Tem certeza que deseja deletar a transferência?"
+                : "Tem certeza que deseja deletar a transação?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {isInvoiceRemainder
-                ? "A fatura deixa de contar no mês. As compras do cartão que estavam ligadas a ela continuam registradas e voltam a contar na data em que foram feitas."
-                : `Esta ação não pode ser desfeita. ${
-                    isTransfer
-                      ? "Esta transferência será deletada permanentemente."
-                      : "Esta transação será deletada permanentemente."
-                  }`}
+              {`Esta ação não pode ser desfeita. ${
+                isTransfer
+                  ? "Esta transferência será deletada permanentemente."
+                  : "Esta transação será deletada permanentemente."
+              }`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1191,6 +1248,7 @@ export function GastosTransacoes({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <PurchaseDrawer purchase={editingPurchase} onClose={() => setEditingPurchase(null)} />
     </div>
   );
 }

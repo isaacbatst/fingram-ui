@@ -35,6 +35,20 @@ import type {
   ConfirmImportResponse,
   ImportBatchDTO,
   InvoicesData,
+  ApiResult,
+  ConfirmInvoicePaymentResponse,
+  CardView,
+  CardRequest,
+  AvailableBalanceData,
+  InvoiceDetail,
+  InvoiceReconcile,
+  UpdateInvoiceRequest,
+  InvoiceView,
+  AddPaymentRequest,
+  UpdatePaymentRequest,
+  PaymentResult,
+  DuplicatePair,
+  ReprocessReport,
   ActivityData,
   McpConnection,
   OAuthConsentDetails,
@@ -172,17 +186,10 @@ export class StandaloneApiService implements ApiService {
   }
 
   async editTransaction(request: EditTransactionRequest): Promise<EditTransactionResponse> {
-    try {
-      await this.makeRequest('/edit-transaction', {
-        method: "POST",
-        body: JSON.stringify(request),
-      });
-
-      return {};
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
-      return { error: "Erro ao conectar com o servidor" };
-    }
+    // A recusa da API (ex.: mudar o estrato de uma compra de cartão) já vem
+    // explicada; trocá-la por um texto genérico esconderia o motivo.
+    const result = await this.action('/edit-transaction', request);
+    return result.error ? { error: result.error } : {};
   }
 
   async setBudgets(budgets: Budget[]): Promise<SetBudgetsResponse> {
@@ -207,16 +214,8 @@ export class StandaloneApiService implements ApiService {
   async deleteTransaction(transactionId: string): Promise<{
     error?: string;
   }> {
-    try {
-      await this.makeRequest('/delete-transaction', {
-        method: "POST",
-        body: JSON.stringify({ transactionId }),
-      });
-      return {};
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
-      return { error: "Erro ao deletar transação" };
-    }
+    const result = await this.action('/delete-transaction', { transactionId });
+    return result.error ? { error: result.error } : {};
   }
 
   async setBudgetStartDayConfig(
@@ -538,51 +537,157 @@ export class StandaloneApiService implements ApiService {
     }
   }
 
-  async confirmImportInvoice(entryIds: string[]): Promise<ConfirmImportResponse> {
+  async confirmImportInvoicePayment(
+    entryIds: string[],
+    target: { cardId?: string; invoiceId?: string },
+  ): Promise<ConfirmInvoicePaymentResponse> {
     try {
-      const response = await this.makeImportRequest('/confirm-invoice', {
+      const response = await this.makeImportRequest('/confirm-invoice-payment', {
         method: 'POST',
-        body: JSON.stringify({ entryIds }),
+        body: JSON.stringify({ entryIds, ...target }),
       });
       return await response.json();
     } catch (error) {
-      console.error("Erro ao registrar fatura:", error);
-      return { error: error instanceof Error ? error.message : "Erro ao registrar fatura" };
+      console.error("Erro ao confirmar pagamento de fatura:", error);
+      return {
+        error: error instanceof Error ? error.message : "Erro ao confirmar pagamento de fatura",
+      };
     }
   }
 
   async setImportBatchInvoice(
     batchId: string,
     invoiceId: string | null,
-  ): Promise<{ batch?: ImportBatchDTO; error?: string }> {
-    try {
-      const response = await this.makeImportRequest('/batch/invoice', {
-        method: 'POST',
-        body: JSON.stringify({ batchId, invoiceId }),
-      });
-      return { batch: await response.json() };
-    } catch (error) {
-      console.error("Erro ao ligar extrato à fatura:", error);
-      return { error: error instanceof Error ? error.message : "Erro ao ligar extrato à fatura" };
-    }
+  ): Promise<ApiResult<ImportBatchDTO>> {
+    return this.action('/import/batch/invoice', { batchId, invoiceId });
   }
 
-  async getInvoices(): Promise<InvoicesData> {
-    const response = await this.makeRequest('/invoices');
+  async setImportBatchNoInvoice(
+    batchId: string,
+    noInvoice: boolean,
+  ): Promise<ApiResult<ImportBatchDTO>> {
+    return this.action('/import/batch/no-invoice', { batchId, noInvoice });
+  }
+
+  // --- Cartões, faturas e pagamentos ---
+
+  /**
+   * GET que preserva a mensagem da API no erro (para o SWR mostrar algo útil).
+   */
+  private async read<T>(endpoint: string): Promise<T> {
+    const response = await this.fetchVault(endpoint);
     return response.json();
   }
 
-  async deleteInvoice(invoiceId: string): Promise<{ error?: string }> {
+  /**
+   * POST que devolve o dado ou a mensagem de recusa da API. As recusas de
+   * regra (400) já vêm em português, prontas para mostrar.
+   */
+  private async action<T>(endpoint: string, body?: unknown): Promise<ApiResult<T>> {
     try {
-      await this.makeRequest('/invoices/delete', {
+      const response = await this.fetchVault(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ invoiceId }),
+        body: body === undefined ? undefined : JSON.stringify(body),
       });
-      return {};
+      // Algumas rotas (ex.: delete-transaction) respondem sem corpo.
+      const text = await response.text();
+      return { data: (text ? JSON.parse(text) : undefined) as T };
     } catch (error) {
-      console.error("Erro ao excluir fatura:", error);
-      return { error: error instanceof Error ? error.message : "Erro ao excluir fatura" };
+      console.error(`Erro em ${endpoint}:`, error);
+      return {
+        error: error instanceof Error ? error.message : "Erro ao conectar com o servidor",
+      };
     }
+  }
+
+  private async fetchVault(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const response = await fetch(`${API_BASE_URL}/vault${endpoint}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    if (response.status === 401) {
+      throw new Error("Token de acesso inválido ou expirado.");
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const message = Array.isArray(body?.message) ? body.message[0] : body?.message;
+      throw new Error(message || "Erro ao conectar com o servidor");
+    }
+    return response;
+  }
+
+  async getCards(): Promise<CardView[]> {
+    const { cards } = await this.read<{ cards: CardView[] }>('/cards');
+    return cards;
+  }
+
+  async createCard(request: CardRequest): Promise<ApiResult<CardView>> {
+    return this.action('/cards', request);
+  }
+
+  async updateCard(cardId: string, request: Partial<CardRequest>): Promise<ApiResult<CardView>> {
+    return this.action(`/cards/${encodeURIComponent(cardId)}/update`, request);
+  }
+
+  async deleteCard(cardId: string): Promise<ApiResult<{ deleted: true }>> {
+    return this.action(`/cards/${encodeURIComponent(cardId)}/delete`);
+  }
+
+  async getAvailableBalance(): Promise<AvailableBalanceData> {
+    return this.read('/available-balance');
+  }
+
+  async getInvoices(cardId?: string): Promise<InvoicesData> {
+    const query = cardId ? `?cardId=${encodeURIComponent(cardId)}` : "";
+    return this.read(`/invoices${query}`);
+  }
+
+  async getInvoice(invoiceId: string): Promise<InvoiceDetail> {
+    return this.read(`/invoices/${encodeURIComponent(invoiceId)}`);
+  }
+
+  async getInvoiceReconcile(invoiceId: string): Promise<InvoiceReconcile> {
+    return this.read(`/invoices/${encodeURIComponent(invoiceId)}/reconcile`);
+  }
+
+  async updateInvoice(
+    invoiceId: string,
+    request: UpdateInvoiceRequest,
+  ): Promise<ApiResult<InvoiceView>> {
+    return this.action(`/invoices/${encodeURIComponent(invoiceId)}/update`, request);
+  }
+
+  async closeInvoice(invoiceId: string, closingDate: string): Promise<ApiResult<InvoiceView>> {
+    return this.action(`/invoices/${encodeURIComponent(invoiceId)}/close`, { closingDate });
+  }
+
+  async addInvoicePayment(request: AddPaymentRequest): Promise<ApiResult<PaymentResult>> {
+    return this.action('/invoices/payments', request);
+  }
+
+  async updateInvoicePayment(
+    paymentId: string,
+    request: UpdatePaymentRequest,
+  ): Promise<ApiResult<PaymentResult>> {
+    return this.action(`/invoices/payments/${encodeURIComponent(paymentId)}/update`, request);
+  }
+
+  async deleteInvoicePayment(paymentId: string): Promise<ApiResult<{ deleted: true }>> {
+    return this.action(`/invoices/payments/${encodeURIComponent(paymentId)}/delete`);
+  }
+
+  async getDuplicates(invoiceId?: string): Promise<{ pairs: DuplicatePair[] }> {
+    const query = invoiceId ? `?invoiceId=${encodeURIComponent(invoiceId)}` : "";
+    return this.read(`/invoices/duplicates${query}`);
+  }
+
+  async previewReprocess(): Promise<ReprocessReport> {
+    return this.read('/invoices/reprocess/preview');
+  }
+
+  async applyReprocess(): Promise<ApiResult<ReprocessReport>> {
+    return this.action('/invoices/reprocess/apply');
   }
 
   async confirmImportBatch(batchId: string): Promise<ConfirmImportResponse> {
