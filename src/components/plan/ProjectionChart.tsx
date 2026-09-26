@@ -15,7 +15,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AllocationDTO, MonthDataDTO, PlanDTO } from "@/services/plan.service";
-import { buildMirrorRows, formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
+import { buildMirrorRows, computeMirrorAxis, formatCompactCurrency, formatCurrency, holdsPhysicalFunds } from "@/utils/plan-dashboard";
 
 import { DATA_COLORS, getBoxColor } from "@/utils/box-colors";
 
@@ -23,6 +23,9 @@ type ChartView = "trajectory" | "flow";
 
 const DEFICIT_COLOR = "var(--color-danger)";
 const BALANCE_COLOR = "var(--color-text)";
+const OUTLINE_COLOR = "var(--color-text-secondary)";
+const AXIS_TICK = { fontSize: 10, fill: "var(--color-text-muted)", fontFamily: "var(--font-mono-family)" };
+const SECTION_LABEL = { fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", fill: "var(--color-text-secondary)", fontFamily: "var(--font-body)" };
 
 const TOOLTIP_STYLE = {
   background: "rgba(8,9,12,0.92)",
@@ -162,12 +165,18 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
       deficit: Math.min(0, r.cash),
       heldTotal: r.heldTotal,
       owedTotal: r.owedTotal,
+      owedEdge: -r.owedTotal,
       balance: r.balance,
     };
     Object.entries(r.held).forEach(([id, v]) => { row[`h_${id}`] = v; });
     Object.entries(r.owed).forEach(([id, v]) => { row[`o_${id}`] = -v; });
     return row;
   }), [mirrorRows]);
+
+  const mirrorAxis = useMemo(() => computeMirrorAxis(
+    Math.max(0, ...mirrorRows.map((r) => r.heldTotal)),
+    Math.max(0, ...mirrorRows.map((r) => r.owedTotal)),
+  ), [mirrorRows]);
 
   const { flowData, flowDomain } = useMemo(() => {
     const flowDataRaw = visibleProjection.map((m) => ({
@@ -269,20 +278,23 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
 
       {/* Chart */}
       <div className="bg-[linear-gradient(180deg,rgba(217,175,120,0.04)_0%,transparent_100%)] border border-[var(--color-border-subtle)] rounded-[var(--radius-lg)] p-4 pb-2">
-        <ResponsiveContainer width="100%" height={view === "trajectory" ? 240 : 180}>
+        <ResponsiveContainer width="100%" height={view === "trajectory" ? 320 : 180}>
           {view === "trajectory" ? (
-            <ComposedChart data={trajectoryData} stackOffset="sign" margin={{ top: 4, right: 4, bottom: 0, left: -20 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(217,175,120,0.04)" />
+            <ComposedChart data={trajectoryData} stackOffset="sign" margin={{ top: 4, right: 4, bottom: 0, left: -12 }} onClick={handleChartClick} onMouseMove={handleChartMouseMove} onMouseLeave={handleChartMouseLeave}>
+              <CartesianGrid vertical={false} stroke="var(--color-border-strong)" />
               <XAxis
                 dataKey="month"
                 tickFormatter={formatXTick}
-                tick={{ fontSize: 9, fill: "var(--color-text-muted)", fontFamily: "var(--font-mono-family)" }}
+                tick={AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
+                domain={mirrorAxis.domain}
+                ticks={mirrorAxis.ticks}
+                interval={0}
                 tickFormatter={(v: number) => formatCompactCurrency(Math.abs(v))}
-                tick={{ fontSize: 9, fill: "var(--color-text-muted)", fontFamily: "var(--font-mono-family)" }}
+                tick={AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
               />
@@ -325,13 +337,39 @@ export const ProjectionChart = memo(function ProjectionChart({ projection, alloc
                   name={se.label}
                   stackId="mirror"
                   stroke="var(--color-bg)"
-                  strokeWidth={1}
+                  strokeWidth={1.5}
                   fill={se.color}
                   fillOpacity={1}
                   isAnimationActive={false}
                 />
               ))}
-              <ReferenceLine y={0} stroke="var(--color-text-muted)" />
+              {[{ key: "heldTotal", show: heldSeries.length > 0 }, { key: "owedEdge", show: owedSeries.length > 0 }]
+                .filter((edge) => edge.show)
+                .map((edge) => (
+                  <Line
+                    key={edge.key}
+                    type="linear"
+                    dataKey={edge.key}
+                    stroke={OUTLINE_COLOR}
+                    strokeWidth={1.25}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                  />
+                ))}
+              <ReferenceLine y={0} stroke="var(--color-text)" strokeOpacity={0.8} strokeWidth={1.5} />
+              <ReferenceLine
+                y={mirrorAxis.domain[1]}
+                stroke="none"
+                label={{ value: "↑ GUARDADO", position: "insideTopLeft", offset: 8, ...SECTION_LABEL }}
+              />
+              {owedSeries.length > 0 && (
+                <ReferenceLine
+                  y={mirrorAxis.domain[0]}
+                  stroke="none"
+                  label={{ value: "↓ A PAGAR", position: "insideBottomLeft", offset: 8, ...SECTION_LABEL }}
+                />
+              )}
               <Line
                 type="linear"
                 dataKey="balance"
